@@ -1,7 +1,7 @@
 // src/middlewares/validation/secuenciaSchema.js
 import { z } from 'zod';
 
-const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO'];
+const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO','EN PROCESO'];
 
 /**
  * Esquema para la creación de secuencias
