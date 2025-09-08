@@ -76,6 +76,6 @@ cp .env.example .env
 
 # 4. Iniciar servidor
 cd src
-npm run dev
+node app.js 
 
 
