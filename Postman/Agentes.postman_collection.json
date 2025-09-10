@@ -1,0 +1,586 @@
+{
+	"info": {
+		"_postman_id": "agentes-collection-id",
+		"name": "Agentes API - Micrositio Iris",
+		"description": "Colección para probar todos los endpoints del módulo de agentes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.token) {",
+									"        pm.environment.set('token', response.data.token);",
+									"        console.log('Token guardado:', response.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"alias\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Agentes",
+			"item": [
+				{
+					"name": "Crear Agente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.id_agente) {",
+									"        pm.environment.set('agente_id', response.id_agente);",
+									"        console.log('ID del agente creado:', response.id_agente);",
+									"    }",
+									"}",
+									"",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has agente data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id_agente');",
+									"    pm.expect(jsonData).to.have.property('nombre');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"ChatGPT Assistant\",\n  \"link\": \"https://chat.openai.com\",\n  \"descripcion\": \"Asistente de inteligencia artificial conversacional desarrollado por OpenAI\",\n  \"prompt\": \"Eres un asistente útil que responde preguntas de manera clara y concisa.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos los Agentes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Each agente has required properties', function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.length > 0) {",
+									"        jsonData.forEach(agente => {",
+									"            pm.expect(agente).to.have.property('id_agente');",
+									"            pm.expect(agente).to.have.property('nombre');",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Agente por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has agente data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id_agente');",
+									"    pm.expect(jsonData).to.have.property('nombre');",
+									"    pm.expect(jsonData).to.have.property('creado');",
+									"    pm.expect(jsonData).to.have.property('actualizado');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": {{agente_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes/a",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes",
+								"a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Agente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has updated agente data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id_agente');",
+									"    pm.expect(jsonData).to.have.property('nombre');",
+									"    pm.expect(jsonData.nombre).to.include('Actualizado');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": {{agente_id}},\n  \"nombre\": \"ChatGPT Assistant - Actualizado\",\n  \"descripcion\": \"Asistente de inteligencia artificial actualizado con nuevas capacidades\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Agente con datos mínimos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.id_agente) {",
+									"        pm.environment.set('agente_id_2', response.id_agente);",
+									"        console.log('ID del segundo agente creado:', response.id_agente);",
+									"    }",
+									"}",
+									"",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has agente data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id_agente');",
+									"    pm.expect(jsonData).to.have.property('nombre');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Claude AI\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Agente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 204', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test('Response body is empty', function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": {{agente_id_2}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Validaciones",
+			"item": [
+				{
+					"name": "Crear Agente - Nombre muy corto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message about name length', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('3 caracteres');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"AI\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Agente - URL inválida",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message about invalid URL', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('URL válida');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Test Agent\",\n  \"link\": \"not-a-valid-url\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Agente - ID inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error message about not found', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('no encontrado');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 999999\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes/a",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes",
+								"a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Agente - Sin autenticación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Agente sin auth\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agentes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agentes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

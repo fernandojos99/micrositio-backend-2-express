@@ -19,13 +19,13 @@ const testingCardBaseSchema = z.object({
 });
 
 // Esquema para creación con validación adicional de fechas
-/**const testingCardCreateSchema = testingCardBaseSchema.refine(
-  data => data.dia_fin >= data.dia_inicio,
+const testingCardCreateSchema = testingCardBaseSchema.refine(
+  data => !data.dia_fin || !data.dia_inicio || data.dia_fin >= data.dia_inicio,
   {
     message: 'La fecha de fin no puede ser anterior a la fecha de inicio',
     path: ['dia_fin']
   }
-);*/
+);
 
 // Esquema para actualización (todos los campos opcionales)
 const testingCardUpdateSchema = z.object({
@@ -48,4 +48,4 @@ const testingCardUpdateSchema = z.object({
   }
 );
 
-export { testingCardBaseSchema, testingCardUpdateSchema };
+export { testingCardBaseSchema, testingCardCreateSchema, testingCardUpdateSchema };

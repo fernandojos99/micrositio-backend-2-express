@@ -1,5 +1,5 @@
 // src/models/TestingCard.js
-import { testingCardBaseSchema, testingCardUpdateSchema } from '../middlewares/validation/testingCardSchema.js';
+import { testingCardCreateSchema, testingCardUpdateSchema } from '../middlewares/validation/testingCardSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class TestingCard {
