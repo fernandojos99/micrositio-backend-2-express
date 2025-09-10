@@ -1,6 +1,6 @@
 // src/controllers/testingCardController.js
 import TestingCardService from '../services/testingCardService.js';
-import { testingCardBaseSchema, testingCardUpdateSchema } from '../middlewares/validation/testingCardSchema.js';
+import { testingCardCreateSchema, testingCardUpdateSchema } from '../middlewares/validation/testingCardSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class TestingCardController {
@@ -64,7 +64,7 @@ class TestingCardController {
 
   async crear(req, res, next) {
     try {
-      const validatedData = testingCardBaseSchema.parse(req.body);
+      const validatedData = testingCardCreateSchema.parse(req.body);
       const testingCard = await this.testingCardService.crear(validatedData);
       res.status(201).json(testingCard);
     } catch (error) {

@@ -21,6 +21,7 @@ import learningCardDocumentRoutes from './routes/learningCardDocumentRoutes.js';
 import usuarioRoutes from './routes/usuarioRoutes.js';
 import usuarioProyectoRoutes from './routes/usuarioProyectoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import agenteRoutes from './routes/agenteRoutes.js';
 // import testRoutes from './routes/testRoutes.js';
  
  
@@ -55,6 +56,7 @@ app.use('/api/learning-card', learningCardDocumentRoutes);
 app.use('/usuarios', usuarioRoutes);
 app.use('/usuario_proyecto', usuarioProyectoRoutes);
 app.use('/auth', authRoutes);
+app.use('/agentes', agenteRoutes);
 // app.use('/debug', testRoutes);
 //app.use('/debug', testRoutes);
 
