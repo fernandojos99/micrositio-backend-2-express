@@ -10,7 +10,7 @@ const agenteController = new AgenteController();
 router.get('/', authMiddleware, soloEditores, agenteController.listarTodos.bind(agenteController));
 
 // Obtener agente específico por ID
-router.post('/a', authMiddleware, soloEditores, agenteController.obtenerPorId.bind(agenteController));
+router.get('/:id', authMiddleware, soloEditores, agenteController.obtenerPorId.bind(agenteController));
 
 // Crear agente
 router.post('/', authMiddleware, soloEditores, agenteController.crear.bind(agenteController));

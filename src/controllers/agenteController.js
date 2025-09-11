@@ -16,9 +16,9 @@ class AgenteController {
    */
   async obtenerPorId(req, res, next) {
     try {
-      const id_agente = Number(req.body.id_agente);
-      if (!id_agente) {
-        throw new ApiError('Se requiere el campo "id_agente" en el body', 400);
+      const id_agente = Number(req.params.id);
+      if (!id_agente || isNaN(id_agente)) {
+        throw new ApiError('Se requiere un ID de agente válido en la ruta', 400);
       }
 
       const agente = await this.agenteService.obtenerPorId(id_agente);
