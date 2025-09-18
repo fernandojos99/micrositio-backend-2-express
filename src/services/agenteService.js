@@ -1,10 +1,12 @@
 // src/services/agenteService.js
 import AgenteRepository from '../repositories/agenteRepository.js';
+import AgenteCategoriaRepository from '../repositories/agenteCategoriaRepository.js';
 import ApiError from '../utils/ApiError.js';
 
 class AgenteService {
   constructor() {
     this.agenteRepo = new AgenteRepository();
+    this.agenteCategoriaRepo = new AgenteCategoriaRepository();
   }
 
   /**
@@ -30,6 +32,23 @@ class AgenteService {
   async listarTodos() {
     const agentes = await this.agenteRepo.listarTodos();
     return agentes.map(agente => agente.toAPI());
+  }
+
+  /**
+   * Lista todos los agentes de una categoría dada
+   * @param {number} id_categoria - ID de la categoría
+   * @returns {Promise<Array>} Lista de agentes con información completa
+   */
+  async listarPorCategoria(id_categoria) {
+    const relaciones = await this.agenteCategoriaRepo.listarPorCategoria(id_categoria);
+    
+    // Extraer y devolver solo la información de los agentes
+    return relaciones
+      .filter(relacion => relacion.agente) // Solo incluir relaciones que tengan información del agente
+      .map(relacion => ({
+        ...relacion.agente,
+        es_principal: relacion.es_principal // Añadir si es principal en esta categoría
+      }));
   }
 
   /**

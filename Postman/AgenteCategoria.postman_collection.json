@@ -1,0 +1,464 @@
+{
+	"info": {
+		"_postman_id": "agente-categoria-collection-id",
+		"name": "Agente Categoria API - Micrositio Iris",
+		"description": "Colección para probar todos los endpoints del módulo de relaciones agente-categoria",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.token) {",
+									"        pm.environment.set('token', response.data.token);",
+									"        console.log('Token guardado:', response.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"alias\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Agente Categoria - CRUD",
+			"item": [
+				{
+					"name": "1. Crear relación agente-categoria",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('id_relacion_agente_categoria', response.id_relacion_agente_categoria);",
+									"    pm.environment.set('id_agente', response.id_agente);",
+									"    pm.environment.set('id_categoria', response.id_categoria);",
+									"    console.log('Relación creada - ID:', response.id_relacion_agente_categoria);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 1,\n  \"id_categoria\": 1,\n  \"es_principal\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Crear segunda relación agente-categoria",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 1,\n  \"id_categoria\": 2,\n  \"es_principal\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Crear relación para otro agente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 2,\n  \"id_categoria\": 1,\n  \"es_principal\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Obtener todas las categorías disponibles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria/categorias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria",
+								"categorias"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Listar todas las relaciones",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Obtener relación específica por ID único",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria/{{id_relacion_agente_categoria}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria",
+								"{{id_relacion_agente_categoria}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7. Obtener categorías de un agente",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria/agente/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria",
+								"agente",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8. Obtener agentes de una categoría",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria/categoria/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria",
+								"categoria",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+										"name": "10. Eliminar relación",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 1,\n  \"id_categoria\": 2,\n  \"es_principal\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Agente Categoria - DELETE",
+			"item": [
+				{
+					"name": "1. Eliminar relación específica",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 1,\n  \"id_categoria\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Casos de Error",
+			"item": [
+				{
+					"name": "Error: Crear relación duplicada",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": 1,\n  \"id_categoria\": 1,\n  \"es_principal\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Datos inválidos (ID negativo)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_agente\": -1,\n  \"id_categoria\": 1,\n  \"es_principal\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Relación no encontrada",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria/999/999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria",
+								"999",
+								"999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Sin autenticación",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000"
+		}
+	]
+}
