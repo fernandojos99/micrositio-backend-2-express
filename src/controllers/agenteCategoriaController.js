@@ -9,6 +9,21 @@ class AgenteCategoriaController {
   }
 
   /**
+   * Metodo para obtener todas las categorías disponibles
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
+   */
+  async obtenerCategorias(req, res, next) {
+    try {
+      const categorias = await this.agenteCategoriaService.obtenerCategorias();
+      res.json(categorias);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Obtiene una relación agente-categoría por sus IDs 
    * @param {Object} req - Request de Express
    * @param {Object} res - Response de Express

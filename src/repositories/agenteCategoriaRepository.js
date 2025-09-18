@@ -4,6 +4,23 @@ import ApiError from '../utils/ApiError.js';
 import AgenteCategoria from '../models/AgenteCategoria.js';
 
 class AgenteCategoriaRepository {
+
+  /**
+   * Obtiene todas las categorías disponibles
+   * @returns {Promise<Array>} Lista de categorías disponibles
+   */
+  async listarCategorias() {
+    const { data, error } = await supabase
+      .from('categoria_agente')
+      .select('*')
+      .order('nombre_categoria', { ascending: true });
+
+    if (error) {
+      throw new ApiError(`Error al listar categorías: ${error.message}`, 500);
+    }
+    return data;
+  }
+
   /**
    * Obtiene una relación agente-categoría por su ID único
    * @param {number} id_relacion_agente_categoria - ID de la relación

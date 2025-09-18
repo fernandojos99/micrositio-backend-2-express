@@ -6,6 +6,9 @@ import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 const agenteCategoriaController = new AgenteCategoriaController();
 
+// Obtener todas las categorías disponibles
+router.get('/categorias', authMiddleware, soloEditores, agenteCategoriaController.obtenerCategorias.bind(agenteCategoriaController));
+
 // Obtener todas las relaciones agente-categoría
 router.get('/', authMiddleware, soloEditores, agenteCategoriaController.listarTodos.bind(agenteCategoriaController));
 

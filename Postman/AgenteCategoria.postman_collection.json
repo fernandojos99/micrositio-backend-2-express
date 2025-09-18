@@ -166,7 +166,30 @@
 					"response": []
 				},
 				{
-					"name": "4. Listar todas las relaciones",
+					"name": "4. Obtener todas las categorías disponibles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/agente_categoria/categorias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agente_categoria",
+								"categorias"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Listar todas las relaciones",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -188,7 +211,7 @@
 					"response": []
 				},
 				{
-					"name": "5. Obtener relación específica por ID único",
+					"name": "6. Obtener relación específica por ID único",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -211,7 +234,7 @@
 					"response": []
 				},
 				{
-					"name": "6. Obtener categorías de un agente",
+					"name": "7. Obtener categorías de un agente",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -235,7 +258,7 @@
 					"response": []
 				},
 				{
-					"name": "7. Obtener agentes de una categoría",
+					"name": "8. Obtener agentes de una categoría",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -259,7 +282,7 @@
 					"response": []
 				},
 				{
-					"name": "8. Actualizar relación (cambiar es_principal)",
+										"name": "10. Eliminar relación",
 					"request": {
 						"method": "PATCH",
 						"header": [

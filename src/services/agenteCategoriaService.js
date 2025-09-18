@@ -8,6 +8,15 @@ class AgenteCategoriaService {
   }
 
   /**
+   * Obtiene todas las categorías disponibles
+   * @returns {Promise<Array>} Lista de categorías disponibles
+   */
+  async obtenerCategorias() {
+    const categorias = await this.agenteCategoriaRepo.listarCategorias();
+    return categorias;
+  }
+
+  /**
    * Obtiene una relación agente-categoría por su ID único
    * @param {number} id_relacion_agente_categoria - ID de la relación
    * @returns {Promise<Object>} Relación encontrada
