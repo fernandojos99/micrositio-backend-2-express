@@ -8,14 +8,13 @@ class AgenteCategoriaService {
   }
 
   /**
-   * Obtiene una relación agente-categoría por sus IDs compuestos
-   * @param {number} id_agente - ID del agente
-   * @param {number} id_categoria - ID de la categoría
+   * Obtiene una relación agente-categoría por su ID único
+   * @param {number} id_relacion_agente_categoria - ID de la relación
    * @returns {Promise<Object>} Relación encontrada
    * @throws {ApiError} Si la relación no existe
    */
-  async obtenerPorId(id_agente, id_categoria) {
-    const relacion = await this.agenteCategoriaRepo.obtenerPorId(id_agente, id_categoria);
+  async obtenerPorId(id_relacion_agente_categoria) {
+    const relacion = await this.agenteCategoriaRepo.obtenerPorId(id_relacion_agente_categoria);
     
     if (!relacion) {
       throw new ApiError('Relación agente-categoría no encontrada', 404);
@@ -59,16 +58,6 @@ class AgenteCategoriaService {
    * @returns {Promise<Object>} Relación creada
    */
   async crear(relacionData) {
-    // Verificar si la relación ya existe
-    const relacionExistente = await this.agenteCategoriaRepo.obtenerPorId(
-      relacionData.id_agente, 
-      relacionData.id_categoria
-    );
-    
-    if (relacionExistente) {
-      throw new ApiError('La relación agente-categoría ya existe', 409);
-    }
-
     const relacion = await this.agenteCategoriaRepo.crear(relacionData);
     return relacion.toAPI();
   }
@@ -106,52 +95,6 @@ class AgenteCategoriaService {
     }
     
     return relacion.toAPI();
-  }
-
-  /**
-   * Elimina todas las relaciones de un agente
-   * @param {number} id_agente - ID del agente
-   * @returns {Promise<Array>} Relaciones eliminadas
-   */
-  async eliminarPorAgente(id_agente) {
-    const relaciones = await this.agenteCategoriaRepo.eliminarPorAgente(id_agente);
-    return relaciones.map(relacion => relacion.toAPI());
-  }
-
-  /**
-   * Elimina todas las relaciones de una categoría
-   * @param {number} id_categoria - ID de la categoría
-   * @returns {Promise<Array>} Relaciones eliminadas
-   */
-  async eliminarPorCategoria(id_categoria) {
-    const relaciones = await this.agenteCategoriaRepo.eliminarPorCategoria(id_categoria);
-    return relaciones.map(relacion => relacion.toAPI());
-  }
-
-  /**
-   * Actualiza las categorías de un agente (reemplaza todas las existentes)
-   * @param {number} id_agente - ID del agente
-   * @param {Array} categorias - Array de objetos {id_categoria, es_principal}
-   * @returns {Promise<Array>} Nuevas relaciones creadas
-   */
-  async actualizarCategoriasAgente(id_agente, categorias) {
-    // Eliminar todas las relaciones existentes del agente
-    await this.agenteCategoriaRepo.eliminarPorAgente(id_agente);
-
-    // Crear las nuevas relaciones
-    const relacionesCreadas = [];
-    for (const categoria of categorias) {
-      const relacionData = {
-        id_agente,
-        id_categoria: categoria.id_categoria,
-        es_principal: categoria.es_principal || false
-      };
-      
-      const relacion = await this.agenteCategoriaRepo.crear(relacionData);
-      relacionesCreadas.push(relacion.toAPI());
-    }
-
-    return relacionesCreadas;
   }
 }
 

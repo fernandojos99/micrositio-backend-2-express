@@ -19,6 +19,7 @@ Devuelve todas las relaciones agente-categoría existentes.
 ```json
 [
   {
+    "id_relacion_agente_categoria": 1,
     "id_agente": 1,
     "id_categoria": 2,
     "es_principal": true,
@@ -29,17 +30,17 @@ Devuelve todas las relaciones agente-categoría existentes.
 ```
 
 ### 2. Obtener relación específica
-**GET** `/agente_categoria/:id_agente/:id_categoria`
+**GET** `/agente_categoria/:id_relacion_agente_categoria`
 
-Obtiene una relación específica por los IDs de agente y categoría.
+Obtiene una relación específica por su ID único.
 
 **Parámetros de ruta:**
-- `id_agente` (number): ID del agente
-- `id_categoria` (number): ID de la categoría
+- `id_relacion_agente_categoria` (number): ID único de la relación
 
 **Respuesta exitosa (200):**
 ```json
 {
+  "id_relacion_agente_categoria": 1,
   "id_agente": 1,
   "id_categoria": 2,
   "es_principal": true,
@@ -60,6 +61,7 @@ Lista todas las categorías asociadas a un agente específico.
 ```json
 [
   {
+    "id_relacion_agente_categoria": 1,
     "id_agente": 1,
     "id_categoria": 2,
     "es_principal": true,
@@ -81,6 +83,7 @@ Lista todos los agentes asociados a una categoría específica.
 ```json
 [
   {
+    "id_relacion_agente_categoria": 1,
     "id_agente": 1,
     "id_categoria": 2,
     "es_principal": true,
@@ -112,6 +115,7 @@ Crea una nueva relación entre un agente y una categoría.
 **Respuesta exitosa (201):**
 ```json
 {
+  "id_relacion_agente_categoria": 1,
   "id_agente": 1,
   "id_categoria": 2,
   "es_principal": true,
@@ -123,7 +127,7 @@ Crea una nueva relación entre un agente y una categoría.
 ### 6. Actualizar relación
 **PATCH** `/agente_categoria/`
 
-Actualiza una relación agente-categoría existente (solo el campo `es_principal`).
+Actualiza una relación agente-categoría existente.
 
 **Body de la petición:**
 ```json
@@ -142,6 +146,7 @@ Actualiza una relación agente-categoría existente (solo el campo `es_principal
 **Respuesta exitosa (200):**
 ```json
 {
+  "id_relacion_agente_categoria": 1,
   "id_agente": 1,
   "id_categoria": 2,
   "es_principal": false,
@@ -150,51 +155,7 @@ Actualiza una relación agente-categoría existente (solo el campo `es_principal
 }
 ```
 
-### 7. Actualizar todas las categorías de un agente
-**PUT** `/agente_categoria/agente/:id_agente/categorias`
-
-Reemplaza todas las categorías existentes de un agente con una nueva lista.
-
-**Parámetros de ruta:**
-- `id_agente` (number): ID del agente
-
-**Body de la petición:**
-```json
-{
-  "categorias": [
-    {
-      "id_categoria": 1,
-      "es_principal": true
-    },
-    {
-      "id_categoria": 3,
-      "es_principal": false
-    }
-  ]
-}
-```
-
-**Respuesta exitosa (200):**
-```json
-[
-  {
-    "id_agente": 1,
-    "id_categoria": 1,
-    "es_principal": true,
-    "creado": "2024-01-15T12:00:00.000Z",
-    "actualizado": "2024-01-15T12:00:00.000Z"
-  },
-  {
-    "id_agente": 1,
-    "id_categoria": 3,
-    "es_principal": false,
-    "creado": "2024-01-15T12:00:00.000Z",
-    "actualizado": "2024-01-15T12:00:00.000Z"
-  }
-]
-```
-
-### 8. Eliminar relación específica
+### 7. Eliminar relación específica
 **DELETE** `/agente_categoria/`
 
 Elimina una relación específica entre un agente y una categoría.
@@ -209,63 +170,12 @@ Elimina una relación específica entre un agente y una categoría.
 
 **Respuesta exitosa (204):** Sin contenido
 
-### 9. Eliminar todas las relaciones de un agente
-**DELETE** `/agente_categoria/agente`
-
-Elimina todas las relaciones de un agente específico.
-
-**Body de la petición:**
-```json
-{
-  "id_agente": 1
-}
-```
-
-**Respuesta exitosa (200):**
-```json
-[
-  {
-    "id_agente": 1,
-    "id_categoria": 2,
-    "es_principal": true,
-    "creado": "2024-01-15T10:30:00.000Z",
-    "actualizado": "2024-01-15T10:30:00.000Z"
-  }
-]
-```
-
-### 10. Eliminar todas las relaciones de una categoría
-**DELETE** `/agente_categoria/categoria`
-
-Elimina todas las relaciones de una categoría específica.
-
-**Body de la petición:**
-```json
-{
-  "id_categoria": 2
-}
-```
-
-**Respuesta exitosa (200):**
-```json
-[
-  {
-    "id_agente": 1,
-    "id_categoria": 2,
-    "es_principal": true,
-    "creado": "2024-01-15T10:30:00.000Z",
-    "actualizado": "2024-01-15T10:30:00.000Z"
-  }
-]
-```
-
 ## Códigos de Error Comunes
 
 - **400 Bad Request**: Datos de entrada inválidos
 - **401 Unauthorized**: Token de autenticación requerido
 - **403 Forbidden**: Permisos insuficientes (solo editores)
 - **404 Not Found**: Relación no encontrada
-- **409 Conflict**: La relación ya existe (al crear)
 - **500 Internal Server Error**: Error del servidor
 
 ## Autenticación
@@ -278,7 +188,7 @@ Authorization: Bearer <token>
 
 ## Notas importantes
 
-1. La tabla `relacion_agente_categoria` usa claves compuestas (`id_agente` + `id_categoria`)
+1. La tabla `relacion_agente_categoria` usa un ID único autoincremental (`id_relacion_agente_categoria`)
 2. El campo `es_principal` indica si una categoría es la principal para un agente
 3. Se recomienda que solo una categoría por agente tenga `es_principal = true`
-4. Al usar el endpoint PUT para actualizar categorías de un agente, se eliminan todas las relaciones existentes y se crean las nuevas
+4. Las consultas incluyen información expandida de agentes y categorías relacionadas

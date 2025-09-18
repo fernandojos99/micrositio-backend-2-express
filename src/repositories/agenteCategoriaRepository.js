@@ -5,17 +5,15 @@ import AgenteCategoria from '../models/AgenteCategoria.js';
 
 class AgenteCategoriaRepository {
   /**
-   * Obtiene una relación agente-categoría por sus IDs compuestos
-   * @param {number} id_agente - ID del agente
-   * @param {number} id_categoria - ID de la categoría
+   * Obtiene una relación agente-categoría por su ID único
+   * @param {number} id_relacion_agente_categoria - ID de la relación
    * @returns {Promise<AgenteCategoria|null>} Relación encontrada o null
    */
-  async obtenerPorId(id_agente, id_categoria) {
+  async obtenerPorId(id_relacion_agente_categoria) {
     const { data, error } = await supabase
       .from('relacion_agente_categoria')
       .select('*')
-      .eq('id_agente', id_agente)
-      .eq('id_categoria', id_categoria)
+      .eq('id_relacion_agente_categoria', id_relacion_agente_categoria)
       .single();
 
     if (error && error.code !== 'PGRST116') {
@@ -35,7 +33,7 @@ class AgenteCategoriaRepository {
       .select(`
         *,
         agente:id_agente(id_agente, nombre),
-        categoria:id_categoria(id_categoria, nombre)
+        categoria_agente:id_categoria(id_categoria, nombre_categoria)
       `)
       .order('id_agente', { ascending: true });
 
@@ -56,7 +54,7 @@ class AgenteCategoriaRepository {
       .from('relacion_agente_categoria')
       .select(`
         *,
-        categoria:id_categoria(id_categoria, nombre)
+        categoria_agente:id_categoria(id_categoria, nombre_categoria)
       `)
       .eq('id_agente', id_agente)
       .order('es_principal', { ascending: false });
@@ -149,44 +147,6 @@ class AgenteCategoriaRepository {
     }
 
     return data && data.length > 0 ? AgenteCategoria.fromDatabase(data[0]) : null;
-  }
-
-  /**
-   * Elimina todas las relaciones de un agente
-   * @param {number} id_agente - ID del agente
-   * @returns {Promise<Array<AgenteCategoria>>} Relaciones eliminadas
-   */
-  async eliminarPorAgente(id_agente) {
-    const { data, error } = await supabase
-      .from('relacion_agente_categoria')
-      .delete()
-      .eq('id_agente', id_agente)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar relaciones del agente: ${error.message}`, 500);
-    }
-
-    return data.map(relacion => AgenteCategoria.fromDatabase(relacion));
-  }
-
-  /**
-   * Elimina todas las relaciones de una categoría
-   * @param {number} id_categoria - ID de la categoría
-   * @returns {Promise<Array<AgenteCategoria>>} Relaciones eliminadas
-   */
-  async eliminarPorCategoria(id_categoria) {
-    const { data, error } = await supabase
-      .from('relacion_agente_categoria')
-      .delete()
-      .eq('id_categoria', id_categoria)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar relaciones de la categoría: ${error.message}`, 500);
-    }
-
-    return data.map(relacion => AgenteCategoria.fromDatabase(relacion));
   }
 }
 

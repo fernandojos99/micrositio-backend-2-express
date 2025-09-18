@@ -19,14 +19,5 @@ const agenteCategoriaUpdateSchema = z.object({
     .optional()
 });
 
-// Esquema para obtener por IDs compuestos
-const agenteCategoriaKeySchema = z.object({
-  id_agente: z.number()
-    .int('El ID del agente debe ser un número entero')
-    .positive('El ID del agente debe ser positivo'),
-  id_categoria: z.number()
-    .int('El ID de la categoría debe ser un número entero')
-    .positive('El ID de la categoría debe ser positivo')
-});
 
-export { agenteCategoriaCreateSchema, agenteCategoriaUpdateSchema, agenteCategoriaKeySchema };
+export { agenteCategoriaCreateSchema, agenteCategoriaUpdateSchema };

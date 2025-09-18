@@ -1,6 +1,6 @@
 // src/controllers/agenteCategoriaController.js
 import AgenteCategoriaService from '../services/agenteCategoriaService.js';
-import { agenteCategoriaCreateSchema, agenteCategoriaUpdateSchema, agenteCategoriaKeySchema } from '../middlewares/validation/agenteCategoriaSchema.js';
+import { agenteCategoriaCreateSchema, agenteCategoriaUpdateSchema } from '../middlewares/validation/agenteCategoriaSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class AgenteCategoriaController {
@@ -9,19 +9,20 @@ class AgenteCategoriaController {
   }
 
   /**
-   * Obtiene una relación agente-categoría por sus IDs compuestos
+   * Obtiene una relación agente-categoría por sus IDs 
    * @param {Object} req - Request de Express
    * @param {Object} res - Response de Express
    * @param {Function} next - Next middleware
    */
   async obtenerPorId(req, res, next) {
     try {
+      const id_relacion_agente_categoria = Number(req.params.id_relacion_agente_categoria);
 
-      if (!id_agente || isNaN(id_agente) ) {
-        throw new ApiError('Se requieren IDs de agente y categoría válidos en la ruta', 400);
+      if (!id_relacion_agente_categoria || isNaN(id_relacion_agente_categoria)) {
+        throw new ApiError('Se requiere un ID de relación agente-categoría válido en la ruta', 400);
       }
 
-      const relacion = await this.agenteCategoriaService.obtenerPorId(id_agente, id_categoria);
+      const relacion = await this.agenteCategoriaService.obtenerPorId(id_relacion_agente_categoria);
       res.json(relacion);
     } catch (error) {
       next(error);
@@ -139,67 +140,10 @@ class AgenteCategoriaController {
     }
   }
 
-  /**
-   * Elimina todas las relaciones de un agente
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
-  async eliminarPorAgente(req, res, next) {
-    try {
-      if (!req.body.id_agente) {
-        throw new ApiError('Se requiere el campo "id_agente" en el body', 400);
-      }
 
-      const relaciones = await this.agenteCategoriaService.eliminarPorAgente(req.body.id_agente);
-      res.json(relaciones);
-    } catch (error) {
-      next(error);
-    }
-  }
 
-  /**
-   * Elimina todas las relaciones de una categoría
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
-  async eliminarPorCategoria(req, res, next) {
-    try {
-      if (!req.body.id_categoria) {
-        throw new ApiError('Se requiere el campo "id_categoria" en el body', 400);
-      }
+ 
 
-      const relaciones = await this.agenteCategoriaService.eliminarPorCategoria(req.body.id_categoria);
-      res.json(relaciones);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Actualiza las categorías de un agente (reemplaza todas las existentes)
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
-  async actualizarCategoriasAgente(req, res, next) {
-    try {
-      const id_agente = Number(req.params.id_agente);
-      if (!id_agente || isNaN(id_agente)) {
-        throw new ApiError('Se requiere un ID de agente válido en la ruta', 400);
-      }
-
-      if (!Array.isArray(req.body.categorias)) {
-        throw new ApiError('Se requiere un array de categorías en el body', 400);
-      }
-
-      const relaciones = await this.agenteCategoriaService.actualizarCategoriasAgente(id_agente, req.body.categorias);
-      res.json(relaciones);
-    } catch (error) {
-      next(error);
-    }
-  }
 }
 
 export default AgenteCategoriaController;

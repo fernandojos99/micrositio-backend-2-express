@@ -4,6 +4,7 @@ import ApiError from '../utils/ApiError.js';
 
 class AgenteCategoria {
   constructor(data) {
+    this.id_relacion_agente_categoria = data.id_relacion_agente_categoria;
     this.id_agente = data.id_agente;
     this.id_categoria = data.id_categoria;
     this.es_principal = data.es_principal || false;
@@ -75,6 +76,7 @@ class AgenteCategoria {
    */
   toAPI() {
     return {
+      id_relacion_agente_categoria: this.id_relacion_agente_categoria,
       id_agente: this.id_agente,
       id_categoria: this.id_categoria,
       es_principal: this.es_principal,

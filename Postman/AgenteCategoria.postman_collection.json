@@ -67,9 +67,10 @@
 								"exec": [
 									"if (pm.response.code === 201) {",
 									"    const response = pm.response.json();",
+									"    pm.environment.set('id_relacion_agente_categoria', response.id_relacion_agente_categoria);",
 									"    pm.environment.set('id_agente', response.id_agente);",
 									"    pm.environment.set('id_categoria', response.id_categoria);",
-									"    console.log('Relación creada - Agente ID:', response.id_agente, 'Categoria ID:', response.id_categoria);",
+									"    console.log('Relación creada - ID:', response.id_relacion_agente_categoria);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -187,7 +188,7 @@
 					"response": []
 				},
 				{
-					"name": "5. Obtener relación específica",
+					"name": "5. Obtener relación específica por ID único",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -197,14 +198,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/agente_categoria/{{id_agente}}/{{id_categoria}}",
+							"raw": "{{base_url}}/agente_categoria/{{id_relacion_agente_categoria}}",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"agente_categoria",
-								"{{id_agente}}",
-								"{{id_categoria}}"
+								"{{id_relacion_agente_categoria}}"
 							]
 						}
 					},
@@ -287,39 +287,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "9. Actualizar todas las categorías de un agente",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"categorias\": [\n    {\n      \"id_categoria\": 1,\n      \"es_principal\": true\n    },\n    {\n      \"id_categoria\": 3,\n      \"es_principal\": false\n    },\n    {\n      \"id_categoria\": 4,\n      \"es_principal\": false\n    }\n  ]\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/agente_categoria/agente/1/categorias",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"agente_categoria",
-								"agente",
-								"1",
-								"categorias"
-							]
-						}
-					},
-					"response": []
 				}
 			]
 		},
@@ -351,68 +318,6 @@
 							],
 							"path": [
 								"agente_categoria"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "2. Eliminar todas las relaciones de un agente",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id_agente\": 2\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/agente_categoria/agente",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"agente_categoria",
-								"agente"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "3. Eliminar todas las relaciones de una categoría",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id_categoria\": 4\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/agente_categoria/categoria",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"agente_categoria",
-								"categoria"
 							]
 						}
 					},
