@@ -44,6 +44,27 @@ class AgenteController {
   }
 
   /**
+   * Lista todos los agentes de una categoria dada
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
+   */
+  async listarPorCategoria(req, res, next) {
+    try {
+      const id_categoria = Number(req.params.id);
+      if (!id_categoria || isNaN(id_categoria)) {
+        throw new ApiError('Se requiere un ID de categoría válido en la ruta', 400);
+      }
+
+      const agentes = await this.agenteService.listarPorCategoria(id_categoria);
+      res.json(agentes);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+  /**
    * Crea un nuevo agente
    * @param {Object} req - Request de Express
    * @param {Object} res - Response de Express

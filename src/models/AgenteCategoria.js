@@ -10,6 +10,11 @@ class AgenteCategoria {
     this.es_principal = data.es_principal || false;
     this.created_at = new Date(data.created_at || Date.now());
     this.updated_at = new Date(data.updated_at || Date.now());
+    
+    // Información adicional del agente si está disponible
+    this.agente = data.agente || null;
+    // Información adicional de la categoría si está disponible
+    this.categoria_agente = data.categoria_agente || null;
   }
 
   /**
@@ -50,11 +55,14 @@ class AgenteCategoria {
    */
   static fromDatabase(dbData) {
     return new AgenteCategoria({
+      id_relacion_agente_categoria: dbData.id_relacion_agente_categoria,
       id_agente: dbData.id_agente,
       id_categoria: dbData.id_categoria,
       es_principal: dbData.es_principal,
       created_at: dbData.created_at,
-      updated_at: dbData.updated_at
+      updated_at: dbData.updated_at,
+      agente: dbData.agente || null,
+      categoria_agente: dbData.categoria_agente || null
     });
   }
 
@@ -75,7 +83,7 @@ class AgenteCategoria {
    * @returns {Object} Objeto para respuesta API
    */
   toAPI() {
-    return {
+    const response = {
       id_relacion_agente_categoria: this.id_relacion_agente_categoria,
       id_agente: this.id_agente,
       id_categoria: this.id_categoria,
@@ -83,6 +91,18 @@ class AgenteCategoria {
       creado: this.created_at.toISOString(),
       actualizado: this.updated_at.toISOString()
     };
+
+    // Incluir información del agente si está disponible
+    if (this.agente) {
+      response.agente = this.agente;
+    }
+
+    // Incluir información de la categoría si está disponible
+    if (this.categoria_agente) {
+      response.categoria_agente = this.categoria_agente;
+    }
+
+    return response;
   }
 }
 

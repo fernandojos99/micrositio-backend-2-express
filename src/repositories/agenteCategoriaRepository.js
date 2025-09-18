@@ -76,7 +76,7 @@ class AgenteCategoriaRepository {
       .from('relacion_agente_categoria')
       .select(`
         *,
-        agente:id_agente(id_agente, nombre)
+        agente:id_agente(*)
       `)
       .eq('id_categoria', id_categoria)
       .order('es_principal', { ascending: false });

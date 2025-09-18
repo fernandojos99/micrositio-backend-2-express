@@ -9,6 +9,9 @@ const agenteController = new AgenteController();
 // Obtener todos los agentes
 router.get('/', authMiddleware, soloEditores, agenteController.listarTodos.bind(agenteController));
 
+// Obtener agentes por categoría
+router.get('/categoria/:id', authMiddleware, soloEditores, agenteController.listarPorCategoria.bind(agenteController));
+
 // Obtener agente específico por ID
 router.get('/:id', authMiddleware, soloEditores, agenteController.obtenerPorId.bind(agenteController));
 
