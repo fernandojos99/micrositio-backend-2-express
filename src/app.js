@@ -33,7 +33,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
  
-app.use(cors())
+// Configuración de CORS
+app.use(cors({
+  origin: [
+    'https://micrositio-iris-front.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// Middleware adicional para manejar preflight OPTIONS
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Middleware para parsear JSON
 app.use(bodyParser.json()); 
 app.use(express.json());
