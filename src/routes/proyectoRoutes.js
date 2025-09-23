@@ -1,13 +1,13 @@
 // src/routes/proyectoRoutes.js
 import express from 'express';
 import ProyectoController from '../controllers/proyectoController.js';
-import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
+import { authMiddleware, soloEditores, configurarFiltroProyectos } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const proyectoController = new ProyectoController();
 
-// Obtener todos los proyectos
-router.get('/', authMiddleware, soloEditores, proyectoController.listarProyectos.bind(proyectoController));
+// Obtener todos los proyectos (editores ven todos, visitantes solo sus asignados)
+router.get('/', authMiddleware, configurarFiltroProyectos, proyectoController.listarProyectos.bind(proyectoController));
 
 // Obtener proyecto específico
 router.get('/p', authMiddleware, soloEditores, proyectoController.obtenerProyecto.bind(proyectoController));

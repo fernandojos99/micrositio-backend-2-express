@@ -92,7 +92,7 @@ class ProyectoController {
    */
   async listarProyectos(req, res, next) {
     try {
-      const proyectos = await this.proyectoService.listarProyectos();
+      const proyectos = await this.proyectoService.listarProyectos(req.filtroProyectos);
       res.json(proyectos);
     } catch (error) {
       next(error);

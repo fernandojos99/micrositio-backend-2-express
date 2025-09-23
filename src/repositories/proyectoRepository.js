@@ -70,6 +70,23 @@ class ProyectoRepository {
 
     return data.map(proyecto => Proyecto.fromDatabase(proyecto));
   }
+
+  async listarPorIds(ids_proyectos) {
+    if (!ids_proyectos || ids_proyectos.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('proyecto')
+      .select('*')
+      .in('id_proyecto', ids_proyectos);
+
+    if (error) {
+      throw new ApiError(`Error al listar proyectos por IDs: ${error.message}`, 500);
+    }
+
+    return data.map(proyecto => Proyecto.fromDatabase(proyecto));
+  }
 }
 
 export default ProyectoRepository;
