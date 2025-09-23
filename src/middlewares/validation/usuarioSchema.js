@@ -13,7 +13,7 @@ const usuarioCreateSchema = z.object({
   alias: z.string()
     .min(3, 'El alias debe tener al menos 3 caracteres')
     .max(50, 'El alias no puede exceder los 50 caracteres')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'El alias solo puede contener letras, números, guiones y guiones bajos'),
+    .regex(/^[a-zA-Z0-9_@-]+$/, 'El alias solo puede contener letras, números, guiones, guiones bajos y @'),
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .max(100, 'La contraseña no puede exceder los 100 caracteres')
