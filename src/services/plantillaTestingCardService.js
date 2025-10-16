@@ -59,15 +59,6 @@ class PlantillaTestingCardService {
    * @throws {ApiError} Si ya existe la relación o hay error en validación
    */
   async crear(plantillaData) {
-    // Verificar si ya existe la relación
-    const existeRelacion = await this.plantillaTestingCardRepo.existeRelacion(
-      plantillaData.id_testing_card, 
-      plantillaData.id_empleado
-    );
-
-    if (existeRelacion) {
-      throw new ApiError('La relación entre testing card y empleado ya existe', 409);
-    }
 
     const plantilla = await this.plantillaTestingCardRepo.crear(plantillaData);
     return plantilla.toAPI();
