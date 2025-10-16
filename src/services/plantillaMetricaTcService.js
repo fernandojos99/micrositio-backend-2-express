@@ -1,10 +1,12 @@
 // src/services/plantillaMetricaTcService.js
 import PlantillaMetricaTcRepository from '../repositories/plantillaMetricaTcRepository.js';
+import MetricaTestingCardRepository from '../repositories/metricaTestingCardRepository.js';
 import ApiError from '../utils/ApiError.js';
 
 class PlantillaMetricaTcService {
   constructor() {
     this.plantillaMetricaTcRepo = new PlantillaMetricaTcRepository();
+    this.metricaRepo = new MetricaTestingCardRepository();
   }
 
   /**
@@ -55,21 +57,33 @@ class PlantillaMetricaTcService {
   /**
    * Crea una nueva plantilla métrica tc
    * @param {Object} plantillaData - Datos de la plantilla métrica tc
+   * @param {number} plantillaData.id_metrica_tc - ID de la métrica original a copiar
+   * @param {number} plantillaData.id_empleado - ID del empleado
    * @returns {Promise<Object>} Plantilla métrica tc creada
-   * @throws {ApiError} Si ya existe la relación o hay error en validación
+   * @throws {ApiError} Si no existe la métrica original, empleado, o hay error en validación
    */
   async crear(plantillaData) {
-    // Verificar si ya existe la relación
-    const existeRelacion = await this.plantillaMetricaTcRepo.existeRelacion(
-      plantillaData.id_metrica, 
-      plantillaData.id_empleado
-    );
+    const { id_metrica_tc, id_empleado } = plantillaData;
 
-    if (existeRelacion) {
-      throw new ApiError('La relación entre métrica y empleado ya existe', 409);
+    // 1. Verificar que exista la métrica original (métrica A)
+    const metricaOriginal = await this.metricaRepo.obtenerPorId(id_metrica_tc);
+    if (!metricaOriginal) {
+      throw new ApiError('La métrica original no existe', 404);
     }
 
-    const plantilla = await this.plantillaMetricaTcRepo.crear(plantillaData);
+    // 2. Verificar que exista el empleado - esto lo hará el constraint de la BD
+    // pero podríamos agregar validación adicional aquí si es necesario
+
+    // 3. Crear una copia de la métrica (métrica B)
+    const metricaCopia = await this.metricaRepo.copiarMetrica(id_metrica_tc);
+
+    // 4. Crear la plantilla métrica con la nueva métrica copiada (métrica B)
+    const plantillaDataModificada = {
+      id_metrica: metricaCopia.id_metrica, // Usar el ID de la métrica copiada
+      id_empleado: id_empleado
+    };
+
+    const plantilla = await this.plantillaMetricaTcRepo.crear(plantillaDataModificada);
     return plantilla.toAPI();
   }
 
@@ -119,13 +133,30 @@ class PlantillaMetricaTcService {
    * @throws {ApiError} Si la plantilla métrica tc no existe
    */
   async eliminar(id_plantilla_metrica) {
-    const plantilla = await this.plantillaMetricaTcRepo.eliminar(id_plantilla_metrica);
+    // 1. Obtener la plantilla antes de eliminarla para saber qué métrica eliminar
+    const plantillaExistente = await this.plantillaMetricaTcRepo.obtenerPorId(id_plantilla_metrica);
     
-    if (!plantilla) {
+    if (!plantillaExistente) {
       throw new ApiError('Plantilla métrica tc no encontrada', 404);
     }
+
+    // 2. Eliminar la plantilla métrica
+    const plantillaEliminada = await this.plantillaMetricaTcRepo.eliminar(id_plantilla_metrica);
     
-    return plantilla.toAPI();
+    if (!plantillaEliminada) {
+      throw new ApiError('Plantilla métrica tc no encontrada', 404);
+    }
+
+    // 3. Eliminar la métrica copiada (métrica B) de la tabla metrica_testing_card
+    try {
+      await this.metricaRepo.eliminar(plantillaExistente.id_metrica);
+    } catch (error) {
+      // Si falla eliminar la métrica, registrar el error pero no fallar toda la operación
+      console.error(`Error al eliminar métrica copiada ${plantillaExistente.id_metrica}:`, error);
+      // Nota: En un entorno de producción, podrías querer implementar un mecanismo de limpieza
+    }
+    
+    return plantillaEliminada.toAPI();
   }
 }
 

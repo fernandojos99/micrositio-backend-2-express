@@ -3,9 +3,9 @@ import { z } from 'zod';
 
 // Esquema base para crear plantilla metrica tc
 const plantillaMetricaTcCreateSchema = z.object({
-  id_metrica: z.number()
-    .int('El ID de métrica debe ser un número entero')
-    .positive('El ID de métrica debe ser un número positivo'),
+  id_metrica_tc: z.number()
+    .int('El ID de métrica tc debe ser un número entero')
+    .positive('El ID de métrica tc debe ser un número positivo'),
   id_empleado: z.number()
     .int('El ID de empleado debe ser un número entero')
     .positive('El ID de empleado debe ser un número positivo')

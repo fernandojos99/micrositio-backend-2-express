@@ -143,6 +143,41 @@ class MetricaTestingCardRepository {
 
     return !!data;
   }
+
+  /**
+   * Crea una copia de una métrica existente
+   * @param {number} idMetricaOriginal - ID de la métrica original a copiar
+   * @returns {Promise<Object>} Métrica copiada
+   * @throws {ApiError} Si la métrica original no existe o hay error al copiar
+   */
+  async copiarMetrica(idMetricaOriginal) {
+    // Primero obtener la métrica original
+    const metricaOriginal = await this.obtenerPorId(idMetricaOriginal);
+    
+    if (!metricaOriginal) {
+      throw new ApiError('Métrica original no encontrada', 404);
+    }
+
+    // Crear una copia excluyendo el ID y timestamps
+    const datosParaCopia = {
+      id_testing_card: metricaOriginal.id_testing_card,
+      nombre: metricaOriginal.nombre,
+      operador: metricaOriginal.operador,
+      criterio: metricaOriginal.criterio
+    };
+
+    // Insertar la copia
+    const { data, error } = await supabase
+      .from('metrica_testing_card')
+      .insert(datosParaCopia)
+      .select();
+
+    if (error) {
+      throw new ApiError(`Error al copiar métrica: ${error.message}`, 500);
+    }
+
+    return MetricaTestingCard.fromDatabase(data[0]);
+  }
 }
 
 export default MetricaTestingCardRepository;

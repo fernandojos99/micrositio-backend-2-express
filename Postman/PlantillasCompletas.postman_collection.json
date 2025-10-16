@@ -1,0 +1,484 @@
+{
+  "info": {
+    "name": "Plantillas API - Completa",
+    "description": "Colección completa para testing de APIs de plantillas (testing_card, metrica_tc, secuencia)",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if needed",
+          "if (!pm.environment.get('jwt_token') || pm.environment.get('jwt_token') === '') {",
+          "    console.log('No JWT token found. Please run login first.');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('jwt_token', response.token);",
+                  "    pm.environment.set('user_id', response.user.id_empleado);",
+                  "    console.log('Token saved:', response.token);",
+                  "} else {",
+                  "    console.log('Login failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"admin@test.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plantilla Métrica TC",
+      "item": [
+        {
+          "name": "Crear Plantilla Métrica TC",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('plantilla_metrica_id', response.id_plantilla_metrica);",
+                  "    pm.environment.set('metrica_copia_id', response.id_metrica);",
+                  "    console.log('Plantilla métrica creada:', response.id_plantilla_metrica);",
+                  "    console.log('Métrica copia creada:', response.id_metrica);",
+                  "    pm.test('Plantilla métrica creada correctamente', function () {",
+                  "        pm.expect(response).to.have.property('id_plantilla_metrica');",
+                  "        pm.expect(response).to.have.property('id_metrica');",
+                  "        pm.expect(response).to.have.property('id_empleado');",
+                  "    });",
+                  "} else {",
+                  "    console.log('Error:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_metrica_tc\": {{metrica_original_id}},\n  \"id_empleado\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_metrica_tc",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_metrica_tc"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Plantilla Métrica TC por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Plantilla métrica obtenida correctamente', function () {",
+                  "        pm.expect(response).to.have.property('id_plantilla_metrica');",
+                  "        pm.expect(response.id_plantilla_metrica).to.equal(pm.environment.get('plantilla_metrica_id'));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_metrica_tc/{{plantilla_metrica_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_metrica_tc", "{{plantilla_metrica_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Todas las Plantillas Métrica TC",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Lista obtenida correctamente', function () {",
+                  "        pm.expect(response).to.be.an('array');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_metrica_tc",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_metrica_tc"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Plantillas por Empleado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_metrica_tc/empleado/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_metrica_tc", "empleado", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Plantilla Métrica TC",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Plantilla métrica actualizada correctamente', function () {",
+                  "        pm.expect(response).to.have.property('id_plantilla_metrica');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_empleado\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_metrica_tc/{{plantilla_metrica_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_metrica_tc", "{{plantilla_metrica_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Plantilla Métrica TC",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Plantilla métrica eliminada correctamente', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    console.log('Plantilla métrica eliminada, métrica copia también eliminada');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_metrica_tc/{{plantilla_metrica_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_metrica_tc", "{{plantilla_metrica_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plantilla Secuencia",
+      "item": [
+        {
+          "name": "Crear Plantilla Secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('plantilla_secuencia_id', response.data.id_plantilla_secuencia);",
+                  "    console.log('Plantilla secuencia creada:', response.data.id_plantilla_secuencia);",
+                  "    pm.test('Plantilla secuencia creada correctamente', function () {",
+                  "        pm.expect(response.data).to.have.property('id_plantilla_secuencia');",
+                  "        pm.expect(response.data).to.have.property('id_secuencia');",
+                  "        pm.expect(response.data).to.have.property('id_empleado');",
+                  "    });",
+                  "} else {",
+                  "    console.log('Error:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_secuencia\": {{secuencia_test_id}},\n  \"id_empleado\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Plantilla Secuencia por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Plantilla secuencia obtenida correctamente', function () {",
+                  "        pm.expect(response.data).to.have.property('id_plantilla_secuencia');",
+                  "        pm.expect(response.data.id_plantilla_secuencia).to.equal(pm.environment.get('plantilla_secuencia_id'));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/{{plantilla_secuencia_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "{{plantilla_secuencia_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Todas las Plantillas Secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Lista obtenida correctamente', function () {",
+                  "        pm.expect(response.data).to.be.an('array');",
+                  "        pm.expect(response).to.have.property('total');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Plantilla Secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Plantilla secuencia actualizada correctamente', function () {",
+                  "        pm.expect(response.data).to.have.property('id_plantilla_secuencia');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_empleado\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/{{plantilla_secuencia_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "{{plantilla_secuencia_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Plantilla Secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Plantilla secuencia eliminada correctamente', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    console.log('Plantilla secuencia eliminada');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/{{plantilla_secuencia_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "{{plantilla_secuencia_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

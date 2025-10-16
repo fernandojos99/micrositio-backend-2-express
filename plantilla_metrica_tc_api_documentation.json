@@ -1,0 +1,216 @@
+{
+  "api_name": "Plantilla Métrica TC API",
+  "version": "1.0.0",
+  "description": "API para gestión de plantillas de métricas testing card con lógica de copia de métricas",
+  "base_url": "http://localhost:3000",
+  "authentication": {
+    "type": "Bearer Token (JWT)",
+    "header": "Authorization: Bearer <token>",
+    "note": "Obtener token desde /auth/login"
+  },
+  "endpoints": {
+    "crear_plantilla_metrica": {
+      "method": "POST",
+      "url": "/plantilla_metrica_tc",
+      "description": "Crea una nueva plantilla métrica. Internamente copia la métrica original y crea la plantilla con la copia.",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer <jwt_token>"
+      },
+      "body": {
+        "id_metrica_tc": 1,
+        "id_empleado": 1
+      },
+      "body_description": {
+        "id_metrica_tc": "ID de la métrica original que se copiará (entero positivo)",
+        "id_empleado": "ID del empleado que crea la plantilla (entero positivo)"
+      },
+      "response_success": {
+        "status": 201,
+        "body": {
+          "id_plantilla_metrica": "123e4567-e89b-12d3-a456-426614174000",
+          "id_metrica": 15,
+          "id_empleado": 1,
+          "creado": "2025-10-16T10:30:00.000Z",
+          "actualizado": "2025-10-16T10:30:00.000Z"
+        }
+      },
+      "response_error": {
+        "status": 404,
+        "body": {
+          "message": "La métrica original no existe"
+        }
+      },
+      "business_logic": "1. Verifica que exista la métrica original (id_metrica_tc), 2. Crea una copia de la métrica en la tabla metrica_testing_card, 3. Crea la plantilla con la métrica copiada"
+    },
+    "obtener_por_id": {
+      "method": "GET",
+      "url": "/plantilla_metrica_tc/:id",
+      "description": "Obtiene una plantilla métrica por su ID",
+      "headers": {
+        "Authorization": "Bearer <jwt_token>"
+      },
+      "url_params": {
+        "id": "UUID de la plantilla métrica"
+      },
+      "response_success": {
+        "status": 200,
+        "body": {
+          "id_plantilla_metrica": "123e4567-e89b-12d3-a456-426614174000",
+          "id_metrica": 15,
+          "id_empleado": 1,
+          "creado": "2025-10-16T10:30:00.000Z",
+          "actualizado": "2025-10-16T10:30:00.000Z"
+        }
+      }
+    },
+    "obtener_todas": {
+      "method": "GET",
+      "url": "/plantilla_metrica_tc",
+      "description": "Obtiene todas las plantillas métrica",
+      "headers": {
+        "Authorization": "Bearer <jwt_token>"
+      },
+      "response_success": {
+        "status": 200,
+        "body": [
+          {
+            "id_plantilla_metrica": "123e4567-e89b-12d3-a456-426614174000",
+            "id_metrica": 15,
+            "id_empleado": 1,
+            "creado": "2025-10-16T10:30:00.000Z",
+            "actualizado": "2025-10-16T10:30:00.000Z"
+          }
+        ]
+      }
+    },
+    "obtener_por_empleado": {
+      "method": "GET",
+      "url": "/plantilla_metrica_tc/empleado/:id_empleado",
+      "description": "Obtiene todas las plantillas métrica de un empleado específico",
+      "headers": {
+        "Authorization": "Bearer <jwt_token>"
+      },
+      "url_params": {
+        "id_empleado": "ID del empleado (entero)"
+      },
+      "response_success": {
+        "status": 200,
+        "body": [
+          {
+            "id_plantilla_metrica": "123e4567-e89b-12d3-a456-426614174000",
+            "id_metrica": 15,
+            "id_empleado": 1,
+            "creado": "2025-10-16T10:30:00.000Z",
+            "actualizado": "2025-10-16T10:30:00.000Z"
+          }
+        ]
+      }
+    },
+    "actualizar": {
+      "method": "PUT",
+      "url": "/plantilla_metrica_tc/:id",
+      "description": "Actualiza una plantilla métrica existente",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer <jwt_token>"
+      },
+      "url_params": {
+        "id": "UUID de la plantilla métrica"
+      },
+      "body": {
+        "id_metrica": 16,
+        "id_empleado": 2
+      },
+      "body_description": {
+        "id_metrica": "Nuevo ID de métrica (opcional)",
+        "id_empleado": "Nuevo ID de empleado (opcional)"
+      },
+      "response_success": {
+        "status": 200,
+        "body": {
+          "id_plantilla_metrica": "123e4567-e89b-12d3-a456-426614174000",
+          "id_metrica": 16,
+          "id_empleado": 2,
+          "creado": "2025-10-16T10:30:00.000Z",
+          "actualizado": "2025-10-16T11:00:00.000Z"
+        }
+      }
+    },
+    "eliminar": {
+      "method": "DELETE",
+      "url": "/plantilla_metrica_tc/:id",
+      "description": "Elimina una plantilla métrica y su métrica copiada asociada",
+      "headers": {
+        "Authorization": "Bearer <jwt_token>"
+      },
+      "url_params": {
+        "id": "UUID de la plantilla métrica"
+      },
+      "response_success": {
+        "status": 200,
+        "body": {
+          "id_plantilla_metrica": "123e4567-e89b-12d3-a456-426614174000",
+          "id_metrica": 15,
+          "id_empleado": 1,
+          "creado": "2025-10-16T10:30:00.000Z",
+          "actualizado": "2025-10-16T10:30:00.000Z"
+        }
+      },
+      "business_logic": "1. Elimina la plantilla métrica, 2. Elimina la métrica copiada (B) de la tabla metrica_testing_card"
+    }
+  },
+  "error_responses": {
+    "400": {
+      "description": "Solicitud incorrecta - datos de entrada inválidos",
+      "example": {
+        "message": "Validación fallida: El ID de métrica tc debe ser un número positivo"
+      }
+    },
+    "401": {
+      "description": "No autorizado - token JWT requerido",
+      "example": {
+        "message": "Token de acceso requerido"
+      }
+    },
+    "404": {
+      "description": "Recurso no encontrado",
+      "example": {
+        "message": "Plantilla métrica tc no encontrada"
+      }
+    },
+    "409": {
+      "description": "Conflicto - relación ya existe",
+      "example": {
+        "message": "La nueva relación entre métrica y empleado ya existe"
+      }
+    },
+    "500": {
+      "description": "Error interno del servidor",
+      "example": {
+        "message": "Error interno del servidor"
+      }
+    }
+  },
+  "business_flow": {
+    "crear_plantilla": {
+      "step_1": "Usuario proporciona id_metrica_tc (métrica original A) e id_empleado",
+      "step_2": "Sistema verifica que existe la métrica A y el empleado",
+      "step_3": "Sistema crea una copia de la métrica A (métrica B) en metrica_testing_card",
+      "step_4": "Sistema crea la plantilla_metrica_tc con id_metrica apuntando a la métrica B",
+      "step_5": "Sistema retorna la plantilla creada"
+    },
+    "eliminar_plantilla": {
+      "step_1": "Usuario proporciona id_plantilla_metrica para eliminar",
+      "step_2": "Sistema busca la plantilla y obtiene su id_metrica (métrica B)",
+      "step_3": "Sistema elimina la plantilla_metrica_tc",
+      "step_4": "Sistema elimina la métrica B de metrica_testing_card",
+      "step_5": "Sistema retorna confirmación de eliminación"
+    }
+  },
+  "testing_notes": {
+    "setup": "1. Crear al menos una métrica en metrica_testing_card, 2. Crear al menos un empleado, 3. Obtener token JWT válido",
+    "test_order": "1. Crear plantilla, 2. Obtener por ID, 3. Listar todas, 4. Actualizar, 5. Eliminar",
+    "validations": "Verificar que se crean métricas copiadas y que se eliminan al borrar plantillas"
+  }
+}
