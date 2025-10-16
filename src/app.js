@@ -23,6 +23,7 @@ import usuarioProyectoRoutes from './routes/usuarioProyectoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import agenteRoutes from './routes/agenteRoutes.js';
 import agenteCategoriaRoutes from './routes/agenteCategoriaRoutes.js';
+import plantillaTestingCardRoutes from './routes/plantillaTestingCardRoutes.js';
 // import testRoutes from './routes/testRoutes.js';
  
  
@@ -81,6 +82,7 @@ app.use('/usuario_proyecto', usuarioProyectoRoutes);
 app.use('/auth', authRoutes);
 app.use('/agentes', agenteRoutes);
 app.use('/agente_categoria', agenteCategoriaRoutes);
+app.use('/plantilla_testing_card', plantillaTestingCardRoutes);
 // app.use('/debug', testRoutes);
 //app.use('/debug', testRoutes);
 
