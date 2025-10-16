@@ -1,0 +1,509 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "API Plantillas - Micrositio IRIS",
+		"description": "Colección de Postman para testear los endpoints de plantillas (PlantillaTestingCard y PlantillaMetricaTc)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login Editor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('jwt_token', response.data.token);",
+									"    console.log('Token guardado:', response.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"alias\": \"editor_usuario\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login para obtener token JWT de editor"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación"
+		},
+		{
+			"name": "📋 PlantillaTestingCard",
+			"item": [
+				{
+					"name": "Listar Todas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card"
+							]
+						},
+						"description": "Obtiene todas las plantillas testing card"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card/{{plantilla_testing_card_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card",
+								"{{plantilla_testing_card_id}}"
+							]
+						},
+						"description": "Obtiene una plantilla testing card por su ID (UUID)"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por Empleado",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card/empleado/{{id_empleado}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card",
+								"empleado",
+								"{{id_empleado}}"
+							]
+						},
+						"description": "Obtiene todas las plantillas testing card de un empleado específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por Testing Card",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card/testing-card/{{id_testing_card}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card",
+								"testing-card",
+								"{{id_testing_card}}"
+							]
+						},
+						"description": "Obtiene todas las plantillas de una testing card específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Nueva",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('plantilla_testing_card_id', response.id_plantilla_testing_card);",
+									"    console.log('ID guardado:', response.id_plantilla_testing_card);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_testing_card\": {{id_testing_card}},\n    \"id_empleado\": {{id_empleado}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card"
+							]
+						},
+						"description": "Crea una nueva plantilla testing card"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_plantilla_testing_card\": \"{{plantilla_testing_card_id}}\",\n    \"id_testing_card\": {{id_testing_card_nuevo}},\n    \"id_empleado\": {{id_empleado_nuevo}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card"
+							]
+						},
+						"description": "Actualiza una plantilla testing card existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_plantilla_testing_card\": \"{{plantilla_testing_card_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/plantilla_testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_testing_card"
+							]
+						},
+						"description": "Elimina una plantilla testing card"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para PlantillaTestingCard"
+		},
+		{
+			"name": "📊 PlantillaMetricaTc",
+			"item": [
+				{
+					"name": "Listar Todas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc"
+							]
+						},
+						"description": "Obtiene todas las plantillas métrica tc"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc/{{plantilla_metrica_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc",
+								"{{plantilla_metrica_id}}"
+							]
+						},
+						"description": "Obtiene una plantilla métrica tc por su ID (UUID)"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por Empleado",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc/empleado/{{id_empleado}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc",
+								"empleado",
+								"{{id_empleado}}"
+							]
+						},
+						"description": "Obtiene todas las plantillas métrica tc de un empleado específico"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por Métrica",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc/metrica/{{id_metrica}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc",
+								"metrica",
+								"{{id_metrica}}"
+							]
+						},
+						"description": "Obtiene todas las plantillas de una métrica específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Nueva",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('plantilla_metrica_id', response.id_plantilla_metrica);",
+									"    console.log('ID guardado:', response.id_plantilla_metrica);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_metrica\": {{id_metrica}},\n    \"id_empleado\": {{id_empleado}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc"
+							]
+						},
+						"description": "Crea una nueva plantilla métrica tc"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_plantilla_metrica\": \"{{plantilla_metrica_id}}\",\n    \"id_metrica\": {{id_metrica_nuevo}},\n    \"id_empleado\": {{id_empleado_nuevo}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc"
+							]
+						},
+						"description": "Actualiza una plantilla métrica tc existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_plantilla_metrica\": \"{{plantilla_metrica_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/plantilla_metrica_tc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"plantilla_metrica_tc"
+							]
+						},
+						"description": "Elimina una plantilla métrica tc"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para PlantillaMetricaTc"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}
