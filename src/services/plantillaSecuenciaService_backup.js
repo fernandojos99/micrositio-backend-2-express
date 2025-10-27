@@ -57,10 +57,10 @@ class PlantillaSecuenciaService {
    * @throws {ApiError} Si los datos no son válidos o hay error en la creación
    */
   async crear(datosPlantillaSecuencia) {
-    // console.log('Datos recibidos en crear:', datosPlantillaSecuencia); // Debug
+    console.log('Datos recibidos en crear:', datosPlantillaSecuencia); // Debug
     const { id_secuencia, id_empleado } = datosPlantillaSecuencia;
-    // console.log('ID secuencia:', id_secuencia, 'tipo:', typeof id_secuencia); // Debug
-    // console.log('ID empleado:', id_empleado, 'tipo:', typeof id_empleado); // Debug
+    console.log('ID secuencia:', id_secuencia, 'tipo:', typeof id_secuencia); // Debug
+    console.log('ID empleado:', id_empleado, 'tipo:', typeof id_empleado); // Debug
 
     // 1. Verificar que existe el empleado
     try {
@@ -91,7 +91,7 @@ class PlantillaSecuenciaService {
     };
 
     const secuenciaCopia = await this.secuenciaRepo.crear(datosSecuenciaCopia);
-    // console.log('Secuencia copia creada:', secuenciaCopia); // Debug
+    console.log('Secuencia copia creada:', secuenciaCopia); // Debug
 
     // El método toAPI() de Secuencia devuelve 'id' en lugar de 'id_secuencia'
     const idSecuenciaCopia = secuenciaCopia.id || secuenciaCopia.id_secuencia;
@@ -134,8 +134,8 @@ class PlantillaSecuenciaService {
     const nodePositionsOriginales = await this.nodePositionRepo.obtenerPorSecuencia(id_secuencia);
     const nodePositionsCopiados = [];
 
-    // console.log('Node positions originales:', nodePositionsOriginales); // Debug
-    // console.log('Mapeo ID original a copia:', Array.from(mapeoIdOriginalACopia.entries())); // Debug
+    console.log('Node positions originales:', nodePositionsOriginales); // Debug
+    console.log('Mapeo ID original a copia:', Array.from(mapeoIdOriginalACopia.entries())); // Debug
 
     for (const nodePos of nodePositionsOriginales) {
       if (nodePos.node_type === 'testing' && mapeoIdOriginalACopia.has(nodePos.node_id)) {
@@ -150,11 +150,11 @@ class PlantillaSecuenciaService {
           extra_data: nodePos.extra_data
         };
 
-        // console.log('Datos para node position copia:', datosNodePosCopia); // Debug
+        console.log('Datos para node position copia:', datosNodePosCopia); // Debug
 
         // Verificar que todos los campos requeridos están presentes
         if (!datosNodePosCopia.id_secuencia || !datosNodePosCopia.node_id) {
-          // console.error('Error: Faltan campos requeridos para node position:', datosNodePosCopia);
+          console.error('Error: Faltan campos requeridos para node position:', datosNodePosCopia);
           throw new ApiError('Error en datos de node position: faltan campos requeridos', 500);
         }
 
@@ -183,8 +183,8 @@ class PlantillaSecuenciaService {
     }
 
     // 8. Crear la plantilla secuencia con la secuencia copia (B)
-    // console.log('idSecuenciaCopia antes de conversión:', idSecuenciaCopia, typeof idSecuenciaCopia); // Debug
-    // console.log('id_empleado antes de conversión:', id_empleado, typeof id_empleado); // Debug
+    console.log('idSecuenciaCopia antes de conversión:', idSecuenciaCopia, typeof idSecuenciaCopia); // Debug
+    console.log('id_empleado antes de conversión:', id_empleado, typeof id_empleado); // Debug
 
     // Verificar que los valores no sean undefined o null antes de convertir
     if (idSecuenciaCopia === undefined || idSecuenciaCopia === null) {
@@ -207,11 +207,11 @@ class PlantillaSecuenciaService {
       id_empleado: idEmpleadoNum
     };
 
-    // console.log('Datos para plantilla antes de validar:', datosPlantilla); // Debug
-    // console.log('Tipos de datos:', {
-    //   id_secuencia: typeof datosPlantilla.id_secuencia,
-    //   id_empleado: typeof datosPlantilla.id_empleado
-    // }); // Debug
+    console.log('Datos para plantilla antes de validar:', datosPlantilla); // Debug
+    console.log('Tipos de datos:', {
+      id_secuencia: typeof datosPlantilla.id_secuencia,
+      id_empleado: typeof datosPlantilla.id_empleado
+    }); // Debug
 
     // Validar datos para BD
     const datosValidados = PlantillaSecuencia.validateCreate(datosPlantilla);

@@ -1,5 +1,5 @@
 // src/models/PlantillaSecuencia.js
-import { plantillaSecuenciaCreateSchema, plantillaSecuenciaUpdateSchema, plantillaSecuenciaDBSchema } from '../middlewares/validation/plantillaSecuenciaSchema.js';
+import { plantillaSecuenciaCreateSchema, plantillaSecuenciaUpdateSchema } from '../middlewares/validation/plantillaSecuenciaSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class PlantillaSecuencia {
@@ -12,7 +12,7 @@ class PlantillaSecuencia {
   }
 
   /**
-   * Valida los datos al crear una plantilla secuencia (desde API)
+   * Valida los datos al crear una plantilla secuencia
    * @static
    * @param {Object} data - Datos a validar
    * @returns {Object} Datos validados
@@ -20,24 +20,14 @@ class PlantillaSecuencia {
    */
   static validateCreate(data) {
     try {
+      // console.log('Validando datos en PlantillaSecuencia:', data); // Debug
+      // console.log('Esquema shape:', Object.keys(plantillaSecuenciaCreateSchema.shape)); // Debug - ver qué campos espera
+      // console.log('Esquema completo:', plantillaSecuenciaCreateSchema); // Debug
       return plantillaSecuenciaCreateSchema.parse(data);
     } catch (error) {
-      throw new ApiError(`Validación fallida: ${error.errors.map(e => e.message).join(', ')}`, 400);
-    }
-  }
-
-  /**
-   * Valida los datos antes de insertar en BD
-   * @static
-   * @param {Object} data - Datos a validar
-   * @returns {Object} Datos validados
-   * @throws {ApiError} Si la validación falla
-   */
-  static validateDB(data) {
-    try {
-      return plantillaSecuenciaDBSchema.parse(data);
-    } catch (error) {
-      throw new ApiError(`Validación BD fallida: ${error.errors.map(e => e.message).join(', ')}`, 400);
+      // console.error('Error de validación:', error.errors); // Debug
+      const errorDetails = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      throw new ApiError(`Validación fallida: ${errorDetails}`, 400);
     }
   }
 

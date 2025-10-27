@@ -11,7 +11,7 @@ const secuenciaCreateSchema = z.object({
   id_testing_card_padre: z.number().int().optional(),
   nombre: z.string()
     .min(3, 'El nombre debe tener al menos 3 caracteres')
-    .max(50, 'El nombre no puede exceder los 50 caracteres'),
+    .max(100, 'El nombre no puede exceder los 50 caracteres'),
   descripcion: z.string().optional(),
   dia_inicio: z.coerce.date().optional(),
   dia_fin: z.coerce.date().optional(),

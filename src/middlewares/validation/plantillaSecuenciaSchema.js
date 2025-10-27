@@ -1,20 +1,8 @@
 // src/middlewares/validation/plantillaSecuenciaSchema.js
 import { z } from 'zod';
 
-// Esquema para crear una plantilla secuencia (recibe id_testing_card para copiar)
+// Esquema para crear una plantilla secuencia
 export const plantillaSecuenciaCreateSchema = z.object({
-  id_testing_card: z.number()
-    .int()
-    .positive()
-    .describe('ID de la testing card original a copiar - debe ser un entero positivo'),
-  id_empleado: z.number()
-    .int()
-    .positive()
-    .describe('ID del empleado - debe ser un entero positivo')
-});
-
-// Esquema interno para validar datos antes de insertar en BD
-export const plantillaSecuenciaDBSchema = z.object({
   id_secuencia: z.number()
     .int()
     .positive()
@@ -24,6 +12,8 @@ export const plantillaSecuenciaDBSchema = z.object({
     .positive()
     .describe('ID del empleado - debe ser un entero positivo')
 });
+
+// console.log('ESQUEMA PLANTILLA SECUENCIA CARGADO - Solo id_secuencia e id_empleado'); // Debug
 
 // Esquema para actualizar una plantilla secuencia
 export const plantillaSecuenciaUpdateSchema = z.object({
