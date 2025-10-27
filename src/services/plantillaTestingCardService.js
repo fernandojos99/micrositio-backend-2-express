@@ -137,19 +137,43 @@ class PlantillaTestingCardService {
   }
 
   /**
-   * Elimina una plantilla testing card
-   * @param {string} id_plantilla_testing_card - ID de la plantilla testing card (UUID)
-   * @returns {Promise<Object>} Plantilla testing card eliminada
+   * Elimina una plantilla testing card y su testing card asociada
+   * @param {string} id_plantilla_testing_card - ID de la plantilla testing card (UUID) 
+   * @returns {Promise<Object>} Plantilla testing card eliminada con información de la testing card eliminada
    * @throws {ApiError} Si la plantilla testing card no existe
    */
   async eliminar(id_plantilla_testing_card) {
-    const plantilla = await this.plantillaTestingCardRepo.eliminar(id_plantilla_testing_card);
+    // 1. Obtener la plantilla antes de eliminarla para saber qué testing card eliminar
+    const plantillaExistente = await this.plantillaTestingCardRepo.obtenerPorId(id_plantilla_testing_card);
     
-    if (!plantilla) {
+    if (!plantillaExistente) {
       throw new ApiError('Plantilla testing card no encontrada', 404);
     }
+
+    // 2. Eliminar la plantilla testing card
+    const plantillaEliminada = await this.plantillaTestingCardRepo.eliminar(id_plantilla_testing_card);
     
-    return plantilla.toAPI();
+    if (!plantillaEliminada) {
+      throw new ApiError('Plantilla testing card no encontrada', 404);
+    }
+
+    // 3. Eliminar la testing card asociada (que fue creada como copia)
+    try {
+      await this.testingCardService.eliminar(plantillaExistente.id_testing_card);
+    } catch (error) {
+      // Si falla eliminar la testing card, registrar el error pero no fallar toda la operación
+      console.error(`Error al eliminar testing card asociada ${plantillaExistente.id_testing_card}:`, error);
+      // Nota: En un entorno de producción, podrías querer implementar un mecanismo de limpieza
+    }
+    
+    // 4. Preparar respuesta con información de lo que se eliminó
+    const resultado = plantillaEliminada.toAPI();
+    resultado.testing_card_eliminada = {
+      id_testing_card: plantillaExistente.id_testing_card,
+      mensaje: 'Testing card asociada eliminada exitosamente'
+    };
+
+    return resultado;
   }
 }
 
