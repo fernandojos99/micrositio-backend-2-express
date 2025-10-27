@@ -287,6 +287,217 @@
       ]
     },
     {
+      "name": "Plantilla Testing Card",
+      "item": [
+        {
+          "name": "Crear Plantilla Testing Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('plantilla_testing_id', response.id_plantilla_testing_card || response.data?.id_plantilla_testing_card || response.id_plantilla);",
+                  "    pm.environment.set('testing_copia_id', response.id_testing_card || response.data?.id_testing_card);",
+                  "    console.log('Plantilla testing creada:', pm.environment.get('plantilla_testing_id'));",
+                  "    pm.test('Plantilla testing creada correctamente', function () {",
+                  "        pm.expect(response).to.have.property('id_plantilla_testing_card').or.to.have.property('id_plantilla');",
+                  "        pm.expect(response).to.have.property('id_testing_card').or.to.have.property('id_testing_card');",
+                  "        pm.expect(response).to.have.property('id_empleado').or.to.have.property('id_empleado');",
+                  "    });",
+                  "} else {",
+                  "    console.log('Error:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_testing_card\": {{testing_card_original_id}},\n  \"id_empleado\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_testing_card",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_testing_card"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Plantilla Testing Card por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Plantilla testing obtenida correctamente', function () {",
+                  "        pm.expect(response).to.have.property('id_plantilla_testing_card');",
+                  "        pm.expect(response.id_plantilla_testing_card).to.equal(pm.environment.get('plantilla_testing_id'));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_testing_card/{{plantilla_testing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_testing_card", "{{plantilla_testing_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Todas las Plantillas Testing Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Lista obtenida correctamente', function () {",
+                  "        pm.expect(response).to.be.an('array');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_testing_card",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_testing_card"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Plantillas Testing Card por Empleado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_testing_card/empleado/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_testing_card", "empleado", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Plantilla Testing Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Plantilla testing actualizada correctamente', function () {",
+                  "        pm.expect(response).to.have.property('id_plantilla_testing_card');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_empleado\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_testing_card/{{plantilla_testing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_testing_card", "{{plantilla_testing_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Plantilla Testing Card",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Plantilla testing eliminada correctamente', function () {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    console.log('Plantilla testing eliminada');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_testing_card/{{plantilla_testing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_testing_card", "{{plantilla_testing_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Plantilla Secuencia",
       "item": [
         {
