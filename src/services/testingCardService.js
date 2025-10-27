@@ -66,6 +66,35 @@ class TestingCardService {
     
     return testingCard.toAPI();
   }
+
+  /**
+   * Copia una testing card existente sin el id_secuencia y copia todas sus métricas asociadas
+   * @param {number} id_testing_card_original - ID de la testing card original a copiar
+   * @returns {Promise<Object>} Testing card copiada con sus métricas en formato API
+   * @throws {ApiError} Si la testing card original no existe o hay error al copiar
+   */
+  async copiarTestingCard(id_testing_card_original) {
+    const testingCardCopia = await this.testingCardRepo.copiarTestingCard(id_testing_card_original);
+    
+    // Convertir la testing card copiada al formato API
+    const resultado = testingCardCopia.toAPI();
+    
+    // Añadir información de las métricas copiadas
+    if (testingCardCopia.metricas && testingCardCopia.metricas.length > 0) {
+      resultado.metricas_copiadas = testingCardCopia.metricas.length;
+      resultado.metricas = testingCardCopia.metricas.map(metrica => ({
+        id_metrica: metrica.id_metrica,
+        nombre: metrica.nombre,
+        operador: metrica.operador,
+        criterio: metrica.criterio
+      }));
+    } else {
+      resultado.metricas_copiadas = 0;
+      resultado.metricas = [];
+    }
+    
+    return resultado;
+  }
 }
 
 export default TestingCardService;

@@ -27,4 +27,7 @@ router.patch('/', authMiddleware, soloEditores, testingCardController.actualizar
 // Eliminar
 router.delete('/', authMiddleware, soloEditores, testingCardController.eliminar.bind(testingCardController));
 
+// Copiar testing card (nuevo endpoint)
+router.post('/:id/copiar', authMiddleware, soloEditores, testingCardController.copiarTestingCard.bind(testingCardController));
+
 export default router;

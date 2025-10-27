@@ -99,6 +99,29 @@ class TestingCardController {
       next(error);
     }
   }
+
+  /**
+   * Copia una testing card existente sin el id_secuencia y copia todas sus métricas asociadas
+   */
+  async copiarTestingCard(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ApiError('Se requiere el ID de la testing card a copiar', 400);
+      }
+
+      const testingCardCopia = await this.testingCardService.copiarTestingCard(parseInt(id));
+      
+      res.status(201).json({
+        success: true,
+        message: 'Testing card copiada exitosamente',
+        data: testingCardCopia
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default TestingCardController;
