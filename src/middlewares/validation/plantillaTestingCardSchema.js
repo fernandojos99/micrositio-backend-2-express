@@ -2,6 +2,8 @@
 import { z } from 'zod';
 
 // Esquema base para crear plantilla testing card
+// NOTA: Al crear una plantilla, se copia la testing card original (sin id_secuencia) 
+// y se copian todas sus métricas asociadas. La plantilla se asocia a la copia.
 const plantillaTestingCardCreateSchema = z.object({
   id_testing_card: z.number()
     .int('El ID de testing card debe ser un número entero')

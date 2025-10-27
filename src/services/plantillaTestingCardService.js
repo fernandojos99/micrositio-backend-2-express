@@ -1,10 +1,12 @@
 // src/services/plantillaTestingCardService.js
 import PlantillaTestingCardRepository from '../repositories/plantillaTestingCardRepository.js';
+import TestingCardService from './testingCardService.js';
 import ApiError from '../utils/ApiError.js';
 
 class PlantillaTestingCardService {
   constructor() {
     this.plantillaTestingCardRepo = new PlantillaTestingCardRepository();
+    this.testingCardService = new TestingCardService();
   }
 
   /**
@@ -54,14 +56,45 @@ class PlantillaTestingCardService {
 
   /**
    * Crea una nueva plantilla testing card
+   * Dado el id_testing_card A, crea una testing card copia B (sin id_secuencia)
+   * y copia todas las métricas de A hacia B, luego crea la plantilla asociada a B
    * @param {Object} plantillaData - Datos de la plantilla testing card
-   * @returns {Promise<Object>} Plantilla testing card creada
-   * @throws {ApiError} Si ya existe la relación o hay error en validación
+   * @param {number} plantillaData.id_testing_card - ID de la testing card original a copiar
+   * @param {number} plantillaData.id_empleado - ID del empleado
+   * @returns {Promise<Object>} Plantilla testing card creada con testing card copiada
+   * @throws {ApiError} Si la testing card original no existe o hay error en la copia
    */
   async crear(plantillaData) {
+    const { id_testing_card, id_empleado } = plantillaData;
 
-    const plantilla = await this.plantillaTestingCardRepo.crear(plantillaData);
-    return plantilla.toAPI();
+    // 1. Verificar que exista la testing card original (testing card A)
+    try {
+      await this.testingCardService.obtenerPorId(id_testing_card);
+    } catch (error) {
+      throw new ApiError('La testing card original no existe', 404);
+    }
+
+    // 2. Crear una copia de la testing card (testing card B) usando el nuevo endpoint
+    const testingCardCopia = await this.testingCardService.copiarTestingCard(id_testing_card);
+
+    // 3. Crear la plantilla testing card con la nueva testing card copiada (testing card B)
+    const plantillaDataModificada = {
+      id_testing_card: testingCardCopia.id_testing_card, // Usar el ID de la testing card copiada
+      id_empleado: id_empleado
+    };
+
+    const plantilla = await this.plantillaTestingCardRepo.crear(plantillaDataModificada);
+    
+    // 4. Añadir información adicional sobre la copia realizada
+    const resultado = plantilla.toAPI();
+    resultado.testing_card_copia = {
+      id_testing_card_original: id_testing_card,
+      id_testing_card_copia: testingCardCopia.id_testing_card,
+      titulo_copia: testingCardCopia.titulo,
+      metricas_copiadas: testingCardCopia.metricas_copiadas || 0
+    };
+
+    return resultado;
   }
 
   /**
