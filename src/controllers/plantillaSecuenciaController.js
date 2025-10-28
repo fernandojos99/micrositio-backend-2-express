@@ -108,7 +108,7 @@ class PlantillaSecuenciaController {
   }
 
   /**
-   * Elimina una plantilla secuencia
+   * Elimina una plantilla secuencia y su secuencia copiada asociada
    * @route DELETE /api/plantilla-secuencia/:id
    * @param {Object} req - Request object
    * @param {Object} res - Response object
@@ -122,11 +122,12 @@ class PlantillaSecuenciaController {
         throw new ApiError('ID de plantilla secuencia es requerido', 400);
       }
 
-      await plantillaSecuenciaService.eliminar(id);
+      const resultado = await plantillaSecuenciaService.eliminar(id);
 
       res.status(200).json({
         success: true,
-        message: 'Plantilla secuencia eliminada exitosamente'
+        message: resultado.message,
+        data: resultado.eliminado
       });
     } catch (error) {
       next(error);

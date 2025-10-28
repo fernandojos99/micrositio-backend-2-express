@@ -255,17 +255,50 @@ class PlantillaSecuenciaService {
   }
 
   /**
-   * Elimina una plantilla secuencia
+   * Elimina una plantilla secuencia y la secuencia copiada asociada
    * @param {string} id - UUID de la plantilla secuencia
-   * @returns {Promise<boolean>} true si se eliminó correctamente
+   * @returns {Promise<Object>} Información sobre la eliminación
    * @throws {ApiError} Si la plantilla secuencia no existe
    */
   async eliminar(id) {
-    // Verificar que la plantilla secuencia existe
-    await this.obtenerPorId(id);
+    // Obtener la plantilla secuencia para verificar que existe y obtener el id_secuencia
+    const plantillaSecuencia = await plantillaSecuenciaRepository.obtenerPorId(id);
     
-    // Eliminar la plantilla secuencia
-    return await plantillaSecuenciaRepository.eliminar(id);
+    if (!plantillaSecuencia) {
+      throw new ApiError('Plantilla secuencia no encontrada', 404);
+    }
+
+    const idSecuenciaCopia = plantillaSecuencia.id_secuencia;
+
+    try {
+      // 1. Eliminar primero la plantilla secuencia (remover la referencia)
+      const plantillaEliminada = await plantillaSecuenciaRepository.eliminar(id);
+
+      // 2. Luego eliminar la secuencia copiada (esto eliminará en cascada todas sus dependencias:
+      //    - Testing cards asociadas
+      //    - Node positions de esas testing cards
+      //    - Métricas de esas testing cards)
+      const secuenciaEliminada = await this.secuenciaRepo.eliminar(idSecuenciaCopia);
+
+      return {
+        success: true,
+        message: 'Plantilla secuencia y secuencia copiada eliminadas correctamente',
+        eliminado: {
+          plantilla_secuencia: {
+            id: id,
+            id_secuencia_eliminada: idSecuenciaCopia
+          },
+          secuencia_eliminada: secuenciaEliminada
+        }
+      };
+
+    } catch (error) {
+      // Si hay error al eliminar la secuencia, lanzar el error
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(`Error al eliminar plantilla secuencia: ${error.message}`, 500);
+    }
   }
 
   /**
