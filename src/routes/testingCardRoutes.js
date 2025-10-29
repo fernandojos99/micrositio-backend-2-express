@@ -7,7 +7,7 @@ const router = express.Router();
 const testingCardController = new TestingCardController();
 
 // Obtener por ID
-router.get('/t', authMiddleware, testingCardController.obtenerPorId.bind(testingCardController));
+router.get('/t/:id', authMiddleware, testingCardController.obtenerPorId.bind(testingCardController));
 
 // Obtener por secuencia
 router.get('/s', authMiddleware, testingCardController.obtenerPorSecuencia.bind(testingCardController));

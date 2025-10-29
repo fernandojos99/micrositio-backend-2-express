@@ -10,11 +10,12 @@ class TestingCardController {
 
   async obtenerPorId(req, res, next) {
     try {
-      if (!req.body.id_testing_card) {
-        throw new ApiError('Se requiere el campo "id_testing_card" en el body', 400);
+      const { id } = req.params;
+      if (!id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
 
-      const testingCard = await this.testingCardService.obtenerPorId(req.body.id_testing_card);
+      const testingCard = await this.testingCardService.obtenerPorId(parseInt(id));
       res.json(testingCard);
     } catch (error) {
       next(error);
