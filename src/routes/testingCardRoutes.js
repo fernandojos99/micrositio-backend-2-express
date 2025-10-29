@@ -30,4 +30,7 @@ router.delete('/', authMiddleware, soloEditores, testingCardController.eliminar.
 // Copiar testing card (nuevo endpoint)
 router.post('/:id/copiar', authMiddleware, soloEditores, testingCardController.copiarTestingCard.bind(testingCardController));
 
+// Aplicar plantilla a testing card
+router.patch('/aplicar-plantilla', authMiddleware, soloEditores, testingCardController.aplicarPlantilla.bind(testingCardController));
+
 export default router;

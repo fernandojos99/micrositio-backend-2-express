@@ -123,6 +123,38 @@ class TestingCardController {
       next(error);
     }
   }
+
+  /**
+   * Aplica una plantilla a una testing card existente
+   * Extrae los datos de la plantilla (titulo, hipotesis, id_experimento_tipo, descripcion) 
+   * y los aplica a la testing card especificada
+   */
+  async aplicarPlantilla(req, res, next) {
+    try {
+      const { id_testing_card, id_plantilla_testing_card } = req.body;
+
+      if (!id_testing_card) {
+        throw new ApiError('Se requiere el campo "id_testing_card" en el body', 400);
+      }
+
+      if (!id_plantilla_testing_card) {
+        throw new ApiError('Se requiere el campo "id_plantilla_testing_card" en el body', 400);
+      }
+
+      const testingCardActualizada = await this.testingCardService.aplicarPlantilla(
+        id_testing_card, 
+        id_plantilla_testing_card
+      );
+
+      res.json({
+        success: true,
+        message: 'Plantilla aplicada exitosamente',
+        data: testingCardActualizada
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default TestingCardController;
