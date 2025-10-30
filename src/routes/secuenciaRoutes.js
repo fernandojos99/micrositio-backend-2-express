@@ -2,6 +2,7 @@
 import express from 'express';
 import SecuenciaController from '../controllers/secuenciaController.js';
 import Secuencia from '../models/Secuencia.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const secuenciaController = new SecuenciaController();
@@ -37,7 +38,7 @@ const secuenciaController = new SecuenciaController();
  *       404:
  *         description: Proyecto no encontrado
  */
-router.get('/p', secuenciaController.obtenerPorProyecto.bind(secuenciaController));
+router.get('/p', authMiddleware, secuenciaController.obtenerPorProyecto.bind(secuenciaController));
 
 /**
  * @swagger
@@ -63,7 +64,7 @@ router.get('/p', secuenciaController.obtenerPorProyecto.bind(secuenciaController
  *       404:
  *         description: Secuencia no encontrada
  */
-router.get('/s', secuenciaController.obtenerPorId.bind(secuenciaController));
+router.get('/s', authMiddleware, secuenciaController.obtenerPorId.bind(secuenciaController));
 
 /**
  * @swagger
@@ -75,7 +76,7 @@ router.get('/s', secuenciaController.obtenerPorId.bind(secuenciaController));
  *       200:
  *         description: Lista de todas las secuencias
  */
-router.get('/', secuenciaController.obtenerTodas.bind(secuenciaController));
+router.get('/', authMiddleware, secuenciaController.obtenerTodas.bind(secuenciaController));
 
 /**
  * @swagger
@@ -97,7 +98,7 @@ router.get('/', secuenciaController.obtenerTodas.bind(secuenciaController));
  *       404:
  *         description: Proyecto o testing card no encontrado
  */
-router.post('/', secuenciaController.crear.bind(secuenciaController));
+router.post('/', authMiddleware, soloEditores, secuenciaController.crear.bind(secuenciaController));
 
 /**
  * @swagger
@@ -132,7 +133,7 @@ router.post('/', secuenciaController.crear.bind(secuenciaController));
  *       404:
  *         description: Secuencia no encontrada
  */
-router.patch('/', secuenciaController.actualizar.bind(secuenciaController));
+router.patch('/', authMiddleware, soloEditores, secuenciaController.actualizar.bind(secuenciaController));
 
 /**
  * @swagger
@@ -158,6 +159,6 @@ router.patch('/', secuenciaController.actualizar.bind(secuenciaController));
  *       404:
  *         description: Secuencia no encontrada
  */
-router.delete('/', secuenciaController.eliminar.bind(secuenciaController));
+router.delete('/', authMiddleware, soloEditores, secuenciaController.eliminar.bind(secuenciaController));
 
 export default router;

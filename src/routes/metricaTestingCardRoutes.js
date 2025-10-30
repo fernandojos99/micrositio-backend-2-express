@@ -1,6 +1,7 @@
 // src/routes/metricaTestingCardRoutes.js
 import express from 'express';
 import MetricaTestingCardController from '../controllers/metricaTestingCardController.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const controller = new MetricaTestingCardController();
@@ -31,7 +32,7 @@ const controller = new MetricaTestingCardController();
  *       404:
  *         description: Testing card no encontrada o sin métricas
  */
-router.get('/t', controller.obtenerPorTestingCard.bind(controller));
+router.get('/t', authMiddleware, controller.obtenerPorTestingCard.bind(controller));
 
 /**
  * @swagger
@@ -52,7 +53,7 @@ router.get('/t', controller.obtenerPorTestingCard.bind(controller));
  *       404:
  *         description: Métrica no encontrada
  */
-router.get('/m', controller.obtenerPorId.bind(controller));
+router.get('/m', authMiddleware, controller.obtenerPorId.bind(controller));
 
 /**
  * @swagger
@@ -84,7 +85,7 @@ router.get('/', controller.obtenerTodas.bind(controller));
  *       404:
  *         description: Testing card no encontrada
  */
-router.post('/', controller.crear.bind(controller));
+router.post('/', authMiddleware, soloEditores, controller.crear.bind(controller));
 
 /**
  * @swagger
@@ -117,7 +118,7 @@ router.post('/', controller.crear.bind(controller));
  *       404:
  *         description: Métrica no encontrada
  */
-router.patch('/', controller.actualizar.bind(controller));
+router.patch('/', authMiddleware, soloEditores, controller.actualizar.bind(controller));
 
 /**
  * @swagger
@@ -147,7 +148,7 @@ router.patch('/', controller.actualizar.bind(controller));
  *       404:
  *         description: Métrica no encontrada
  */
-router.patch('/resultado', controller.actualizarResultado.bind(controller));
+router.patch('/resultado', authMiddleware, soloEditores, controller.actualizarResultado.bind(controller));
 
 /**
  * @swagger
@@ -172,6 +173,6 @@ router.patch('/resultado', controller.actualizarResultado.bind(controller));
  *       404:
  *         description: Métrica no encontrada
  */
-router.delete('/', controller.eliminar.bind(controller));
+router.delete('/', authMiddleware, soloEditores, controller.eliminar.bind(controller));
 
 export default router;

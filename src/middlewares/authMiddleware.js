@@ -53,3 +53,19 @@ export const verificarAccesoProyecto = (req, res, next) => {
 
   next(new ApiError('Tipo de usuario no válido', 403));
 };
+
+/**
+ * Middleware para filtrar proyectos según permisos del usuario
+ * Agrega información de filtrado al request para que el controlador la use
+ */
+export const configurarFiltroProyectos = (req, res, next) => {
+  const user = req.user;
+  
+  // Agregar información de filtrado al request
+  req.filtroProyectos = {
+    tipo: user.tipo,
+    proyectosPermitidos: user.tipo === 'VISITANTE' ? user.proyectos : null
+  };
+  
+  next();
+};

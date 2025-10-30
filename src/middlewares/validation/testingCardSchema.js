@@ -5,7 +5,7 @@ const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELAD
 
 // Esquema base que puede ser reutilizado
 const testingCardBaseSchema = z.object({
-  id_secuencia: z.number().int().positive('El ID de secuencia debe ser un número positivo'),
+  id_secuencia: z.number().int().positive('El ID de secuencia debe ser un número positivo').optional(),
   padre_id: z.number().int().positive('El ID padre debe ser un número positivo').optional(),
   titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres').max(300, 'El título no puede exceder los 300 caracteres'),
   hipotesis: z.string().min(10, 'La hipótesis debe tener al menos 10 caracteres').optional(),

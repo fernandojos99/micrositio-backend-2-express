@@ -1,0 +1,417 @@
+{
+  "info": {
+    "name": "Plantilla Secuencia API",
+    "description": "Colección de pruebas para la API de Plantilla Secuencia",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Script para manejar autenticación automática",
+          "if (!pm.environment.get('auth_token')) {",
+          "    console.log('Token no encontrado. Por favor, ejecuta primero el endpoint de login.');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login exitoso', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data.token).to.exist;",
+                  "    ",
+                  "    // Guardar token para uso posterior",
+                  "    pm.environment.set('auth_token', responseJson.data.token);",
+                  "    ",
+                  "    console.log('Token guardado:', responseJson.data.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@micrositio.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plantilla Secuencia",
+      "item": [
+        {
+          "name": "Obtener todas las plantillas secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.message).to.exist;",
+                  "    pm.expect(responseJson.data).to.be.an('array');",
+                  "    pm.expect(responseJson.total).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 1000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia"]
+            }
+          }
+        },
+        {
+          "name": "Crear plantilla secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Plantilla secuencia creada exitosamente', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data.id_plantilla_secuencia).to.exist;",
+                  "    ",
+                  "    // Guardar ID para pruebas posteriores",
+                  "    pm.environment.set('plantilla_secuencia_id', responseJson.data.id_plantilla_secuencia);",
+                  "    ",
+                  "    console.log('ID de plantilla secuencia creada:', responseJson.data.id_plantilla_secuencia);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct data structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.id_secuencia).to.exist;",
+                  "    pm.expect(responseJson.data.id_empleado).to.exist;",
+                  "    pm.expect(responseJson.data.creado).to.exist;",
+                  "    pm.expect(responseJson.data.actualizado).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_secuencia\": {{test_secuencia_id}},\n  \"id_empleado\": {{test_empleado_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia"]
+            }
+          }
+        },
+        {
+          "name": "Obtener plantilla secuencia por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Plantilla secuencia obtenida exitosamente', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data.id_plantilla_secuencia).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Response has correct data structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.id_secuencia).to.exist;",
+                  "    pm.expect(responseJson.data.id_empleado).to.exist;",
+                  "    pm.expect(responseJson.data.creado).to.exist;",
+                  "    pm.expect(responseJson.data.actualizado).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/{{plantilla_secuencia_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "{{plantilla_secuencia_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar plantilla secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Plantilla secuencia actualizada exitosamente', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data.id_plantilla_secuencia).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Updated timestamp is different', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.actualizado).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_secuencia\": {{test_secuencia_id_updated}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/{{plantilla_secuencia_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "{{plantilla_secuencia_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar plantilla secuencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Plantilla secuencia eliminada exitosamente', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.message).to.include('eliminada');",
+                  "});",
+                  "",
+                  "// Limpiar variable de entorno",
+                  "pm.environment.unset('plantilla_secuencia_id');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/{{plantilla_secuencia_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "{{plantilla_secuencia_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tests de Validación",
+      "item": [
+        {
+          "name": "Crear plantilla secuencia - Datos inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Validación de datos inválidos', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('Validación fallida');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_secuencia\": \"invalid\",\n  \"id_empleado\": -1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia"]
+            }
+          }
+        },
+        {
+          "name": "Obtener plantilla secuencia - ID no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Plantilla secuencia no encontrada', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('no encontrada');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia/123e4567-e89b-12d3-a456-426614174999",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia", "123e4567-e89b-12d3-a456-426614174999"]
+            }
+          }
+        },
+        {
+          "name": "Acceso sin autenticación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Acceso denegado sin token', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/plantilla_secuencia",
+              "host": ["{{base_url}}"],
+              "path": ["plantilla_secuencia"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,29 +1,39 @@
 // src/routes/testingCardRoutes.js
 import express from 'express';
 import TestingCardController from '../controllers/testingCardController.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const testingCardController = new TestingCardController();
 
 // Obtener por ID
-router.get('/t', testingCardController.obtenerPorId.bind(testingCardController));
+router.get('/t/:id', authMiddleware, testingCardController.obtenerPorId.bind(testingCardController));
 
 // Obtener por secuencia
-router.get('/s', testingCardController.obtenerPorSecuencia.bind(testingCardController));
+router.get('/s', authMiddleware, testingCardController.obtenerPorSecuencia.bind(testingCardController));
 
 // Obtener todos
-router.get('/', testingCardController.listarTodos.bind(testingCardController));
+router.get('/', authMiddleware, testingCardController.listarTodos.bind(testingCardController));
 
 // Obtener por padre
-router.get('/padre', testingCardController.obtenerPorPadre.bind(testingCardController));
+router.get('/padre', authMiddleware, testingCardController.obtenerPorPadre.bind(testingCardController));
 
 // Crear
-router.post('/', testingCardController.crear.bind(testingCardController));
+router.post('/', authMiddleware, soloEditores, testingCardController.crear.bind(testingCardController));
 
 // Actualizar
-router.patch('/', testingCardController.actualizar.bind(testingCardController));
+router.patch('/', authMiddleware, soloEditores, testingCardController.actualizar.bind(testingCardController));
 
 // Eliminar
-router.delete('/', testingCardController.eliminar.bind(testingCardController));
+router.delete('/', authMiddleware, soloEditores, testingCardController.eliminar.bind(testingCardController));
+
+// Copiar testing card (nuevo endpoint)
+router.post('/:id/copiar', authMiddleware, soloEditores, testingCardController.copiarTestingCard.bind(testingCardController));
+
+// Aplicar plantilla a testing card
+router.patch('/aplicar-plantilla', authMiddleware, soloEditores, testingCardController.aplicarPlantilla.bind(testingCardController));
+
+// Obtener todas las testing cards de plantillas
+router.get('/plantillas', authMiddleware, testingCardController.obtenerTodasTestingCardDeLasPlantillas.bind(testingCardController));
 
 export default router;

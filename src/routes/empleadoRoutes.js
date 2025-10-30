@@ -6,6 +6,7 @@
 
 import express from 'express';
 import EmpleadoController from '../controllers/empleadoController.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const empleadoController = new EmpleadoController();
@@ -15,34 +16,34 @@ const empleadoController = new EmpleadoController();
  * @name get/empleados/
  * @function
  */
-router.post('/', empleadoController.obtenerPorId.bind(empleadoController));
+router.post('/', authMiddleware, empleadoController.obtenerPorId.bind(empleadoController));
 
 /**
  * Ruta POST para crear un nuevo empleado.
  * @name post/empleados
  * @function
  */
-router.post('/', empleadoController.crear.bind(empleadoController));
+router.post('/', authMiddleware, soloEditores, empleadoController.crear.bind(empleadoController));
 
 /**
  * Ruta PATCH para actualizar un empleado existente.
  * @name patch/empleados/
  * @function
  */
-router.patch('/', empleadoController.actualizar.bind(empleadoController));
+router.patch('/', authMiddleware, soloEditores, empleadoController.actualizar.bind(empleadoController));
 
 /**
  * Ruta DELETE para desactivar un empleado (eliminación lógica).
  * @name delete/empleados/
  * @function
  */
-router.delete('/', empleadoController.desactivar.bind(empleadoController));
+router.delete('/', authMiddleware, soloEditores, empleadoController.desactivar.bind(empleadoController));
 
 /**
  * Ruta GET para obtener todos los empleados.
  * @name get/empleados/todos
  * @function
  */
-router.get('/todos', empleadoController.listarTodos.bind(empleadoController));
+router.get('/todos', authMiddleware, empleadoController.listarTodos.bind(empleadoController));
 
 export default router;

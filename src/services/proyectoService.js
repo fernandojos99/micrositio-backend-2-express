@@ -102,11 +102,28 @@ class ProyectoService {
 
   /**
    * Lista todos los proyectos
+   * @param {Object} filtro - Información de filtrado del middleware
    * @returns {Promise<Array>} Lista de proyectos
    */
-  async listarProyectos() {
-    const proyectos = await this.proyectoRepo.listarTodos();
-    return proyectos.map(proyecto => proyecto.toAPI());
+  async listarProyectos(filtro) {
+    // Si es EDITOR, puede ver todos los proyectos
+    if (filtro.tipo === 'EDITOR') {
+      const proyectos = await this.proyectoRepo.listarTodos();
+      return proyectos.map(proyecto => proyecto.toAPI());
+    }
+
+    // Si es VISITANTE, solo ve los proyectos asignados
+    if (filtro.tipo === 'VISITANTE') {
+      if (!filtro.proyectosPermitidos || filtro.proyectosPermitidos.length === 0) {
+        return []; // No tiene proyectos asignados
+      }
+
+      const proyectos = await this.proyectoRepo.listarPorIds(filtro.proyectosPermitidos);
+      return proyectos.map(proyecto => proyecto.toAPI());
+    }
+
+    // Para otros tipos de usuario, no se devuelven proyectos
+    return [];
   }
 }
 

@@ -1,0 +1,520 @@
+{
+	"info": {
+		"_postman_id": "tc-123456-789-abc-def-123456789012",
+		"name": "Testing Cards API - Micrositio IRIS",
+		"description": "Colección de Postman para testear los endpoints de Testing Cards",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login Editor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('jwt_token', response.data.token);",
+									"    console.log('Token guardado:', response.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"alias\": \"editor_usuario\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login para obtener token JWT de editor"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación"
+		},
+		{
+			"name": "📝 Testing Cards",
+			"item": [
+				{
+					"name": "Listar Todas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card"
+							]
+						},
+						"description": "Obtiene todas las testing cards"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/testing_card/t/{{testing_card_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card",
+								"t",
+								"{{testing_card_id}}"
+							]
+						},
+						"description": "Obtiene una testing card por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener por Secuencia",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/testing_card/s?id_secuencia={{id_secuencia}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card",
+								"s"
+							],
+							"query": [
+								{
+									"key": "id_secuencia",
+									"value": "{{id_secuencia}}"
+								}
+							]
+						},
+						"description": "Obtiene testing cards por ID de secuencia"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Testing Card",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_secuencia\": {{id_secuencia}},\n    \"titulo\": \"Nueva Testing Card\",\n    \"hipotesis\": \"Esta es una hipótesis de ejemplo para la nueva testing card\",\n    \"id_experimento_tipo\": {{id_experimento_tipo}},\n    \"descripcion\": \"Descripción detallada de la testing card\",\n    \"dia_inicio\": \"2024-01-01\",\n    \"dia_fin\": \"2024-01-31\",\n    \"id_responsable\": {{id_responsable}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card"
+							]
+						},
+						"description": "Crea una nueva testing card"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Testing Card",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_testing_card\": {{testing_card_id}},\n    \"titulo\": \"Testing Card Actualizada\",\n    \"hipotesis\": \"Hipótesis actualizada\",\n    \"descripcion\": \"Descripción actualizada\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card"
+							]
+						},
+						"description": "Actualiza una testing card existente"
+					},
+					"response": []
+				},
+				{
+					"name": "🎯 Aplicar Plantilla",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success property', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response has data property', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test('Applied template data is present', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('titulo');",
+									"    pm.expect(jsonData.data).to.have.property('hipotesis');",
+									"    pm.expect(jsonData.data).to.have.property('descripcion');",
+									"});",
+									"",
+									"pm.test('Metrics information is present', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('metricas_aplicadas');",
+									"    pm.expect(jsonData.data.metricas_aplicadas).to.be.a('number');",
+									"});",
+									"",
+									"pm.test('Metrics array is present when metrics were copied', function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.metricas_aplicadas > 0) {",
+									"        pm.expect(jsonData.data).to.have.property('metricas');",
+									"        pm.expect(jsonData.data.metricas).to.be.an('array');",
+									"        pm.expect(jsonData.data.metricas.length).to.equal(jsonData.data.metricas_aplicadas);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_testing_card\": {{testing_card_id}},\n    \"id_plantilla_testing_card\": \"{{plantilla_testing_card_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/testing_card/aplicar-plantilla",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card",
+								"aplicar-plantilla"
+							]
+						},
+						"description": "Aplica una plantilla de testing card a una testing card existente.\n\n**Variables necesarias:**\n- {{testing_card_id}}: ID de la testing card destino (número)\n- {{plantilla_testing_card_id}}: ID de la plantilla a aplicar (UUID)\n\n**Qué hace:**\n1. Verifica que exista la testing card destino\n2. Verifica que exista la plantilla\n3. Extrae los datos de la testing card asociada a la plantilla (titulo, hipotesis, id_experimento_tipo, descripcion)\n4. Aplica esos datos a la testing card destino\n5. **NUEVO**: Elimina las métricas existentes de la testing card destino\n6. **NUEVO**: Copia todas las métricas de la testing card de la plantilla\n\n**Respuesta esperada:**\n- success: true\n- message: \"Plantilla aplicada exitosamente\"\n- data: testing card actualizada con los nuevos datos + información de métricas copiadas"
+					},
+					"response": [
+						{
+							"name": "Éxito - Plantilla Aplicada",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id_testing_card\": 123,\n    \"id_plantilla_testing_card\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/testing_card/aplicar-plantilla",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"testing_card",
+										"aplicar-plantilla"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Plantilla aplicada exitosamente\",\n    \"data\": {\n        \"id_testing_card\": 123,\n        \"id_secuencia\": 456,\n        \"padre_id\": null,\n        \"titulo\": \"Título desde plantilla\",\n        \"hipotesis\": \"Hipótesis desde plantilla\",\n        \"id_experimento_tipo\": 789,\n        \"descripcion\": \"Descripción desde plantilla\",\n        \"dia_inicio\": \"2024-01-01\",\n        \"dia_fin\": \"2024-01-31\",\n        \"anexo_url\": null,\n        \"id_responsable\": 101,\n        \"status\": \"EN PLANEACION\",\n        \"creado\": \"2024-01-25T10:00:00.000Z\",\n        \"actualizado\": \"2024-01-25T14:30:00.000Z\",\n        \"metricas_aplicadas\": 3,\n        \"metricas\": [\n            {\n                \"id_metrica\": 501,\n                \"nombre\": \"Conversión\",\n                \"operador\": \">\",\n                \"criterio\": \"5%\"\n            },\n            {\n                \"id_metrica\": 502,\n                \"nombre\": \"Tiempo de Carga\",\n                \"operador\": \"<\",\n                \"criterio\": \"2 segundos\"\n            },\n            {\n                \"id_metrica\": 503,\n                \"nombre\": \"Satisfacción Usuario\",\n                \"operador\": \">=\",\n                \"criterio\": \"4.5/5\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Copiar Testing Card",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.id_testing_card) {",
+									"        pm.environment.set('testing_card_copia_id', response.data.id_testing_card);",
+									"        console.log('Testing card copiada. ID:', response.data.id_testing_card);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/testing_card/{{testing_card_id}}/copiar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card",
+								"{{testing_card_id}}",
+								"copiar"
+							]
+						},
+						"description": "Copia una testing card existente sin el id_secuencia y copia todas sus métricas asociadas"
+					},
+					"response": []
+				},
+				{
+					"name": "🎯 Obtener Testing Cards de Plantillas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/testing_card/plantillas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card",
+								"plantillas"
+							]
+						},
+						"description": "Obtiene todas las testing cards asociadas a las plantillas con información detallada de cada plantilla.\n\n**Qué retorna:**\n- Lista de testing cards con sus datos completos\n- Información adicional de la plantilla asociada (ID, empleado, fechas)\n\n**Útil para:**\n- Ver todas las testing cards que están siendo usadas como plantillas\n- Obtener información completa para crear nuevas testing cards basadas en plantillas\n- Analizar qué testing cards están siendo reutilizadas como plantillas"
+					},
+					"response": [
+						{
+							"name": "Éxito - Testing Cards de Plantillas",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/testing_card/plantillas",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"testing_card",
+										"plantillas"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id_testing_card\": 123,\n        \"id_secuencia\": null,\n        \"padre_id\": null,\n        \"titulo\": \"Plantilla de Testing A/B\",\n        \"hipotesis\": \"Los usuarios prefieren el botón azul sobre el rojo\",\n        \"id_experimento_tipo\": 1,\n        \"descripcion\": \"Testing card para experimentos de botones\",\n        \"dia_inicio\": \"2024-01-01\",\n        \"dia_fin\": \"2024-01-31\",\n        \"anexo_url\": null,\n        \"id_responsable\": 101,\n        \"status\": \"TERMINADO\",\n        \"creado\": \"2024-01-25T10:00:00.000Z\",\n        \"actualizado\": \"2024-01-25T14:30:00.000Z\",\n        \"plantilla_info\": {\n            \"id_plantilla_testing_card\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n            \"id_empleado\": 101,\n            \"plantilla_creada\": \"2024-01-25T15:00:00.000Z\",\n            \"plantilla_actualizada\": \"2024-01-25T15:00:00.000Z\"\n        }\n    },\n    {\n        \"id_testing_card\": 456,\n        \"id_secuencia\": null,\n        \"padre_id\": null,\n        \"titulo\": \"Plantilla de Landing Page\",\n        \"hipotesis\": \"Una landing page más simple aumenta conversiones\",\n        \"id_experimento_tipo\": 2,\n        \"descripcion\": \"Template para testing de páginas de aterrizaje\",\n        \"dia_inicio\": \"2024-02-01\",\n        \"dia_fin\": \"2024-02-28\",\n        \"anexo_url\": \"https://example.com/anexo.pdf\",\n        \"id_responsable\": 102,\n        \"status\": \"TERMINADO\",\n        \"creado\": \"2024-02-01T09:00:00.000Z\",\n        \"actualizado\": \"2024-02-15T16:45:00.000Z\",\n        \"plantilla_info\": {\n            \"id_plantilla_testing_card\": \"b2c3d4e5-f6g7-8901-bcde-f23456789012\",\n            \"id_empleado\": 102,\n            \"plantilla_creada\": \"2024-02-15T17:00:00.000Z\",\n            \"plantilla_actualizada\": \"2024-02-15T17:00:00.000Z\"\n        }\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Eliminar Testing Card",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_testing_card\": {{testing_card_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/testing_card",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"testing_card"
+							]
+						},
+						"description": "Elimina una testing card"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de Testing Cards"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Verificar variables requeridas",
+					"const requiredVars = ['base_url'];",
+					"const missingVars = requiredVars.filter(varName => !pm.environment.get(varName));",
+					"",
+					"if (missingVars.length > 0) {",
+					"    console.log('⚠️  Variables faltantes:', missingVars.join(', '));",
+					"    console.log('Configure estas variables en el environment antes de continuar');",
+					"}",
+					"",
+					"// Log de variables importantes",
+					"console.log('🔧 Variables configuradas:');",
+					"console.log('   base_url:', pm.environment.get('base_url') || 'NO CONFIGURADA');",
+					"console.log('   jwt_token:', pm.environment.get('jwt_token') ? '✅ Configurado' : '❌ No configurado');",
+					"console.log('   testing_card_id:', pm.environment.get('testing_card_id') || 'NO CONFIGURADA');",
+					"console.log('   plantilla_testing_card_id:', pm.environment.get('plantilla_testing_card_id') || 'NO CONFIGURADA');"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string",
+			"description": "URL base del API"
+		},
+		{
+			"key": "testing_card_id",
+			"value": "123",
+			"type": "string",
+			"description": "ID de testing card para pruebas"
+		},
+		{
+			"key": "plantilla_testing_card_id",
+			"value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+			"type": "string",
+			"description": "ID de plantilla testing card (UUID)"
+		},
+		{
+			"key": "id_secuencia",
+			"value": "456",
+			"type": "string",
+			"description": "ID de secuencia para pruebas"
+		},
+		{
+			"key": "id_experimento_tipo",
+			"value": "789",
+			"type": "string",
+			"description": "ID de tipo de experimento"
+		},
+		{
+			"key": "id_responsable",
+			"value": "101",
+			"type": "string",
+			"description": "ID del responsable"
+		}
+	]
+}

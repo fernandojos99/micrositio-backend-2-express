@@ -6,6 +6,7 @@
 
 import express from 'express';
 import CategoriaController from '../controllers/categoriaController.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const categoriaController = new CategoriaController();
@@ -15,34 +16,34 @@ const categoriaController = new CategoriaController();
  * @name get/categoria
  * @function
  */
-router.get('/c', categoriaController.obtenerPorId.bind(categoriaController));
+router.get('/c', authMiddleware, categoriaController.obtenerPorId.bind(categoriaController));
 
 /**
  * Ruta GET para obtener todas las categorías.
  * @name get/categorias
  * @function
  */
-router.get('/', categoriaController.obtenerTodas.bind(categoriaController));
+router.get('/', authMiddleware, categoriaController.obtenerTodas.bind(categoriaController));
 
 /**
  * Ruta POST para crear una nueva categoría.
  * @name post/categoria
  * @function
  */
-router.post('/', categoriaController.crear.bind(categoriaController));
+router.post('/', authMiddleware, soloEditores, categoriaController.crear.bind(categoriaController));
 
 /**
  * Ruta PATCH para actualizar una categoría existente.
  * @name patch/categoria
  * @function
  */
-router.patch('/', categoriaController.actualizar.bind(categoriaController));
+router.patch('/', authMiddleware, soloEditores, categoriaController.actualizar.bind(categoriaController));
 
 /**
  * Ruta DELETE para eliminar una categoría.
  * @name delete/categoria
  * @function
  */
-router.delete('/', categoriaController.eliminar.bind(categoriaController));
+router.delete('/', authMiddleware, soloEditores, categoriaController.eliminar.bind(categoriaController));
 
 export default router;

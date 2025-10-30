@@ -6,6 +6,7 @@
 import express from 'express';
 import NodePositionController from '../controllers/nodePositionController.js';
 import validar, { upsertNodePositionSchema } from '../middlewares/validation/nodePositionSchema.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const nodePositionController = new NodePositionController();
@@ -15,20 +16,20 @@ const nodePositionController = new NodePositionController();
  * @name get/flow-positions/:id_secuencia
  * @function
  */
-router.get('/:id_secuencia', nodePositionController.obtenerPorSecuencia.bind(nodePositionController));
+router.get('/:id_secuencia', authMiddleware, nodePositionController.obtenerPorSecuencia.bind(nodePositionController));
 
 /**
  * Crea o actualiza la posición de un nodo.
  * @name post/flow-positions
  * @function
  */
-router.post('/', validar(upsertNodePositionSchema), nodePositionController.upsert.bind(nodePositionController));
+router.post('/', authMiddleware, soloEditores, validar(upsertNodePositionSchema), nodePositionController.upsert.bind(nodePositionController));
 
 /**
  * Elimina todas las posiciones de una secuencia.
  * @name delete/flow-positions/:id_secuencia
  * @function
  */
-router.delete('/:id_secuencia', nodePositionController.eliminarPorSecuencia.bind(nodePositionController));
+router.delete('/:id_secuencia', authMiddleware, soloEditores, nodePositionController.eliminarPorSecuencia.bind(nodePositionController));
 
 export default router;
