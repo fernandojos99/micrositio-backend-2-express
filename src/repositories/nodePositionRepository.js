@@ -33,6 +33,17 @@ class NodePositionRepository {
     if (error) throw new ApiError(error.message, 500);
     return data;
   }
+
+  async crear(nodePositionData) {
+    const { data, error } = await supabase
+      .from('node_positions')
+      .insert(nodePositionData)
+      .select()
+      .single();
+
+    if (error) throw new ApiError(error.message, 500);
+    return new NodePosition(data);
+  }
 }
 
 export default NodePositionRepository;

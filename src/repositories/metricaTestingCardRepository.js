@@ -143,6 +143,74 @@ class MetricaTestingCardRepository {
 
     return !!data;
   }
+
+  /**
+   * Crea una copia de una métrica existente
+   * @param {number} idMetricaOriginal - ID de la métrica original a copiar
+   * @returns {Promise<Object>} Métrica copiada
+   * @throws {ApiError} Si la métrica original no existe o hay error al copiar
+   */
+  async copiarMetrica(idMetricaOriginal) {
+    // Primero obtener la métrica original
+    const metricaOriginal = await this.obtenerPorId(idMetricaOriginal);
+    
+    if (!metricaOriginal) {
+      throw new ApiError('Métrica original no encontrada', 404);
+    }
+
+    // Determinar la testing_card destino: preferir id 151, 
+    // si no existe buscar por título "ALMACEN DE PLANTILLAS METRICAS"
+    let idTestingCardDestino = null;
+
+    // Primero verificar si existe el id 151
+    const existe151 = await this.existeTestingCard(151);
+    if (existe151) {
+      idTestingCardDestino = 151;
+    } else {
+      // Si no existe 151, buscar por título
+      try {
+        const { data: tcData, error: tcError } = await supabase
+          .from('testing_card')
+          .select('id_testing_card')
+          .eq('titulo', 'ALMACEN DE PLANTILLAS METRICAS')
+          .single();
+
+        if (tcError && tcError.code !== 'PGRST116') {
+          throw new ApiError(`Error al buscar testing card por título: ${tcError.message}`, 500);
+        }
+
+        if (tcData && tcData.id_testing_card) {
+          idTestingCardDestino = tcData.id_testing_card;
+        } else {
+          throw new ApiError('No se encontró la testing card destino (ni id 151 ni título)', 404);
+        }
+      } catch (err) {
+        // Re-throw ApiError
+        if (err instanceof ApiError) throw err;
+        throw new ApiError(`Error al verificar testing card destino: ${err.message}`, 500);
+      }
+    }
+
+    // Crear una copia excluyendo el ID y timestamps; asociar a la testing_card destino
+    const datosParaCopia = {
+      id_testing_card: idTestingCardDestino,
+      nombre: metricaOriginal.nombre,
+      operador: metricaOriginal.operador,
+      criterio: metricaOriginal.criterio
+    };
+
+    // Insertar la copia
+    const { data, error } = await supabase
+      .from('metrica_testing_card')
+      .insert(datosParaCopia)
+      .select();
+
+    if (error) {
+      throw new ApiError(`Error al copiar métrica: ${error.message}`, 500);
+    }
+
+    return MetricaTestingCard.fromDatabase(data[0]);
+  }
 }
 
 export default MetricaTestingCardRepository;
