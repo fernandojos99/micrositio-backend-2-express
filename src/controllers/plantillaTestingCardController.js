@@ -138,6 +138,7 @@ class PlantillaTestingCardController {
       next(error);
     }
   }
+
 }
 
 export default PlantillaTestingCardController;

@@ -177,6 +177,49 @@ class TestingCardService {
     
     return resultado;
   }
+
+  /**
+   * Obtiene todas las testing cards asociadas a las plantillas
+   * Retorna información detallada de cada testing card de cada plantilla
+   * @returns {Promise<Array>} Lista de testing cards con información de la plantilla asociada
+   * @throws {ApiError} Si hay error al consultar
+   */
+  async obtenerTodasTestingCardDeLasPlantillas() {
+    // 1. Obtener todas las plantillas
+    const plantillas = await this.plantillaTestingCardRepo.listarTodas();
+    
+    if (plantillas.length === 0) {
+      return [];
+    }
+
+    // 2. Obtener los datos de cada testing card asociada a las plantillas
+    const testingCardsConPlantilla = [];
+    
+    for (const plantilla of plantillas) {
+      try {
+        // Obtener la testing card asociada a esta plantilla
+        const testingCard = await this.obtenerPorId(plantilla.id_testing_card);
+        
+        // Agregar información de la plantilla a la testing card
+        const testingCardConPlantilla = {
+          ...testingCard,
+          plantilla_info: {
+            id_plantilla_testing_card: plantilla.id_plantilla_testing_card,
+            id_empleado: plantilla.id_empleado,
+            plantilla_creada: plantilla.created_at,
+            plantilla_actualizada: plantilla.updated_at
+          }
+        };
+        
+        testingCardsConPlantilla.push(testingCardConPlantilla);
+      } catch (error) {
+        // Si no se puede obtener una testing card, registrar el error pero continuar
+        console.log(`Error al obtener testing card ${plantilla.id_testing_card} de plantilla ${plantilla.id_plantilla_testing_card}:`, error.message);
+      }
+    }
+    
+    return testingCardsConPlantilla;
+  }
 }
 
 export default TestingCardService;

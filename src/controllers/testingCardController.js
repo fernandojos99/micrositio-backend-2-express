@@ -155,6 +155,19 @@ class TestingCardController {
       next(error);
     }
   }
+
+  /**
+   * Obtiene todas las testing cards asociadas a plantillas
+   * Retorna información detallada de cada testing card de cada plantilla
+   */
+  async obtenerTodasTestingCardDeLasPlantillas(req, res, next) {
+    try {
+      const testingCards = await this.testingCardService.obtenerTodasTestingCardDeLasPlantillas();
+      res.json(testingCards);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default TestingCardController;

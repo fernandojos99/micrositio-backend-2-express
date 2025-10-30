@@ -33,4 +33,7 @@ router.post('/:id/copiar', authMiddleware, soloEditores, testingCardController.c
 // Aplicar plantilla a testing card
 router.patch('/aplicar-plantilla', authMiddleware, soloEditores, testingCardController.aplicarPlantilla.bind(testingCardController));
 
+// Obtener todas las testing cards de plantillas
+router.get('/plantillas', authMiddleware, testingCardController.obtenerTodasTestingCardDeLasPlantillas.bind(testingCardController));
+
 export default router;

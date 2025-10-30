@@ -175,6 +175,8 @@ class PlantillaTestingCardService {
 
     return resultado;
   }
+
+
 }
 
 export default PlantillaTestingCardService;
