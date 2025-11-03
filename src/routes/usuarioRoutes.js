@@ -317,7 +317,60 @@ router.get('/empleado/:id_empleado', authMiddleware, soloEditores, usuarioContro
  *         $ref: '#/components/responses/InternalServerError'
  */
 router.get('/', authMiddleware, soloEditores, usuarioController.obtenerTodos.bind(usuarioController));
-router.post('/', authMiddleware, soloEditores, usuarioController.crear.bind(usuarioController));
+router.post('/', authMiddleware, usuarioController.crear.bind(usuarioController));
+
+/**
+ * @swagger
+ * /usuarios/visitante:
+ *   post:
+ *     summary: Crea un nuevo usuario visitante
+ *     tags: [Usuarios]
+ *     description: Crea un usuario visitante con solo alias y password. No requiere autenticación.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - alias
+ *               - password
+ *             properties:
+ *               alias:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 50
+ *                 pattern: '^[a-zA-Z0-9_@-]+$'
+ *                 description: Alias único del usuario visitante
+ *                 example: "visitante123"
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 maxLength: 100
+ *                 description: Contraseña del usuario (debe contener al menos una minúscula, una mayúscula y un número)
+ *                 example: "Password123"
+ *     responses:
+ *       201:
+ *         description: Usuario visitante creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Usuario visitante creado exitosamente"
+ *                 data:
+ *                   $ref: '#/components/schemas/Usuario'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.post('/visitante', usuarioController.crearVisitante.bind(usuarioController));
 
 /**
  * @swagger

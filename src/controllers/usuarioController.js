@@ -4,7 +4,7 @@
  * @class
  */
 import UsuarioService from '../services/usuarioService.js';
-import { usuarioCreateSchema, usuarioUpdateSchema, usuarioIdSchema } from '../middlewares/validation/usuarioSchema.js';
+import { usuarioCreateSchema, usuarioUpdateSchema, usuarioIdSchema, usuarioVisitanteCreateSchema } from '../middlewares/validation/usuarioSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class UsuarioController {
@@ -112,6 +112,37 @@ class UsuarioController {
       res.status(201).json({
         success: true,
         message: 'Usuario creado exitosamente',
+        data: usuario
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Crea un nuevo usuario visitante (solo alias y password).
+   * POST /usuarios/visitante
+   * @param {Object} req - Request de Express.
+   * @param {Object} res - Response de Express.
+   * @param {Function} next - Función para pasar al siguiente middleware.
+   */
+  async crearVisitante(req, res, next) {
+    try {
+      const validatedData = usuarioVisitanteCreateSchema.parse(req.body);
+      
+      // Agregar tipo VISITANTE automáticamente
+      const usuarioData = {
+        ...validatedData,
+        tipo: 'VISITANTE',
+        id_empleado: null,
+        activo: true
+      };
+      
+      const usuario = await this.usuarioService.crear(usuarioData);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Usuario visitante creado exitosamente',
         data: usuario
       });
     } catch (error) {

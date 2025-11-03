@@ -13,7 +13,7 @@ const usuarioCreateSchema = z.object({
   alias: z.string()
     .min(3, 'El alias debe tener al menos 3 caracteres')
     .max(50, 'El alias no puede exceder los 50 caracteres')
-    .regex(/^[a-zA-Z0-9_@-]+$/, 'El alias solo puede contener letras, números, guiones, guiones bajos y @'),
+    .regex(/^[a-zA-Z0-9_@.-]+$/, 'El alias solo puede contener letras, números, guiones, guiones bajos y @'),
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .max(100, 'La contraseña no puede exceder los 100 caracteres')
@@ -54,7 +54,7 @@ const usuarioUpdateSchema = z.object({
   alias: z.string()
     .min(3, 'El alias debe tener al menos 3 caracteres')
     .max(50, 'El alias no puede exceder los 50 caracteres')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'El alias solo puede contener letras, números, guiones y guiones bajos')
+    .regex(/^[a-zA-Z0-9_@.-]+$/, 'El alias solo puede contener letras, números, guiones y guiones bajos')
     .optional(),
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
@@ -87,6 +87,20 @@ const usuarioUpdateSchema = z.object({
 );
 
 /**
+ * Esquema para la creación de usuarios visitantes (solo alias y password).
+ */
+const usuarioVisitanteCreateSchema = z.object({
+  alias: z.string()
+    .min(3, 'El alias debe tener al menos 3 caracteres')
+    .max(50, 'El alias no puede exceder los 50 caracteres')
+    .regex(/^[a-zA-Z0-9_@.-]+$/, 'El alias solo puede contener letras, números, guiones, guiones bajos y @'),
+  password: z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .max(100, 'La contraseña no puede exceder los 100 caracteres')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'La contraseña debe contener al menos una letra minúscula, una mayúscula y un número')
+});
+
+/**
  * Esquema para obtener usuario por ID (solo validación del UUID)
  */
 const usuarioIdSchema = z.object({
@@ -94,4 +108,4 @@ const usuarioIdSchema = z.object({
     .uuid('El ID del usuario debe ser un UUID válido')
 });
 
-export { usuarioCreateSchema, usuarioUpdateSchema, usuarioIdSchema };
+export { usuarioCreateSchema, usuarioUpdateSchema, usuarioIdSchema, usuarioVisitanteCreateSchema };
