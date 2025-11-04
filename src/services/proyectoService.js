@@ -2,6 +2,7 @@
 import ProyectoRepository from '../repositories/proyectoRepository.js';
 import CategoriaRepository from '../repositories/categoriaRepository.js';
 import EmpleadoRepository from '../repositories/empleadoRepository.js';
+import UsuarioProyectoRepository from '../repositories/usuarioProyectoRepository.js';
 import ApiError from '../utils/ApiError.js';
 import Proyecto from '../models/Proyecto.js';
 
@@ -10,6 +11,7 @@ class ProyectoService {
     this.proyectoRepo = new ProyectoRepository();
     this.categoriaRepo = new CategoriaRepository();
     this.empleadoRepo = new EmpleadoRepository();
+    this.usuarioProyectoRepo = new UsuarioProyectoRepository();
   }
 
   /**
@@ -124,6 +126,21 @@ class ProyectoService {
 
     // Para otros tipos de usuario, no se devuelven proyectos
     return [];
+  }
+
+  /**
+   * Obtiene proyectos asignados a un usuario específico
+   * @param {string} id_usuario - UUID del usuario
+   * @returns {Promise<Array>} Lista de proyectos del usuario
+   * @throws {ApiError} Si hay error en la operación
+   */
+  async obtenerProyectosPorIdUsuario(id_usuario) {
+    try {
+      const proyectos = await this.usuarioProyectoRepo.obtenerPorIdUsuario(id_usuario);
+      return proyectos;
+    } catch (error) {
+      throw new ApiError(`Error al obtener proyectos del usuario: ${error.message}`, error.statusCode || 500);
+    }
   }
 }
 
