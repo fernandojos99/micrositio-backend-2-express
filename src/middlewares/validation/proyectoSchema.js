@@ -19,4 +19,9 @@ const proyectoUpdateSchema = proyectoCreateSchema.partial().extend({
   id_lider: z.number().int().positive('El ID del líder debe ser un número positivo').optional()
 });
 
-export { proyectoCreateSchema, proyectoUpdateSchema };
+const proyectoPorUsuarioSchema = z.object({
+  id_usuario: z.string()
+    .uuid('El ID del usuario debe ser un UUID válido')
+});
+
+export { proyectoCreateSchema, proyectoUpdateSchema, proyectoPorUsuarioSchema };

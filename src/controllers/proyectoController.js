@@ -1,6 +1,6 @@
 // src/controllers/proyectoController.js
 import ProyectoService from '../services/proyectoService.js';
-import { proyectoCreateSchema, proyectoUpdateSchema } from '../middlewares/validation/proyectoSchema.js';
+import { proyectoCreateSchema, proyectoUpdateSchema, proyectoPorUsuarioSchema } from '../middlewares/validation/proyectoSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class ProyectoController {
@@ -94,6 +94,27 @@ class ProyectoController {
     try {
       const proyectos = await this.proyectoService.listarProyectos(req.filtroProyectos);
       res.json(proyectos);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Obtiene proyectos por ID de usuario
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
+   */
+  async obtenerProyectosPorIdUsuario(req, res, next) {
+    try {
+      const validatedData = proyectoPorUsuarioSchema.parse({ id_usuario: req.params.id_usuario });
+      const proyectos = await this.proyectoService.obtenerProyectosPorIdUsuario(validatedData.id_usuario);
+      
+      res.json({
+        success: true,
+        data: proyectos,
+        total: proyectos.length
+      });
     } catch (error) {
       next(error);
     }

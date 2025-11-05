@@ -20,7 +20,7 @@ class UsuarioProyectoRepository {
         id_usuario,
         id_proyecto,
         usuarios!inner(alias, tipo),
-        proyecto!inner(nombre_proyecto, descripcion)
+        proyecto!inner(titulo, descripcion)
       `)
       .order('id_usuario');
 
@@ -35,7 +35,7 @@ class UsuarioProyectoRepository {
         tipo: item.usuarios.tipo
       },
       proyecto: {
-        nombre_proyecto: item.proyecto.nombre_proyecto,
+        titulo: item.proyecto.titulo,
         descripcion: item.proyecto.descripcion
       }
     }));
@@ -48,39 +48,34 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error en la consulta.
    */
   async obtenerPorIdUsuario(id_usuario) {
-    const { data, error } = await supabase
+    // Primero obtenemos los IDs de los proyectos del usuario
+    const { data: usuarioProyectos, error: errorRelaciones } = await supabase
       .from('usuario_proyecto')
-      .select(`
-        id_proyecto,
-        proyecto!inner(
-          id_proyecto,
-          nombre_proyecto,
-          descripcion,
-          fecha_creacion,
-          fecha_estimacion_finalizacion,
-          estado,
-          id_categoria,
-          categoria!inner(nombre_categoria)
-        )
-      `)
+      .select('id_proyecto')
       .eq('id_usuario', id_usuario);
 
-    if (error) {
-      throw new ApiError(`Error al obtener proyectos del usuario: ${error.message}`, 500);
+    if (errorRelaciones) {
+      throw new ApiError(`Error al obtener relaciones usuario-proyecto: ${errorRelaciones.message}`, 500);
     }
 
-    return data.map(item => ({
-      id_proyecto: item.proyecto.id_proyecto,
-      nombre_proyecto: item.proyecto.nombre_proyecto,
-      descripcion: item.proyecto.descripcion,
-      fecha_creacion: item.proyecto.fecha_creacion,
-      fecha_estimacion_finalizacion: item.proyecto.fecha_estimacion_finalizacion,
-      estado: item.proyecto.estado,
-      categoria: {
-        id_categoria: item.proyecto.id_categoria,
-        nombre_categoria: item.proyecto.categoria.nombre_categoria
-      }
-    }));
+    if (!usuarioProyectos || usuarioProyectos.length === 0) {
+      return [];
+    }
+
+    // Extraemos los IDs de los proyectos
+    const proyectoIds = usuarioProyectos.map(rel => rel.id_proyecto);
+
+    // Ahora obtenemos los detalles de los proyectos
+    const { data: proyectos, error: errorProyectos } = await supabase
+      .from('proyecto')
+      .select('id_proyecto, titulo')
+      .in('id_proyecto', proyectoIds);
+
+    if (errorProyectos) {
+      throw new ApiError(`Error al obtener detalles de proyectos: ${errorProyectos.message}`, 500);
+    }
+
+    return proyectos || [];
   }
 
   /**

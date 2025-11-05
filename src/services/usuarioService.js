@@ -279,9 +279,9 @@ class UsuarioService {
     }
 
     // Verificar que el usuario esté inactivo antes de eliminarlo
-    if (usuario.activo) {
+    /**if (usuario.activo) {
       throw new ApiError('No se puede eliminar un usuario activo. Primero debe darse de baja.', 400);
-    }
+    }*/
 
     const usuarioEliminado = await this.usuarioRepo.eliminar(id_usuario);
     return usuarioEliminado.toAPI();
