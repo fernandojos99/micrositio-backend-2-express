@@ -42,29 +42,24 @@ router.get('/p', authMiddleware, secuenciaController.obtenerPorProyecto.bind(sec
 
 /**
  * @swagger
- * /secuencia/s:
+ * /secuencia/{id}:
  *   get:
  *     summary: Obtiene una secuencia por su ID
  *     tags: [Secuencias]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - id_secuencia
- *             properties:
- *               id_secuencia:
- *                 type: integer
- *                 description: ID de la secuencia
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la secuencia
  *     responses:
  *       200:
  *         description: Secuencia encontrada
  *       404:
  *         description: Secuencia no encontrada
  */
-router.get('/s', authMiddleware, secuenciaController.obtenerPorId.bind(secuenciaController));
+router.get('/:id', authMiddleware, secuenciaController.obtenerPorId.bind(secuenciaController));
 
 /**
  * @swagger
@@ -160,5 +155,35 @@ router.patch('/', authMiddleware, soloEditores, secuenciaController.actualizar.b
  *         description: Secuencia no encontrada
  */
 router.delete('/', authMiddleware, soloEditores, secuenciaController.eliminar.bind(secuenciaController));
+
+/**
+ * @swagger
+ * /secuencia/aplicar-plantilla:
+ *   patch:
+ *     summary: Aplica una plantilla secuencia a una secuencia existente
+ *     tags: [Secuencias]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id_secuencia
+ *               - id_plantilla_secuencia
+ *             properties:
+ *               id_secuencia:
+ *                 type: string
+ *                 description: ID de la secuencia destino
+ *               id_plantilla_secuencia:
+ *                 type: string
+ *                 description: ID de la plantilla secuencia a aplicar
+ *     responses:
+ *       200:
+ *         description: Plantilla aplicada exitosamente
+ *       404:
+ *         description: Secuencia o plantilla no encontrada
+ */
+router.patch('/aplicar-plantilla', authMiddleware, secuenciaController.aplicarPlantilla.bind(secuenciaController));
 
 export default router;

@@ -43,11 +43,4 @@ router.put('/:id', plantillaSecuenciaController.actualizar);
  */
 router.delete('/', plantillaSecuenciaController.eliminar);
 
-/**
- * @route   PATCH /api/plantilla-secuencia/aplicar-plantilla
- * @desc    Aplicar una plantilla secuencia a una secuencia existente
- * @access  Private (requiere autenticación)
- */
-router.patch('/aplicar-plantilla', plantillaSecuenciaController.aplicarPlantilla);
-
 export default router;

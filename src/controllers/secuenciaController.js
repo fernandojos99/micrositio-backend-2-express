@@ -3,6 +3,7 @@ import SecuenciaService from '../services/secuenciaService.js';
 import SecuenciaRepository from '../repositories/secuenciaRepository.js';
 import ProyectoRepository from '../repositories/proyectoRepository.js';
 import TestingCardRepository from '../repositories/testingCardRepository.js';
+import plantillaSecuenciaService from '../services/plantillaSecuenciaService.js';
 import Secuencia from '../models/Secuencia.js';
 import { secuenciaCreateSchema, secuenciaUpdateSchema } from '../middlewares/validation/secuenciaSchema.js';
 import ApiError from '../utils/ApiError.js';
@@ -50,11 +51,13 @@ class SecuenciaController {
    */
   async obtenerPorId(req, res, next) {
     try {
-      if (!req.body.id_secuencia) {
-        throw new ApiError('Se requiere el campo "id_secuencia" en el body', 400);
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ApiError('Se requiere el parámetro "id" en la ruta', 400);
       }
 
-      const secuencia = await this.secuenciaService.obtenerPorId(req.body.id_secuencia);
+      const secuencia = await this.secuenciaService.obtenerPorId(id);
       res.json(secuencia);
     } catch (error) {
       next(error);
@@ -127,6 +130,32 @@ class SecuenciaController {
 
       await this.secuenciaService.eliminar(req.body.id_secuencia);
       res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Aplica una plantilla secuencia a una secuencia existente
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
+   */
+  async aplicarPlantilla(req, res, next) {
+    try {
+      const { id_secuencia, id_plantilla_secuencia } = req.body;
+
+      if (!id_secuencia || !id_plantilla_secuencia) {
+        throw new ApiError('id_secuencia e id_plantilla_secuencia son requeridos', 400);
+      }
+
+      const resultado = await plantillaSecuenciaService.aplicarPlantilla(id_secuencia, id_plantilla_secuencia);
+
+      res.status(200).json({
+        success: true,
+        message: 'Plantilla aplicada exitosamente a la secuencia',
+        data: resultado
+      });
     } catch (error) {
       next(error);
     }

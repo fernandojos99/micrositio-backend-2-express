@@ -7,7 +7,7 @@ class SecuenciaRepository {
   /**
    * Obtiene una secuencia por ID de proyecto
    * @param {number} id_proyecto - ID del proyecto
-   * @returns {Promise<Array>} Lista de secuencias (objetos planos)
+   * @returns {Promise<Array>} Lista de instancias de Secuencia
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerPorProyecto(id_proyecto) {
@@ -20,14 +20,14 @@ class SecuenciaRepository {
       throw new ApiError(`Error al obtener secuencias: ${error.message}`, 500);
     }
 
-    // Devuelve objetos planos
-    return data.map(sec => new Secuencia(sec).toAPI());
+    // Devuelve instancias del modelo
+    return data.map(sec => new Secuencia(sec));
   }
 
   /**
    * Obtiene una secuencia por su ID
    * @param {number} id_secuencia - ID de la secuencia
-   * @returns {Promise<Object|null>} Secuencia encontrada (objeto plano) o null
+   * @returns {Promise<Secuencia|null>} Instancia del modelo Secuencia o null
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerPorId(id_secuencia) {
@@ -41,12 +41,12 @@ class SecuenciaRepository {
       throw new ApiError(`Error al obtener secuencia: ${error.message}`, 500);
     }
 
-    return data ? new Secuencia(data).toAPI() : null;
+    return data ? new Secuencia(data) : null;
   }
 
   /**
    * Obtiene todas las secuencias
-   * @returns {Promise<Array>} Lista de secuencias (objetos planos)
+   * @returns {Promise<Array>} Lista de instancias de Secuencia
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerTodas() {
@@ -58,13 +58,13 @@ class SecuenciaRepository {
       throw new ApiError(`Error al obtener secuencias: ${error.message}`, 500);
     }
 
-    return data.map(sec => new Secuencia(sec).toAPI());
+    return data.map(sec => new Secuencia(sec));
   }
 
   /**
    * Crea una nueva secuencia
    * @param {Object} secuenciaData - Datos de la secuencia
-   * @returns {Promise<Object>} Secuencia creada (objeto plano)
+   * @returns {Promise<Secuencia>} Instancia del modelo Secuencia creada
    * @throws {ApiError} Si ocurre un error
    */  async crear(secuenciaData) {
     const { data, error } = await supabase
@@ -80,13 +80,13 @@ class SecuenciaRepository {
       throw new ApiError('Error al crear secuencia: No se devolvieron datos', 500);
     }
 
-    return new Secuencia(data[0]).toAPI();
+    return new Secuencia(data[0]);
   }
   /**
    * Actualiza una secuencia existente
    * @param {number} id_secuencia - ID de la secuencia
    * @param {Object} secuenciaData - Datos a actualizar
-   * @returns {Promise<Object>} Secuencia actualizada (objeto plano)
+   * @returns {Promise<Secuencia>} Instancia del modelo Secuencia actualizada
    * @throws {ApiError} Si ocurre un error
    */
   async actualizar(id_secuencia, secuenciaData) {
@@ -104,13 +104,13 @@ class SecuenciaRepository {
       throw new ApiError(`Secuencia con ID ${id_secuencia} no encontrada`, 404);
     }
 
-    return new Secuencia(data[0]).toAPI();
+    return new Secuencia(data[0]);
   }
 
   /**
    * Elimina una secuencia
    * @param {number} id_secuencia - ID de la secuencia
-   * @returns {Promise<Object>} Secuencia eliminada (objeto plano)
+   * @returns {Promise<Secuencia>} Instancia del modelo Secuencia eliminada
    * @throws {ApiError} Si ocurre un error
    */
   async eliminar(id_secuencia) {
@@ -128,7 +128,7 @@ class SecuenciaRepository {
       throw new ApiError('Secuencia no encontrada', 404);
     }
 
-    return new Secuencia(data[0]).toAPI();
+    return new Secuencia(data[0]);
   }
 }
 

@@ -28,7 +28,8 @@ class SecuenciaService {
       throw new ApiError('Proyecto no encontrado', 404);
     }
 
-    return this.secuenciaRepo.obtenerPorProyecto(id_proyecto);
+    const secuencias = await this.secuenciaRepo.obtenerPorProyecto(id_proyecto);
+    return secuencias.map(secuencia => secuencia.toAPI());
   }
 
   /**
@@ -50,7 +51,7 @@ class SecuenciaService {
    */
   async obtenerTodas() {
     const secuencias = await this.secuenciaRepo.obtenerTodas();
-    return secuencias; // El repositorio ya devuelve objetos planos con toAPI()
+    return secuencias.map(secuencia => secuencia.toAPI());
   }
 
   /**
@@ -59,21 +60,22 @@ class SecuenciaService {
  * @returns {Promise<Object>} Secuencia creada
  * @throws {ApiError} Si proyecto o testing card no existen
  */
-async crear(secuenciaData) {
-  // Verificar que el proyecto existe
-  const proyecto = await this.proyectoRepo.obtenerPorId(secuenciaData.id_proyecto);
-  if (!proyecto) {
-    throw new ApiError('Proyecto no encontrado', 404);
-  }
+  async crear(secuenciaData) {
+    // Verificar que el proyecto existe
+    const proyecto = await this.proyectoRepo.obtenerPorId(secuenciaData.id_proyecto);
+    if (!proyecto) {
+      throw new ApiError('Proyecto no encontrado', 404);
+    }
 
-  // Verificar que el testing card existe (si aplica)
-  // const testingCard = await this.testingCardRepo.obtenerPorId(secuenciaData.id_testing_card_padre);
-  // if (!testingCard) {
-  //   throw new ApiError('Testing card no encontrado', 404);
-  // }
+    // Verificar que el testing card existe (si aplica)
+    // const testingCard = await this.testingCardRepo.obtenerPorId(secuenciaData.id_testing_card_padre);
+    // if (!testingCard) {
+    //   throw new ApiError('Testing card no encontrado', 404);
+    // }
 
-  return await this.secuenciaRepo.crear(secuenciaData);
-}   
+    const secuencia = await this.secuenciaRepo.crear(secuenciaData);
+    return secuencia.toAPI();
+  }   
 
   /**
    * Actualiza una secuencia existente
@@ -91,17 +93,18 @@ async crear(secuenciaData) {
     }
 
     const secuencia = await this.secuenciaRepo.actualizar(id_secuencia, secuenciaData);
-    return secuencia; // <-- Ya es un objeto plano, no llames .toAPI()
+    return secuencia.toAPI();
   }
 
   /**
    * Elimina una secuencia
    * @param {number} id_secuencia - ID de la secuencia
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>} Secuencia eliminada
    * @throws {ApiError} Si la secuencia no existe
    */
   async eliminar(id_secuencia) {
-    await this.secuenciaRepo.eliminar(id_secuencia);
+    const secuencia = await this.secuenciaRepo.eliminar(id_secuencia);
+    return secuencia.toAPI();
   }
 }
 

@@ -133,33 +133,6 @@ class PlantillaSecuenciaController {
       next(error);
     }
   }
-
-  /**
-   * Aplica una plantilla secuencia a una secuencia existente
-   * @route PATCH /api/plantilla-secuencia/aplicar-plantilla
-   * @param {Object} req - Request object
-   * @param {Object} res - Response object
-   * @param {Function} next - Next middleware function
-   */
-  async aplicarPlantilla(req, res, next) {
-    try {
-      const { id_secuencia, id_plantilla_secuencia } = req.body;
-
-      if (!id_secuencia || !id_plantilla_secuencia) {
-        throw new ApiError('id_secuencia e id_plantilla_secuencia son requeridos', 400);
-      }
-
-      const resultado = await plantillaSecuenciaService.aplicarPlantilla(id_secuencia, id_plantilla_secuencia);
-
-      res.status(200).json({
-        success: true,
-        message: 'Plantilla aplicada exitosamente a la secuencia',
-        data: resultado
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
 }
 
 export default new PlantillaSecuenciaController();
