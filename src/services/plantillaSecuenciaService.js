@@ -309,6 +309,96 @@ class PlantillaSecuenciaService {
   async existeRelacion(idSecuencia) {
     return await plantillaSecuenciaRepository.existeRelacion(idSecuencia);
   }
+
+  /**
+   * Aplica una plantilla secuencia a una secuencia existente
+   * @param {string} idSecuencia - ID de la secuencia destino
+   * @param {string} idPlantillaSecuencia - ID de la plantilla secuencia a aplicar
+   * @returns {Promise<Object>} Resultado de la aplicación de la plantilla
+   * @throws {ApiError} Si alguna de las entidades no existe o hay error en el proceso
+   */
+  async aplicarPlantilla(idSecuencia, idPlantillaSecuencia) {
+    // Verificar que la secuencia destino existe
+    const secuenciaDestino = await this.secuenciaRepo.obtenerPorId(idSecuencia);
+    if (!secuenciaDestino) {
+      throw new ApiError('Secuencia destino no encontrada', 404);
+    }
+
+    // Verificar que la plantilla secuencia existe
+    const plantillaSecuencia = await plantillaSecuenciaRepository.obtenerPorId(idPlantillaSecuencia);
+    if (!plantillaSecuencia) {
+      throw new ApiError('Plantilla secuencia no encontrada', 404);
+    }
+
+    // Obtener la secuencia plantilla (la secuencia asociada a la plantilla)
+    const secuenciaPlantilla = await this.secuenciaRepo.obtenerPorId(plantillaSecuencia.id_secuencia);
+    if (!secuenciaPlantilla) {
+      throw new ApiError('Secuencia plantilla no encontrada', 404);
+    }
+
+    try {
+      // Obtener las testing cards de la secuencia plantilla
+      const testingCardsPlantilla = await this.testingCardRepo.obtenerPorIdSecuencia(plantillaSecuencia.id_secuencia);
+
+      // Copiar cada testing card de la plantilla a la secuencia destino
+      const testingCardsCopias = [];
+      
+      for (const tcPlantilla of testingCardsPlantilla) {
+        // Crear la copia de la testing card
+        const nuevaTestingCard = await this.testingCardRepo.crear({
+          nombre_testing_card: tcPlantilla.nombre_testing_card,
+          descripcion: tcPlantilla.descripcion,
+          experimento_tipo_id: tcPlantilla.experimento_tipo_id,
+          id_secuencia: idSecuencia, // Asignar a la secuencia destino
+          estado_testing_card: tcPlantilla.estado_testing_card || 'CREADO',
+          fecha_creacion: new Date()
+        });
+
+        // Copiar las métricas de la testing card original
+        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCardId(tcPlantilla.id);
+        for (const metrica of metricasOriginal) {
+          await this.metricaRepo.crear({
+            testing_card_id: nuevaTestingCard.id,
+            nombre_metrica: metrica.nombre_metrica,
+            tipo_dato: metrica.tipo_dato,
+            valor_esperado: metrica.valor_esperado,
+            operador_comparacion: metrica.operador_comparacion,
+            descripcion: metrica.descripcion
+          });
+        }
+
+        // Copiar las posiciones de nodos de la testing card original
+        const posicionesOriginal = await this.nodePositionRepo.obtenerPorTestingCardId(tcPlantilla.id);
+        for (const posicion of posicionesOriginal) {
+          await this.nodePositionRepo.crear({
+            testing_card_id: nuevaTestingCard.id,
+            position_x: posicion.position_x,
+            position_y: posicion.position_y,
+            node_type: posicion.node_type,
+            node_data: posicion.node_data
+          });
+        }
+
+        testingCardsCopias.push(nuevaTestingCard);
+      }
+
+      return {
+        success: true,
+        message: `Plantilla aplicada exitosamente. Se copiaron ${testingCardsCopias.length} testing cards`,
+        data: {
+          secuencia_destino: secuenciaDestino.toAPI(),
+          plantilla_aplicada: plantillaSecuencia.toAPI(),
+          testing_cards_creadas: testingCardsCopias.map(tc => tc.toAPI())
+        }
+      };
+
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(`Error al aplicar plantilla: ${error.message}`, 500);
+    }
+  }
 }
 
 export default new PlantillaSecuenciaService();
