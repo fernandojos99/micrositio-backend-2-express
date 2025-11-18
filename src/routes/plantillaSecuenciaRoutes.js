@@ -41,6 +41,6 @@ router.put('/:id', plantillaSecuenciaController.actualizar);
  * @desc    Eliminar una plantilla secuencia
  * @access  Private (requiere autenticación)
  */
-router.delete('/', plantillaSecuenciaController.eliminar);
+router.delete('/:id', plantillaSecuenciaController.eliminar);
 
 export default router;

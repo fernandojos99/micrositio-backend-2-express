@@ -340,25 +340,51 @@ class PlantillaSecuenciaService {
       // Obtener las testing cards de la secuencia plantilla
       const testingCardsPlantilla = await this.testingCardRepo.obtenerPorIdSecuencia(plantillaSecuencia.id_secuencia);
 
-      // Copiar cada testing card de la plantilla a la secuencia destino
+      // Crear un mapeo para mantener las relaciones padre-hijo
+      const mapeoIdOriginalANuevo = new Map(); // ID original -> ID nuevo
       const testingCardsCopias = [];
       
+      // Paso 1: Crear todas las testing cards SIN las relaciones padre-hijo
       for (const tcPlantilla of testingCardsPlantilla) {
-        // Crear la copia de la testing card
         const nuevaTestingCard = await this.testingCardRepo.crear({
           nombre_testing_card: tcPlantilla.nombre_testing_card,
           descripcion: tcPlantilla.descripcion,
           experimento_tipo_id: tcPlantilla.experimento_tipo_id,
           id_secuencia: idSecuencia, // Asignar a la secuencia destino
+          id_testing_card_padre: null, // Temporalmente null, lo actualizaremos después
           estado_testing_card: tcPlantilla.estado_testing_card || 'CREADO',
           fecha_creacion: new Date()
         });
 
+        // Guardar el mapeo ID original -> ID nuevo
+        mapeoIdOriginalANuevo.set(tcPlantilla.id, nuevaTestingCard.id);
+        testingCardsCopias.push(nuevaTestingCard);
+      }
+
+      // Paso 2: Actualizar las relaciones padre-hijo usando el mapeo
+      for (let i = 0; i < testingCardsPlantilla.length; i++) {
+        const tcOriginal = testingCardsPlantilla[i];
+        const tcCopia = testingCardsCopias[i];
+
+        // Si la testing card original tiene padre, buscar el ID del padre copiado
+        if (tcOriginal.id_testing_card_padre) {
+          const idPadreCopia = mapeoIdOriginalANuevo.get(tcOriginal.id_testing_card_padre);
+          
+          if (idPadreCopia) {
+            // Actualizar la testing card con el ID del padre copiado
+            await this.testingCardRepo.actualizar(tcCopia.id, {
+              id_testing_card_padre: idPadreCopia
+            });
+            // Actualizar también nuestro objeto local
+            tcCopia.id_testing_card_padre = idPadreCopia;
+          }
+        }
+
         // Copiar las métricas de la testing card original
-        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCardId(tcPlantilla.id);
+        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCardId(tcOriginal.id);
         for (const metrica of metricasOriginal) {
           await this.metricaRepo.crear({
-            testing_card_id: nuevaTestingCard.id,
+            testing_card_id: tcCopia.id,
             nombre_metrica: metrica.nombre_metrica,
             tipo_dato: metrica.tipo_dato,
             valor_esperado: metrica.valor_esperado,
@@ -368,27 +394,26 @@ class PlantillaSecuenciaService {
         }
 
         // Copiar las posiciones de nodos de la testing card original
-        const posicionesOriginal = await this.nodePositionRepo.obtenerPorTestingCardId(tcPlantilla.id);
+        const posicionesOriginal = await this.nodePositionRepo.obtenerPorTestingCardId(tcOriginal.id);
         for (const posicion of posicionesOriginal) {
           await this.nodePositionRepo.crear({
-            testing_card_id: nuevaTestingCard.id,
+            testing_card_id: tcCopia.id,
             position_x: posicion.position_x,
             position_y: posicion.position_y,
             node_type: posicion.node_type,
             node_data: posicion.node_data
           });
         }
-
-        testingCardsCopias.push(nuevaTestingCard);
       }
 
       return {
         success: true,
-        message: `Plantilla aplicada exitosamente. Se copiaron ${testingCardsCopias.length} testing cards`,
+        message: `Plantilla aplicada exitosamente. Se copiaron ${testingCardsCopias.length} testing cards con relaciones padre-hijo preservadas`,
         data: {
           secuencia_destino: secuenciaDestino.toAPI(),
           plantilla_aplicada: plantillaSecuencia.toAPI(),
-          testing_cards_creadas: testingCardsCopias.map(tc => tc.toAPI())
+          testing_cards_creadas: testingCardsCopias.map(tc => tc.toAPI()),
+          relaciones_preservadas: testingCardsCopias.filter(tc => tc.id_testing_card_padre).length
         }
       };
 
