@@ -358,19 +358,23 @@ class PlantillaSecuenciaService {
 
     try {
       // Obtener las testing cards de la secuencia plantilla
-      const testingCardsPlantilla = await this.testingCardRepo.obtenerPorIdSecuencia(plantillaSecuencia.id_secuencia);
+      const testingCardsPlantilla = await this.testingCardRepo.obtenerPorSecuencia(plantillaSecuencia.id_secuencia);
 
       // Función para ordenar las testing cards por jerarquía (padres primero)
       const ordenarPorJerarquia = (testingCards) => {
         const mapa = new Map();
         const ordenadas = [];
         
-        // Crear mapa de ID -> testing card
-        testingCards.forEach(tc => mapa.set(tc.id, tc));
+        // Crear mapa de ID -> testing card (usando el campo correcto del ID)
+        testingCards.forEach(tc => {
+          const id = tc.id_testing_card || tc.id;
+          mapa.set(id, tc);
+        });
         
         // Función recursiva para agregar testing card y sus dependientes
         const agregar = (tc) => {
-          if (ordenadas.find(ordenada => ordenada.id === tc.id)) {
+          const id = tc.id_testing_card || tc.id;
+          if (ordenadas.find(ordenada => (ordenada.id_testing_card || ordenada.id) === id)) {
             return; // Ya fue agregada
           }
           
@@ -397,6 +401,13 @@ class PlantillaSecuenciaService {
       
       // Crear las testing cards en orden jerárquico (padres primero)
       for (const tcPlantilla of testingCardsOrdenadas) {
+        console.log('🔍 Testing card plantilla:', {
+          id: tcPlantilla.id,
+          id_testing_card: tcPlantilla.id_testing_card,
+          titulo: tcPlantilla.titulo,
+          todas_las_propiedades: Object.keys(tcPlantilla)
+        });
+
         // Determinar el padre_id para la nueva testing card
         let nuevoPadreId = null;
         if (tcPlantilla.padre_id && mapeoIdOriginalANuevo.has(tcPlantilla.padre_id)) {
@@ -404,41 +415,56 @@ class PlantillaSecuenciaService {
         }
 
         const nuevaTestingCard = await this.testingCardRepo.crear({
-          nombre_testing_card: tcPlantilla.nombre_testing_card,
+          titulo: tcPlantilla.titulo || tcPlantilla.nombre_testing_card,
+          hipotesis: tcPlantilla.hipotesis || '',
           descripcion: tcPlantilla.descripcion,
-          experimento_tipo_id: tcPlantilla.experimento_tipo_id,
+          id_experimento_tipo: tcPlantilla.id_experimento_tipo || tcPlantilla.experimento_tipo_id,
           id_secuencia: idSecuencia, // Asignar a la secuencia destino
           padre_id: nuevoPadreId, // Usar el ID del padre ya creado
-          estado_testing_card: tcPlantilla.estado_testing_card || 'CREADO',
-          fecha_creacion: new Date()
+          status: tcPlantilla.status || 'En desarrollo',
+          dia_inicio: tcPlantilla.dia_inicio || new Date(),
+          dia_fin: tcPlantilla.dia_fin || new Date(),
+          id_responsable: tcPlantilla.id_responsable || null,
+          anexo_url: tcPlantilla.anexo_url || null
+        });
+
+        console.log('✅ Nueva testing card creada:', {
+          id: nuevaTestingCard.id,
+          id_testing_card: nuevaTestingCard.id_testing_card,
+          todas_las_propiedades: Object.keys(nuevaTestingCard)
         });
 
         // Guardar el mapeo ID original -> ID nuevo
-        mapeoIdOriginalANuevo.set(tcPlantilla.id, nuevaTestingCard.id);
+        const idOriginal = tcPlantilla.id_testing_card || tcPlantilla.id;
+        const idNuevo = nuevaTestingCard.id_testing_card || nuevaTestingCard.id;
+        mapeoIdOriginalANuevo.set(idOriginal, idNuevo);
         testingCardsCopias.push(nuevaTestingCard);
 
         // Copiar las métricas de la testing card original
-        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCardId(tcPlantilla.id);
+        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCard(idOriginal);
         for (const metrica of metricasOriginal) {
           await this.metricaRepo.crear({
-            testing_card_id: nuevaTestingCard.id,
-            nombre_metrica: metrica.nombre_metrica,
-            tipo_dato: metrica.tipo_dato,
-            valor_esperado: metrica.valor_esperado,
-            operador_comparacion: metrica.operador_comparacion,
-            descripcion: metrica.descripcion
+            id_testing_card: idNuevo, // Usar el ID correcto de la nueva testing card
+            nombre: metrica.nombre,
+            operador: metrica.operador,
+            criterio: metrica.criterio
           });
         }
 
         // Copiar las posiciones de nodos de la testing card original
-        const posicionesOriginal = await this.nodePositionRepo.obtenerPorTestingCardId(tcPlantilla.id);
+        // Obtener todas las posiciones de la secuencia y filtrar por esta testing card
+        const posicionesSecuencia = await this.nodePositionRepo.obtenerPorSecuencia(plantillaSecuencia.id_secuencia);
+        const posicionesOriginal = posicionesSecuencia.filter(pos => 
+          pos.node_type === 'testing' && pos.node_id === idOriginal
+        );
+        
         for (const posicion of posicionesOriginal) {
           await this.nodePositionRepo.crear({
-            testing_card_id: nuevaTestingCard.id,
-            position_x: posicion.position_x,
-            position_y: posicion.position_y,
+            id_secuencia: idSecuencia, // Nueva secuencia destino
             node_type: posicion.node_type,
-            node_data: posicion.node_data
+            node_id: idNuevo, // Usar el ID correcto de la nueva testing card
+            position_x: posicion.position_x,
+            position_y: posicion.position_y
           });
         }
       }
@@ -451,7 +477,11 @@ class PlantillaSecuenciaService {
           plantilla_aplicada: plantillaSecuencia.toAPI(),
           testing_cards_creadas: testingCardsCopias.map(tc => tc.toAPI()),
           relaciones_preservadas: testingCardsCopias.filter(tc => tc.padre_id).length,
-          orden_procesamiento: testingCardsOrdenadas.map(tc => ({ id: tc.id, padre_id: tc.padre_id, nombre: tc.nombre_testing_card }))
+          orden_procesamiento: testingCardsOrdenadas.map(tc => ({ 
+            id: tc.id_testing_card || tc.id, 
+            padre_id: tc.padre_id, 
+            nombre: tc.titulo || tc.nombre_testing_card 
+          }))
         }
       };
 
