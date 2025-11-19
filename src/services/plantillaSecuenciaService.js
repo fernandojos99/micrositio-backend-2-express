@@ -79,18 +79,22 @@ class PlantillaSecuenciaService {
       throw new ApiError('La secuencia original no existe', 404);
     }
 
-    // 3. Crear una copia de la secuencia (B)
+    // 3. Crear una copia de la secuencia (B) sin id_proyecto para que sea reutilizable
     const datosSecuenciaCopia = {
-      id_proyecto: secuenciaOriginal.id_proyecto,
+      // id_proyecto: NO incluido para que sea reutilizable en cualquier proyecto
       id_testing_card_padre: secuenciaOriginal.id_testing_card_padre,
-      nombre: `${secuenciaOriginal.nombre} (Copia)`,
+      nombre: `${secuenciaOriginal.nombre} (Plantilla)`,
       dia_inicio: secuenciaOriginal.dia_inicio,
       dia_fin: secuenciaOriginal.dia_fin,
       descripcion: secuenciaOriginal.descripcion,
       estado: secuenciaOriginal.estado
     };
 
+    console.log('🔍 Datos para crear secuencia copia (SIN id_proyecto):', datosSecuenciaCopia);
+
     const secuenciaCopia = await this.secuenciaRepo.crear(datosSecuenciaCopia);
+    console.log('✅ Secuencia copia creada:', secuenciaCopia); 
+    console.log('🔍 ID proyecto en secuencia creada:', secuenciaCopia.id_proyecto);
     // console.log('Secuencia copia creada:', secuenciaCopia); // Debug
 
     // El método toAPI() de Secuencia devuelve 'id' en lugar de 'id_secuencia'
