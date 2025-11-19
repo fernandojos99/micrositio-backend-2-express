@@ -133,6 +133,33 @@ class PlantillaSecuenciaController {
       next(error);
     }
   }
+
+  /**
+   * Obtiene una plantilla secuencia por el ID de secuencia
+   * @route GET /api/plantilla-secuencia/secuencia/:id_secuencia
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @param {Function} next - Next middleware function
+   */
+  async obtenerPorIdSecuencia(req, res, next) {
+    try {
+      const { id_secuencia } = req.params;
+      
+      if (!id_secuencia) {
+        throw new ApiError('ID de secuencia es requerido', 400);
+      }
+
+      const plantillaSecuencia = await plantillaSecuenciaService.obtenerPorIdSecuencia(id_secuencia);
+
+      res.status(200).json({
+        success: true,
+        message: 'Plantilla secuencia obtenida exitosamente',
+        data: plantillaSecuencia
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new PlantillaSecuenciaController();

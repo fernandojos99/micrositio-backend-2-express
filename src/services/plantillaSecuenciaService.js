@@ -311,6 +311,22 @@ class PlantillaSecuenciaService {
   }
 
   /**
+   * Obtiene una plantilla secuencia por el ID de secuencia
+   * @param {string} idSecuencia - ID de la secuencia
+   * @returns {Promise<Object>} Plantilla secuencia en formato API
+   * @throws {ApiError} Si la plantilla secuencia no existe
+   */
+  async obtenerPorIdSecuencia(idSecuencia) {
+    const plantillaSecuencia = await plantillaSecuenciaRepository.obtenerPorIdSecuencia(idSecuencia);
+    
+    if (!plantillaSecuencia) {
+      throw new ApiError('Plantilla secuencia no encontrada para la secuencia especificada', 404);
+    }
+
+    return plantillaSecuencia.toAPI();
+  }
+
+  /**
    * Aplica una plantilla secuencia a una secuencia existente
    * @param {string} idSecuencia - ID de la secuencia destino
    * @param {string} idPlantillaSecuencia - ID de la plantilla secuencia a aplicar
@@ -340,18 +356,55 @@ class PlantillaSecuenciaService {
       // Obtener las testing cards de la secuencia plantilla
       const testingCardsPlantilla = await this.testingCardRepo.obtenerPorIdSecuencia(plantillaSecuencia.id_secuencia);
 
+      // Función para ordenar las testing cards por jerarquía (padres primero)
+      const ordenarPorJerarquia = (testingCards) => {
+        const mapa = new Map();
+        const ordenadas = [];
+        
+        // Crear mapa de ID -> testing card
+        testingCards.forEach(tc => mapa.set(tc.id, tc));
+        
+        // Función recursiva para agregar testing card y sus dependientes
+        const agregar = (tc) => {
+          if (ordenadas.find(ordenada => ordenada.id === tc.id)) {
+            return; // Ya fue agregada
+          }
+          
+          // Si tiene padre, agregarlo primero
+          if (tc.padre_id && mapa.has(tc.padre_id)) {
+            agregar(mapa.get(tc.padre_id));
+          }
+          
+          ordenadas.push(tc);
+        };
+        
+        // Procesar todas las testing cards
+        testingCards.forEach(tc => agregar(tc));
+        
+        return ordenadas;
+      };
+
+      // Ordenar las testing cards por jerarquía
+      const testingCardsOrdenadas = ordenarPorJerarquia(testingCardsPlantilla);
+
       // Crear un mapeo para mantener las relaciones padre-hijo
       const mapeoIdOriginalANuevo = new Map(); // ID original -> ID nuevo
       const testingCardsCopias = [];
       
-      // Paso 1: Crear todas las testing cards SIN las relaciones padre-hijo
-      for (const tcPlantilla of testingCardsPlantilla) {
+      // Crear las testing cards en orden jerárquico (padres primero)
+      for (const tcPlantilla of testingCardsOrdenadas) {
+        // Determinar el padre_id para la nueva testing card
+        let nuevoPadreId = null;
+        if (tcPlantilla.padre_id && mapeoIdOriginalANuevo.has(tcPlantilla.padre_id)) {
+          nuevoPadreId = mapeoIdOriginalANuevo.get(tcPlantilla.padre_id);
+        }
+
         const nuevaTestingCard = await this.testingCardRepo.crear({
           nombre_testing_card: tcPlantilla.nombre_testing_card,
           descripcion: tcPlantilla.descripcion,
           experimento_tipo_id: tcPlantilla.experimento_tipo_id,
           id_secuencia: idSecuencia, // Asignar a la secuencia destino
-          id_testing_card_padre: null, // Temporalmente null, lo actualizaremos después
+          padre_id: nuevoPadreId, // Usar el ID del padre ya creado
           estado_testing_card: tcPlantilla.estado_testing_card || 'CREADO',
           fecha_creacion: new Date()
         });
@@ -359,32 +412,12 @@ class PlantillaSecuenciaService {
         // Guardar el mapeo ID original -> ID nuevo
         mapeoIdOriginalANuevo.set(tcPlantilla.id, nuevaTestingCard.id);
         testingCardsCopias.push(nuevaTestingCard);
-      }
-
-      // Paso 2: Actualizar las relaciones padre-hijo usando el mapeo
-      for (let i = 0; i < testingCardsPlantilla.length; i++) {
-        const tcOriginal = testingCardsPlantilla[i];
-        const tcCopia = testingCardsCopias[i];
-
-        // Si la testing card original tiene padre, buscar el ID del padre copiado
-        if (tcOriginal.id_testing_card_padre) {
-          const idPadreCopia = mapeoIdOriginalANuevo.get(tcOriginal.id_testing_card_padre);
-          
-          if (idPadreCopia) {
-            // Actualizar la testing card con el ID del padre copiado
-            await this.testingCardRepo.actualizar(tcCopia.id, {
-              id_testing_card_padre: idPadreCopia
-            });
-            // Actualizar también nuestro objeto local
-            tcCopia.id_testing_card_padre = idPadreCopia;
-          }
-        }
 
         // Copiar las métricas de la testing card original
-        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCardId(tcOriginal.id);
+        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCardId(tcPlantilla.id);
         for (const metrica of metricasOriginal) {
           await this.metricaRepo.crear({
-            testing_card_id: tcCopia.id,
+            testing_card_id: nuevaTestingCard.id,
             nombre_metrica: metrica.nombre_metrica,
             tipo_dato: metrica.tipo_dato,
             valor_esperado: metrica.valor_esperado,
@@ -394,10 +427,10 @@ class PlantillaSecuenciaService {
         }
 
         // Copiar las posiciones de nodos de la testing card original
-        const posicionesOriginal = await this.nodePositionRepo.obtenerPorTestingCardId(tcOriginal.id);
+        const posicionesOriginal = await this.nodePositionRepo.obtenerPorTestingCardId(tcPlantilla.id);
         for (const posicion of posicionesOriginal) {
           await this.nodePositionRepo.crear({
-            testing_card_id: tcCopia.id,
+            testing_card_id: nuevaTestingCard.id,
             position_x: posicion.position_x,
             position_y: posicion.position_y,
             node_type: posicion.node_type,
@@ -408,12 +441,13 @@ class PlantillaSecuenciaService {
 
       return {
         success: true,
-        message: `Plantilla aplicada exitosamente. Se copiaron ${testingCardsCopias.length} testing cards con relaciones padre-hijo preservadas`,
+        message: `Plantilla aplicada exitosamente. Se copiaron ${testingCardsCopias.length} testing cards con jerarquía preservada`,
         data: {
           secuencia_destino: secuenciaDestino.toAPI(),
           plantilla_aplicada: plantillaSecuencia.toAPI(),
           testing_cards_creadas: testingCardsCopias.map(tc => tc.toAPI()),
-          relaciones_preservadas: testingCardsCopias.filter(tc => tc.id_testing_card_padre).length
+          relaciones_preservadas: testingCardsCopias.filter(tc => tc.padre_id).length,
+          orden_procesamiento: testingCardsOrdenadas.map(tc => ({ id: tc.id, padre_id: tc.padre_id, nombre: tc.nombre_testing_card }))
         }
       };
 

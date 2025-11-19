@@ -196,6 +196,36 @@ class PlantillaSecuenciaRepository {
       throw new ApiError(`Error inesperado al verificar relación: ${error.message}`, 500);
     }
   }
+
+  /**
+   * Obtiene una plantilla secuencia por el ID de secuencia
+   * @param {string} idSecuencia - ID de la secuencia
+   * @returns {Promise<PlantillaSecuencia|null>} Plantilla secuencia encontrada o null
+   * 
+   * SQL Equivalente:
+   * SELECT * FROM plantilla_secuencia WHERE id_secuencia = $1;
+   */
+  async obtenerPorIdSecuencia(idSecuencia) {
+    try {
+      const { data, error } = await supabase
+        .from('plantilla_secuencia')
+        .select('*')
+        .eq('id_secuencia', idSecuencia)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw new ApiError(`Error al consultar la base de datos: ${error.message}`, 500);
+      }
+
+      return data ? PlantillaSecuencia.fromDatabase(data) : null;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(`Error inesperado al obtener plantilla secuencia por ID de secuencia: ${error.message}`, 500);
+    }
+  }
 }
 
 export default new PlantillaSecuenciaRepository();
