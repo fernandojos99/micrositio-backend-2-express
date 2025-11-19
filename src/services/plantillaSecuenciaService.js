@@ -79,18 +79,22 @@ class PlantillaSecuenciaService {
       throw new ApiError('La secuencia original no existe', 404);
     }
 
-    // 3. Crear una copia de la secuencia (B)
+    // 3. Crear una copia de la secuencia (B) sin id_proyecto para que sea reutilizable
     const datosSecuenciaCopia = {
-      id_proyecto: secuenciaOriginal.id_proyecto,
+      // id_proyecto: NO incluido para que sea reutilizable en cualquier proyecto
       id_testing_card_padre: secuenciaOriginal.id_testing_card_padre,
-      nombre: `${secuenciaOriginal.nombre} (Copia)`,
+      nombre: `${secuenciaOriginal.nombre} (Plantilla)`,
       dia_inicio: secuenciaOriginal.dia_inicio,
       dia_fin: secuenciaOriginal.dia_fin,
       descripcion: secuenciaOriginal.descripcion,
       estado: secuenciaOriginal.estado
     };
 
+    console.log('🔍 Datos para crear secuencia copia (SIN id_proyecto):', datosSecuenciaCopia);
+
     const secuenciaCopia = await this.secuenciaRepo.crear(datosSecuenciaCopia);
+    console.log('✅ Secuencia copia creada:', secuenciaCopia); 
+    console.log('🔍 ID proyecto en secuencia creada:', secuenciaCopia.id_proyecto);
     // console.log('Secuencia copia creada:', secuenciaCopia); // Debug
 
     // El método toAPI() de Secuencia devuelve 'id' en lugar de 'id_secuencia'
@@ -308,6 +312,185 @@ class PlantillaSecuenciaService {
    */
   async existeRelacion(idSecuencia) {
     return await plantillaSecuenciaRepository.existeRelacion(idSecuencia);
+  }
+
+  /**
+   * Obtiene una plantilla secuencia por el ID de secuencia
+   * @param {string} idSecuencia - ID de la secuencia
+   * @returns {Promise<Object>} Plantilla secuencia en formato API
+   * @throws {ApiError} Si la plantilla secuencia no existe
+   */
+  async obtenerPorIdSecuencia(idSecuencia) {
+    const plantillaSecuencia = await plantillaSecuenciaRepository.obtenerPorIdSecuencia(idSecuencia);
+    
+    if (!plantillaSecuencia) {
+      throw new ApiError('Plantilla secuencia no encontrada para la secuencia especificada', 404);
+    }
+
+    return plantillaSecuencia.toAPI();
+  }
+
+  /**
+   * Aplica una plantilla secuencia a una secuencia existente
+   * @param {string} idSecuencia - ID de la secuencia destino
+   * @param {string} idPlantillaSecuencia - ID de la plantilla secuencia a aplicar
+   * @returns {Promise<Object>} Resultado de la aplicación de la plantilla
+   * @throws {ApiError} Si alguna de las entidades no existe o hay error en el proceso
+   */
+  async aplicarPlantilla(idSecuencia, idPlantillaSecuencia) {
+    // Verificar que la secuencia destino existe
+    const secuenciaDestino = await this.secuenciaRepo.obtenerPorId(idSecuencia);
+    if (!secuenciaDestino) {
+      throw new ApiError('Secuencia destino no encontrada', 404);
+    }
+
+    // Verificar que la plantilla secuencia existe
+    const plantillaSecuencia = await plantillaSecuenciaRepository.obtenerPorId(idPlantillaSecuencia);
+    if (!plantillaSecuencia) {
+      throw new ApiError('Plantilla secuencia no encontrada', 404);
+    }
+
+    // Obtener la secuencia plantilla (la secuencia asociada a la plantilla)
+    const secuenciaPlantilla = await this.secuenciaRepo.obtenerPorId(plantillaSecuencia.id_secuencia);
+    if (!secuenciaPlantilla) {
+      throw new ApiError('Secuencia plantilla no encontrada', 404);
+    }
+
+    try {
+      // Obtener las testing cards de la secuencia plantilla
+      const testingCardsPlantilla = await this.testingCardRepo.obtenerPorSecuencia(plantillaSecuencia.id_secuencia);
+
+      // Función para ordenar las testing cards por jerarquía (padres primero)
+      const ordenarPorJerarquia = (testingCards) => {
+        const mapa = new Map();
+        const ordenadas = [];
+        
+        // Crear mapa de ID -> testing card (usando el campo correcto del ID)
+        testingCards.forEach(tc => {
+          const id = tc.id_testing_card || tc.id;
+          mapa.set(id, tc);
+        });
+        
+        // Función recursiva para agregar testing card y sus dependientes
+        const agregar = (tc) => {
+          const id = tc.id_testing_card || tc.id;
+          if (ordenadas.find(ordenada => (ordenada.id_testing_card || ordenada.id) === id)) {
+            return; // Ya fue agregada
+          }
+          
+          // Si tiene padre, agregarlo primero
+          if (tc.padre_id && mapa.has(tc.padre_id)) {
+            agregar(mapa.get(tc.padre_id));
+          }
+          
+          ordenadas.push(tc);
+        };
+        
+        // Procesar todas las testing cards
+        testingCards.forEach(tc => agregar(tc));
+        
+        return ordenadas;
+      };
+
+      // Ordenar las testing cards por jerarquía
+      const testingCardsOrdenadas = ordenarPorJerarquia(testingCardsPlantilla);
+
+      // Crear un mapeo para mantener las relaciones padre-hijo
+      const mapeoIdOriginalANuevo = new Map(); // ID original -> ID nuevo
+      const testingCardsCopias = [];
+      
+      // Crear las testing cards en orden jerárquico (padres primero)
+      for (const tcPlantilla of testingCardsOrdenadas) {
+        console.log('🔍 Testing card plantilla:', {
+          id: tcPlantilla.id,
+          id_testing_card: tcPlantilla.id_testing_card,
+          titulo: tcPlantilla.titulo,
+          todas_las_propiedades: Object.keys(tcPlantilla)
+        });
+
+        // Determinar el padre_id para la nueva testing card
+        let nuevoPadreId = null;
+        if (tcPlantilla.padre_id && mapeoIdOriginalANuevo.has(tcPlantilla.padre_id)) {
+          nuevoPadreId = mapeoIdOriginalANuevo.get(tcPlantilla.padre_id);
+        }
+
+        const nuevaTestingCard = await this.testingCardRepo.crear({
+          titulo: tcPlantilla.titulo || tcPlantilla.nombre_testing_card,
+          hipotesis: tcPlantilla.hipotesis || '',
+          descripcion: tcPlantilla.descripcion,
+          id_experimento_tipo: tcPlantilla.id_experimento_tipo || tcPlantilla.experimento_tipo_id,
+          id_secuencia: idSecuencia, // Asignar a la secuencia destino
+          padre_id: nuevoPadreId, // Usar el ID del padre ya creado
+          status: tcPlantilla.status || 'En desarrollo',
+          dia_inicio: tcPlantilla.dia_inicio || new Date(),
+          dia_fin: tcPlantilla.dia_fin || new Date(),
+          id_responsable: tcPlantilla.id_responsable || null,
+          anexo_url: tcPlantilla.anexo_url || null
+        });
+
+        console.log('✅ Nueva testing card creada:', {
+          id: nuevaTestingCard.id,
+          id_testing_card: nuevaTestingCard.id_testing_card,
+          todas_las_propiedades: Object.keys(nuevaTestingCard)
+        });
+
+        // Guardar el mapeo ID original -> ID nuevo
+        const idOriginal = tcPlantilla.id_testing_card || tcPlantilla.id;
+        const idNuevo = nuevaTestingCard.id_testing_card || nuevaTestingCard.id;
+        mapeoIdOriginalANuevo.set(idOriginal, idNuevo);
+        testingCardsCopias.push(nuevaTestingCard);
+
+        // Copiar las métricas de la testing card original
+        const metricasOriginal = await this.metricaRepo.obtenerPorTestingCard(idOriginal);
+        for (const metrica of metricasOriginal) {
+          await this.metricaRepo.crear({
+            id_testing_card: idNuevo, // Usar el ID correcto de la nueva testing card
+            nombre: metrica.nombre,
+            operador: metrica.operador,
+            criterio: metrica.criterio
+          });
+        }
+
+        // Copiar las posiciones de nodos de la testing card original
+        // Obtener todas las posiciones de la secuencia y filtrar por esta testing card
+        const posicionesSecuencia = await this.nodePositionRepo.obtenerPorSecuencia(plantillaSecuencia.id_secuencia);
+        const posicionesOriginal = posicionesSecuencia.filter(pos => 
+          pos.node_type === 'testing' && pos.node_id === idOriginal
+        );
+        
+        for (const posicion of posicionesOriginal) {
+          await this.nodePositionRepo.crear({
+            id_secuencia: idSecuencia, // Nueva secuencia destino
+            node_type: posicion.node_type,
+            node_id: idNuevo, // Usar el ID correcto de la nueva testing card
+            position_x: posicion.position_x,
+            position_y: posicion.position_y
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: `Plantilla aplicada exitosamente. Se copiaron ${testingCardsCopias.length} testing cards con jerarquía preservada`,
+        data: {
+          secuencia_destino: secuenciaDestino.toAPI(),
+          plantilla_aplicada: plantillaSecuencia.toAPI(),
+          testing_cards_creadas: testingCardsCopias.map(tc => tc.toAPI()),
+          relaciones_preservadas: testingCardsCopias.filter(tc => tc.padre_id).length,
+          orden_procesamiento: testingCardsOrdenadas.map(tc => ({ 
+            id: tc.id_testing_card || tc.id, 
+            padre_id: tc.padre_id, 
+            nombre: tc.titulo || tc.nombre_testing_card 
+          }))
+        }
+      };
+
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(`Error al aplicar plantilla: ${error.message}`, 500);
+    }
   }
 }
 

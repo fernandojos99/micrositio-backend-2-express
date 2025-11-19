@@ -23,6 +23,13 @@ router.get('/', plantillaSecuenciaController.obtenerTodas);
 router.get('/:id', plantillaSecuenciaController.obtenerPorId);
 
 /**
+ * @route   GET /api/plantilla-secuencia/secuencia/:id_secuencia
+ * @desc    Obtener una plantilla secuencia por ID de secuencia
+ * @access  Private (requiere autenticación)
+ */
+router.get('/secuencia/:id_secuencia', plantillaSecuenciaController.obtenerPorIdSecuencia);
+
+/**
  * @route   POST /api/plantilla-secuencia
  * @desc    Crear una nueva plantilla secuencia
  * @access  Private (requiere autenticación)
@@ -41,6 +48,6 @@ router.put('/:id', plantillaSecuenciaController.actualizar);
  * @desc    Eliminar una plantilla secuencia
  * @access  Private (requiere autenticación)
  */
-router.delete('/', plantillaSecuenciaController.eliminar);
+router.delete('/:id', plantillaSecuenciaController.eliminar);
 
 export default router;
