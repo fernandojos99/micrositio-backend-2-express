@@ -379,6 +379,42 @@ class PlantillaSecuenciaService {
     }
 
     try {
+      // --- NUEVO: limpiar la secuencia destino antes de aplicar la plantilla ---
+      // Eliminar node_positions asociados a la secuencia destino
+      try {
+        await this.nodePositionRepo.eliminarPorSecuencia(idSecuencia);
+      } catch (err) {
+        // Registrar pero continuar; no queremos que una falla en positions impida la aplicación
+        console.warn(`No se pudieron eliminar node_positions de la secuencia destino ${idSecuencia}: ${err.message}`);
+      }
+
+      // Eliminar testing cards existentes en la secuencia destino (esto eliminará métricas y learning_cards por cascade)
+      try {
+        const testingCardsExistentes = await this.testingCardRepo.obtenerPorSecuencia(idSecuencia);
+        for (const tc of testingCardsExistentes) {
+          const idEliminar = tc.id_testing_card || tc.id;
+          if (idEliminar !== undefined && idEliminar !== null) {
+            await this.testingCardRepo.eliminar(idEliminar);
+          }
+        }
+      } catch (err) {
+        // Si no hay testing cards o falla, registrar y continuar
+        console.warn(`No se pudieron eliminar testing cards de la secuencia destino ${idSecuencia}: ${err.message}`);
+      }
+
+      // Actualizar nombre y descripción de la secuencia destino para que coincida con la plantilla
+      try {
+        const datosActualizacionSecuencia = {};
+        if (secuenciaPlantilla.nombre !== undefined && secuenciaPlantilla.nombre !== null) datosActualizacionSecuencia.nombre = secuenciaPlantilla.nombre;
+        if (secuenciaPlantilla.descripcion !== undefined && secuenciaPlantilla.descripcion !== null) datosActualizacionSecuencia.descripcion = secuenciaPlantilla.descripcion;
+        if (Object.keys(datosActualizacionSecuencia).length > 0) {
+          await this.secuenciaRepo.actualizar(idSecuencia, datosActualizacionSecuencia);
+        }
+      } catch (err) {
+        console.warn(`No se pudo actualizar la secuencia destino ${idSecuencia} con los datos de la plantilla: ${err.message}`);
+      }
+      // --- FIN limpieza y actualización ---
+
       // Obtener las testing cards de la secuencia plantilla
       const testingCardsPlantilla = await this.testingCardRepo.obtenerPorSecuencia(plantillaSecuencia.id_secuencia);
 
