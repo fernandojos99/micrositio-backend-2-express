@@ -164,8 +164,10 @@ class PlantillaSecuenciaService {
     // console.log('Mapeo ID original a copia:', Array.from(mapeoIdOriginalACopia.entries())); // Debug
 
     for (const nodePos of nodePositionsOriginales) {
-      if (nodePos.node_type === 'testing' && mapeoIdOriginalACopia.has(nodePos.node_id)) {
-        const idTestingCardCopia = mapeoIdOriginalACopia.get(nodePos.node_id);
+      // nodePos.node_id puede ser number; mapeoIdOriginalACopia usa claves string
+      const nodeIdKey = String(nodePos.node_id);
+      if (nodePos.node_type === 'testing' && mapeoIdOriginalACopia.has(nodeIdKey)) {
+        const idTestingCardCopia = mapeoIdOriginalACopia.get(nodeIdKey);
         
         const datosNodePosCopia = {
           id_secuencia: idSecuenciaCopia, // Usar el ID correcto de la secuencia copia (B)
