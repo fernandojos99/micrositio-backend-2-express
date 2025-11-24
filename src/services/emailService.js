@@ -170,7 +170,7 @@ class EmailService {
         <div class="content">
           <p>Hola <strong>${nombreDestinatario}</strong>,</p>
           
-          <p>Se han realizado cambios en la página de Iris Startup y queremos informarte que se te ha asignado como líder del siguiente proyecto.</p>
+          <p>Se han realizado cambios en la página de Iris Startup y queremos informarte que se te ha asignado como líder del siguiente experimento.</p>
           
           <div class="highlight">
             <h3>📋 Detalles de la Asignación:</h3>
