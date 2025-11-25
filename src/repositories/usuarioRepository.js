@@ -161,6 +161,21 @@ class UsuarioRepository {
     return data ? Usuario.fromDatabase(data) : null;
   }
 
+  async asignarEmpleado(id_usuario, id_empleado) {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .update({ id_empleado })
+      .eq('id_usuario', id_usuario)
+      .select()
+      .single();
+
+    if (error) {
+      throw new ApiError(`Error al asignar empleado: ${error.message}`, 500);
+    }
+
+    return data ? Usuario.fromDatabase(data) : null;
+  }
+
   /**
    * Cambia el estado activo de un usuario.
    * @async
