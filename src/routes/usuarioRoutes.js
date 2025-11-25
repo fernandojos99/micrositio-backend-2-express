@@ -487,7 +487,7 @@ router.post('/visitante', usuarioController.crearVisitante.bind(usuarioControlle
  *         $ref: '#/components/responses/InternalServerError'
  */
 router.get('/:id', authMiddleware, soloEditores, usuarioController.obtenerPorId.bind(usuarioController));
-router.patch('/:id', authMiddleware, soloEditores, usuarioController.actualizar.bind(usuarioController));
+router.patch('/:id', usuarioController.actualizar.bind(usuarioController));
 router.delete('/:id', authMiddleware, soloEditores, usuarioController.eliminar.bind(usuarioController));
 
 /**
@@ -533,7 +533,7 @@ router.delete('/:id', authMiddleware, soloEditores, usuarioController.eliminar.b
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.patch('/:id/baja', authMiddleware, soloEditores, usuarioController.darBaja.bind(usuarioController));
+router.patch('/:id/baja', authMiddleware,  usuarioController.darBaja.bind(usuarioController));
 
 /**
  * @swagger
