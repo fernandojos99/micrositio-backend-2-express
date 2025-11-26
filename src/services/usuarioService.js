@@ -353,6 +353,24 @@ class UsuarioService {
     const resultado = await this.usuarioRepo.asignarEmpleado(id_usuario, id_empleado);
     return resultado.toAPI();
   }
+
+  /**
+   * Funcion cambiar atributo tipo 
+   * @param {string} id 
+   * @param {string} tipo 
+   * @returns 
+   */
+  async actualizarTipo(id, tipo){
+    // Vamos a verificar que tanto el usuario existe
+    const usuario = await this.usuarioRepo.obtenerPorId(id);
+
+    if (!usuario ) {
+      throw new ApiError('Usuario no encontrado', 404);
+    }
+    const resultado =  await this.usuarioRepo.actualizarTipo(id, tipo);
+    return resultado.toAPI();
+
+  }
 }
 
 export default UsuarioService;

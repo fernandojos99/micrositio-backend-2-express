@@ -253,6 +253,35 @@ class UsuarioController {
     }
    }
 
+  /**
+   * Volver VISITANTE  en EDITOR
+   * PATCH /usuarios/:id_usuario/asignarEmpleado/:id_empleado
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} next 
+   */
+  async actualizarTipo(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { tipo } = req.body;
+
+      if (tipo !== 'EDITOR' && tipo !== 'VISITANTE') {
+        throw new ApiError('El tipo debe ser EDITOR o VISITANTE para esta operación', 400);
+      }
+
+
+      const resultado = await this.usuarioService.actualizarTipo(id, tipo);
+
+      res.json({
+        success: true,
+        message: `El usuario ahora es ${tipo}`,
+        data: resultado
+      });
+    } catch (error) {
+      next(error);
+    }
+   }
+
 
 
   /**

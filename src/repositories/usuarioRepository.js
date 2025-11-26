@@ -203,6 +203,31 @@ class UsuarioRepository {
   }
 
   /**
+   * Actualiza el tipo de un usuario.
+   * @async
+   * @param {string} id_usuario - UUID del usuario.
+   * @param {string} tipo - Nuevo tipo de usuario.
+   * @returns {Promise<Usuario|null>} Usuario actualizado o null.
+   * @throws {ApiError} Si ocurre un error al actualizar.
+   */
+  async actualizarTipo(id, tipo) {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .update({ 
+        tipo
+      })
+      .eq('id_usuario', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new ApiError(`Error al cambiar tipo del usuario: ${error.message}`, 500);
+    }
+
+    return data ? Usuario.fromDatabase(data) : null;
+  }
+
+  /**
    * Elimina un usuario de forma física.
    * @async
    * @param {string} id_usuario - UUID del usuario.
