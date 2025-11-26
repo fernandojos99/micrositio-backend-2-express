@@ -326,6 +326,51 @@ class UsuarioService {
     const usuarioActualizado = await this.usuarioRepo.actualizar(id_usuario, { password_hash });
     return usuarioActualizado.toAPI();
   }
+
+  /**
+   *  Asignar un empleado a un usuario existente.
+   *  @async
+   * @param {string} id_usuario 
+   * @param {number} id_empleado 
+   * @returns {Promise<Object>}
+   */
+  async asignarEmpleado(id_usuario, id_empleado) {
+    // Vamos a verificar que tanto el usuario como el empleado existen
+    const usuario = await this.usuarioRepo.obtenerPorId(id_usuario);
+    const empleado = await this.empleadoRepo.obtenerPorId(id_empleado);
+
+    if (!usuario || !empleado) {
+      throw new ApiError('Usuario o empleado no encontrado', 404);
+    }
+
+    // Vamos a verificar si el emplado ya tiene asignado un usuario EDITOR activo
+    const usuariosEmpleado = await this.usuarioRepo.obtenerPorIdEmpleado(id_empleado);
+    const usuarioEditorActivo = usuariosEmpleado.find(u => u.tipo === 'EDITOR' && u.activo);
+    if (usuarioEditorActivo) {
+      throw new ApiError('El empleado ya tiene un usuario EDITOR activo', 400);
+    }
+
+    const resultado = await this.usuarioRepo.asignarEmpleado(id_usuario, id_empleado);
+    return resultado.toAPI();
+  }
+
+  /**
+   * Funcion cambiar atributo tipo 
+   * @param {string} id 
+   * @param {string} tipo 
+   * @returns 
+   */
+  async actualizarTipo(id, tipo){
+    // Vamos a verificar que tanto el usuario existe
+    const usuario = await this.usuarioRepo.obtenerPorId(id);
+
+    if (!usuario ) {
+      throw new ApiError('Usuario no encontrado', 404);
+    }
+    const resultado =  await this.usuarioRepo.actualizarTipo(id, tipo);
+    return resultado.toAPI();
+
+  }
 }
 
 export default UsuarioService;
