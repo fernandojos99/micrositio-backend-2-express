@@ -486,9 +486,6 @@ router.post('/visitante', usuarioController.crearVisitante.bind(usuarioControlle
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.get('/:id', authMiddleware, soloEditores, usuarioController.obtenerPorId.bind(usuarioController));
-router.patch('/:id', usuarioController.actualizar.bind(usuarioController));
-router.delete('/:id', authMiddleware, soloEditores, usuarioController.eliminar.bind(usuarioController));
 
 /**
  * @swagger
@@ -648,5 +645,69 @@ router.patch('/:id/password', authMiddleware, soloEditores, usuarioController.ca
 
 router.patch('/:id_usuario/asignar-empleado', authMiddleware, soloEditores, usuarioController.asignarEmpleado.bind(usuarioController));
 
+/**
+ * @swagger
+ * /usuarios/{id}/tipo:
+ *   patch:
+ *     summary: Actualiza el tipo de usuario (EDITOR/VISITANTE)
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID del usuario
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - tipo
+ *             properties:
+ *               tipo:
+ *                 type: string
+ *                 enum: [EDITOR, VISITANTE]
+ *                 description: Nuevo tipo de usuario
+ *             example:
+ *               tipo: "EDITOR"
+ *     responses:
+ *       200:
+ *         description: Tipo de usuario actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "El usuario ahora es EDITOR"
+ *                 data:
+ *                   $ref: '#/components/schemas/Usuario'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 router.patch('/:id/tipo', authMiddleware, soloEditores, usuarioController.actualizarTipo.bind(usuarioController));
+
+// Rutas genéricas - DEBEN IR AL FINAL para evitar conflictos con rutas específicas
+router.get('/:id', authMiddleware, soloEditores, usuarioController.obtenerPorId.bind(usuarioController));
+router.patch('/:id', usuarioController.actualizar.bind(usuarioController));
+router.delete('/:id', authMiddleware, soloEditores, usuarioController.eliminar.bind(usuarioController));
+
 export default router;
