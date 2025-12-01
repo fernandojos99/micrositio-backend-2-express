@@ -116,6 +116,25 @@ class EmpleadoController {
       next(error);
     }
   }
+
+  /**
+   * Maneja la obtención de empleados sin usuario asociado (GET /empleados/sin-usuario).
+   * @param {Object} req - Request de Express.
+   * @param {Object} res - Response de Express.
+   * @param {Function} next - Función para pasar al siguiente middleware.
+   */
+  async obtenerEmpleadosSinUsuario(req, res, next) {
+    try {
+      const empleados = await this.empleadoService.obtenerEmpleadosSinUsuario();
+      res.json({
+        success: true,
+        data: empleados,
+        total: empleados.length
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default EmpleadoController;

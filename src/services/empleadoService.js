@@ -88,6 +88,16 @@ class EmpleadoService {
 
     return empleado.toAPI();
   }
+
+  /**
+   * Obtiene empleados que no están relacionados con ningún usuario.
+   * @async
+   * @returns {Promise<Array<Object>>} Lista de empleados sin usuario asociado.
+   */
+  async obtenerEmpleadosSinUsuario() {
+    const empleados = await this.empleadoRepo.obtenerEmpleadosSinUsuario();
+    return empleados.map(empleado => empleado.toAPI());
+  }
 }
 
 export default EmpleadoService;

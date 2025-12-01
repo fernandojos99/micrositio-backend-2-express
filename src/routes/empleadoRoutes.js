@@ -46,4 +46,11 @@ router.delete('/', authMiddleware, soloEditores, empleadoController.desactivar.b
  */
 router.get('/todos', authMiddleware, empleadoController.listarTodos.bind(empleadoController));
 
+/**
+ * Ruta GET para obtener empleados que no tienen usuario asociado.
+ * @name get/empleados/sin-usuario
+ * @function
+ */
+router.get('/sin-usuario', authMiddleware, empleadoController.obtenerEmpleadosSinUsuario.bind(empleadoController));
+
 export default router;

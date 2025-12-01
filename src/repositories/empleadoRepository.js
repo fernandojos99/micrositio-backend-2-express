@@ -109,6 +109,46 @@ class EmpleadoRepository {
 
     return Empleado.fromDatabase(data[0]);
   }
+
+  /**
+   * Obtiene empleados que no están relacionados con ningún usuario.
+   * @async
+   * @returns {Promise<Array<Object>>} Lista de empleados sin usuario asociado.
+   * @throws {ApiError} Si ocurre un error al consultar.
+   */
+  async obtenerEmpleadosSinUsuario() {
+    // Primero obtenemos los IDs de empleados que SÍ tienen usuario
+    const { data: empleadosConUsuario, error: errorUsuarios } = await supabase
+      .from('usuarios')
+      .select('id_empleado')
+      .not('id_empleado', 'is', null);
+
+    if (errorUsuarios) {
+      throw new ApiError(`Error al obtener usuarios con empleado: ${errorUsuarios.message}`, 500);
+    }
+
+    // Extraemos solo los IDs de empleados
+    const idsEmpleadosConUsuario = empleadosConUsuario.map(u => u.id_empleado);
+
+    // Ahora obtenemos empleados activos que NO estén en esa lista
+    let query = supabase
+      .from('empleado')
+      .select('*')
+      .eq('activo', true);
+
+    // Si hay empleados con usuario, los excluimos
+    if (idsEmpleadosConUsuario.length > 0) {
+      query = query.not('id_empleado', 'in', `(${idsEmpleadosConUsuario.join(',')})`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new ApiError(`Error al obtener empleados sin usuario: ${error.message}`, 500);
+    }
+
+    return data.map(empleado => Empleado.fromDatabase(empleado));
+  }
 }
 
 export default EmpleadoRepository;
