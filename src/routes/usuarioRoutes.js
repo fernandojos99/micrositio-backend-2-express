@@ -646,4 +646,7 @@ router.patch('/:id/alta', authMiddleware, soloEditores, usuarioController.darAlt
  */
 router.patch('/:id/password', authMiddleware, soloEditores, usuarioController.cambiarPassword.bind(usuarioController));
 
+router.patch('/:id_usuario/asignar-empleado', authMiddleware, soloEditores, usuarioController.asignarEmpleado.bind(usuarioController));
+
+router.patch('/:id/tipo', authMiddleware, soloEditores, usuarioController.actualizarTipo.bind(usuarioController));
 export default router;

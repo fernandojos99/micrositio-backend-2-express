@@ -230,6 +230,61 @@ class UsuarioController {
   }
 
   /**
+   * Asigna un empleado a un usuario. 
+   * PATCH /usuarios/:id_usuario/asignarEmpleado/:id_empleado
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} next 
+   */
+  async asignarEmpleado(req, res, next) {
+    try {
+      const { id_usuario } = req.params;
+      const { id_empleado } = req.body;
+
+      const resultado = await this.usuarioService.asignarEmpleado(id_usuario, id_empleado);
+
+      res.json({
+        success: true,
+        message: 'Empleado asignado exitosamente',
+        data: resultado
+      });
+    } catch (error) {
+      next(error);
+    }
+   }
+
+  /**
+   * Volver VISITANTE  en EDITOR
+   * PATCH /usuarios/:id_usuario/asignarEmpleado/:id_empleado
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} next 
+   */
+  async actualizarTipo(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { tipo } = req.body;
+
+      if (tipo !== 'EDITOR' && tipo !== 'VISITANTE') {
+        throw new ApiError('El tipo debe ser EDITOR o VISITANTE para esta operación', 400);
+      }
+
+
+      const resultado = await this.usuarioService.actualizarTipo(id, tipo);
+
+      res.json({
+        success: true,
+        message: `El usuario ahora es ${tipo}`,
+        data: resultado
+      });
+    } catch (error) {
+      next(error);
+    }
+   }
+
+
+
+  /**
    * Elimina un usuario de forma física.
    * DELETE /usuarios/:id
    * @param {Object} req - Request de Express.
