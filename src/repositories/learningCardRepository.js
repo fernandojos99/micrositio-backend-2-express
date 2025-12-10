@@ -148,6 +148,31 @@ class LearningCardRepository {
     // Si no hay resultados, regresa un array vacío
     return data.map(item => new LearningCard(item));
   }
+
+  /**
+   * Busca learning cards por texto en los campos 'resultado' y 'hallazgo'
+   * @async
+   * @param {string} q - Texto a buscar
+   * @returns {Promise<Array>} Lista de learning cards encontradas
+   * @throws {ApiError} Si ocurre un error
+   */
+  async buscarPorTexto(q) {
+    try {
+      const { data, error } = await supabase
+        .from('learning_card')
+        .select('*')
+        .or(`resultado.ilike.%${q}%,hallazgo.ilike.%${q}%`);
+
+      if (error) {
+        throw new ApiError(`Error al buscar learning cards: ${error.message}`, 500);
+      }
+
+      return (data || []).map(row => new LearningCard(row));
+    } catch (error) {
+      console.error('Error en LearningCardRepository.buscarPorTexto:', error);
+      throw error;
+    }
+  }
 }
 
 export default LearningCardRepository;

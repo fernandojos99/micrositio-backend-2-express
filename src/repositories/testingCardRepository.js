@@ -181,6 +181,24 @@ class TestingCardRepository {
 
     return testingCardCopia;
   }
+
+  async buscarPorTexto(q) {
+    try {
+      const { data, error } = await supabase
+        .from('testing_card')
+        .select('*')
+        .or(`titulo.ilike.%${q}%,hipotesis.ilike.%${q}%,descripcion.ilike.%${q}%`);
+
+      if (error) {
+        throw new ApiError(`Error al buscar testing cards: ${error.message}`, 500);
+      }
+
+      return (data || []).map(row => TestingCard.fromDatabase(row)); // Utiliza el modelo TestingCard
+    } catch (error) {
+      console.error('Error en TestingCardRepository.buscarPorTexto:', error);
+      throw error;
+    }
+  }
 }
 
 export default TestingCardRepository;

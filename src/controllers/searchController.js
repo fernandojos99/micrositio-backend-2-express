@@ -1,15 +1,9 @@
+// controllers/searchController.js
 const { searchService } = require('../services/searchService');
 
 const searchController = {
-  /**
-   * Controlador para manejar la búsqueda general.
-   * @route GET /search
-   * @param req - Objeto de solicitud HTTP.
-   * @param res - Objeto de respuesta HTTP.
-   */
   async search(req, res) {
     try {
-      // Validar parámetros de entrada
       const { q, scope = 'all' } = req.query;
 
       if (!q || typeof q !== 'string') {
@@ -19,7 +13,17 @@ const searchController = {
         });
       }
 
-      const validScopes = ['proyectos', 'agentes', 'prompts', 'all'];
+      const validScopes = [
+        'proyectos',
+        'agentes',
+        'prompts',
+        'secuencias',
+        'testing_cards',
+        'learning_cards',
+        'documentos',
+        'all',
+      ];
+
       if (scope && !validScopes.includes(scope)) {
         return res.status(400).json({
           success: false,
@@ -27,10 +31,14 @@ const searchController = {
         });
       }
 
-      // Llamar al servicio de búsqueda
-      const results = await searchService.search(q, scope);
+      // 👇 contexto de usuario para permisos
+      const userContext = {
+        tipo: req.user?.tipo,
+        proyectosPermitidos: req.user?.proyectos || null, // VISITANTE
+      };
 
-      // Responder con los resultados
+      const results = await searchService.search(q, scope, userContext);
+
       return res.status(200).json({
         success: true,
         data: results,

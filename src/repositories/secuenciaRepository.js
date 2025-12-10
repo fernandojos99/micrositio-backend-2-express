@@ -66,7 +66,8 @@ class SecuenciaRepository {
    * @param {Object} secuenciaData - Datos de la secuencia
    * @returns {Promise<Secuencia>} Instancia del modelo Secuencia creada
    * @throws {ApiError} Si ocurre un error
-   */  async crear(secuenciaData) {
+   */
+  async crear(secuenciaData) {
     const { data, error } = await supabase
       .from('secuencia')
       .insert(secuenciaData)
@@ -82,6 +83,7 @@ class SecuenciaRepository {
 
     return new Secuencia(data[0]);
   }
+
   /**
    * Actualiza una secuencia existente
    * @param {number} id_secuencia - ID de la secuencia
@@ -129,6 +131,30 @@ class SecuenciaRepository {
     }
 
     return new Secuencia(data[0]);
+  }
+
+  /**
+   * Busca secuencias por texto en nombre y descripción
+   * (para la búsqueda general)
+   * @param {string} q - Texto de búsqueda
+   * @returns {Promise<Array<Secuencia>>}
+   */
+  async buscarPorTexto(q) {
+    try {
+      const { data, error } = await supabase
+        .from('secuencia')
+        .select('*')
+        .or(`nombre.ilike.%${q}%,descripcion.ilike.%${q}%`);
+
+      if (error) {
+        throw new ApiError(`Error al buscar secuencias: ${error.message}`, 500);
+      }
+
+      return (data || []).map(sec => new Secuencia(sec));
+    } catch (error) {
+      console.error('Error en SecuenciaRepository.buscarPorTexto:', error);
+      throw error;
+    }
   }
 }
 
