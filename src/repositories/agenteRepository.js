@@ -107,7 +107,9 @@ class AgenteRepository {
       const { data, error } = await supabase
         .from('agente')
         .select('*')
-        .or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%`);
+        .or(
+          `nombre.ilike.%${q}%,descripcion.ilike.%${q}%,prompt.ilike.%${q}%,link.ilike.%${q}%`
+        ); // ✅ solo columnas reales
 
       if (error) {
         throw new ApiError(`Error al buscar agentes: ${error.message}`, 500);

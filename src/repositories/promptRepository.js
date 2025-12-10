@@ -1,29 +1,19 @@
 // src/repositories/promptRepository.js
-import supabase from '../config/supabaseClient.js';
+// ⚠️ Por ahora NO existe tabla "prompts" en la BD.
+// Dejamos este repositorio como stub seguro para que no rompa la búsqueda.
 
 class PromptRepository {
   /**
    * Buscar prompts por texto.
-   * @param {string} q - Texto de búsqueda.
-   * @returns {Promise<Array>} Lista de prompts que coinciden con el texto.
+   * Por ahora devuelve siempre lista vacía, para no causar errores 500.
+   * @param {string} q
+   * @returns {Promise<Array>}
    */
   async buscarPorTexto(q) {
-    try {
-      const { data, error } = await supabase
-        .from('prompts')
-        .select('*')
-        .ilike('titulo', `%${q}%`);
-
-      if (error) {
-        console.error('Error al buscar prompts:', error);
-        throw new Error('Error al buscar prompts.');
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error en PromptRepository.buscarPorTexto:', error);
-      throw error;
-    }
+    console.warn(
+      'PromptRepository.buscarPorTexto llamado, pero no existe tabla "prompts" en la BD. Devolviendo [].'
+    );
+    return [];
   }
 }
 

@@ -42,7 +42,11 @@ class ProyectoRepository {
       throw new ApiError(`Error al actualizar proyecto: ${error.message}`, 500);
     }
 
-    return data ? Proyecto.fromDatabase(data[0]) : null;
+    if (!data || data.length === 0) {
+      throw new ApiError(`Proyecto con ID ${id_proyecto} no encontrado`, 404);
+    }
+
+    return Proyecto.fromDatabase(data[0]);
   }
 
   async eliminar(id_proyecto) {
@@ -98,13 +102,15 @@ class ProyectoRepository {
       const { data, error } = await supabase
         .from('proyecto')
         .select('*')
-        .ilike('nombre', `%${q}%`);
+        // 🔴 ANTES: .ilike('nombre', `%${q}%`)
+        // 🔵 AHORA: buscamos en titulo y descripcion, que sí existen
+        .or(`titulo.ilike.%${q}%,descripcion.ilike.%${q}%`);
 
       if (error) {
         throw new ApiError(`Error al buscar proyectos: ${error.message}`, 500);
       }
 
-      return data.map(proyecto => Proyecto.fromDatabase(proyecto));
+      return (data || []).map(proyecto => Proyecto.fromDatabase(proyecto));
     } catch (error) {
       console.error('Error en ProyectoRepository.buscarPorTexto:', error);
       throw error;
