@@ -1,6 +1,7 @@
-const supabase = require('../config/supabaseClient');
+// src/repositories/promptRepository.js
+import supabase from '../config/supabaseClient.js';
 
-const promptRepository = {
+class PromptRepository {
   /**
    * Buscar prompts por texto.
    * @param {string} q - Texto de búsqueda.
@@ -20,10 +21,10 @@ const promptRepository = {
 
       return data || [];
     } catch (error) {
-      console.error('Error en promptRepository.buscarPorTexto:', error);
+      console.error('Error en PromptRepository.buscarPorTexto:', error);
       throw error;
     }
-  },
-};
+  }
+}
 
-module.exports = { promptRepository };
+export default PromptRepository;

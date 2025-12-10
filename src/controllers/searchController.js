@@ -1,8 +1,13 @@
-// controllers/searchController.js
-const { searchService } = require('../services/searchService');
+// src/controllers/searchController.js
+import SearchService from '../services/searchService.js';
 
-const searchController = {
-  async search(req, res) {
+class SearchController {
+  constructor() {
+    this.searchService = new SearchService();
+  }
+
+  // ... (todo tu método search tal como está)
+  async search(req, res, next) {
     try {
       const { q, scope = 'all' } = req.query;
 
@@ -31,13 +36,14 @@ const searchController = {
         });
       }
 
-      // 👇 contexto de usuario para permisos
-      const userContext = {
-        tipo: req.user?.tipo,
-        proyectosPermitidos: req.user?.proyectos || null, // VISITANTE
-      };
+      const userContext = req.user
+        ? {
+            tipo: req.user.tipo,
+            proyectosPermitidos: req.user.proyectos || [],
+          }
+        : { tipo: null, proyectosPermitidos: [] };
 
-      const results = await searchService.search(q, scope, userContext);
+      const results = await this.searchService.search(q, scope, userContext);
 
       return res.status(200).json({
         success: true,
@@ -50,7 +56,11 @@ const searchController = {
         message: 'Ocurrió un error interno en el servidor.',
       });
     }
-  },
-};
+  }
+}
 
-module.exports = { searchController };
+// 👇 instancia + exports compatibles con tu ruta
+const searchController = new SearchController();
+
+export { searchController };
+export default SearchController;
