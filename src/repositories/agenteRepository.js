@@ -96,6 +96,29 @@ class AgenteRepository {
 
     return data ? Agente.fromDatabase(data[0]) : null;
   }
+
+  /**
+   * Buscar agentes por texto.
+   * @param {string} q - Texto de búsqueda.
+   * @returns {Promise<Array>} Lista de agentes que coinciden con el texto.
+   */
+  async buscarPorTexto(q) {
+    try {
+      const { data, error } = await supabase
+        .from('agente')
+        .select('*')
+        .or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%`);
+
+      if (error) {
+        throw new ApiError(`Error al buscar agentes: ${error.message}`, 500);
+      }
+
+      return data.map(agente => Agente.fromDatabase(agente));
+    } catch (error) {
+      console.error('Error en AgenteRepository.buscarPorTexto:', error);
+      throw error;
+    }
+  }
 }
 
 export default AgenteRepository;
