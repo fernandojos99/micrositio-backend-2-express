@@ -148,6 +148,75 @@ class LearningCardRepository {
     // Si no hay resultados, regresa un array vacío
     return data.map(item => new LearningCard(item));
   }
+
+  /**
+   * Busca learning cards por texto, incluyendo:
+   * - testing card asociada
+   * - secuencia y proyecto de esa testing card
+   * - responsable (empleado) de la testing card
+   */
+  async buscarPorTexto(q) {
+    try {
+      const term = q.trim();
+
+      const { data, error } = await supabase
+        .from('learning_card')
+        .select(`
+          id,
+          id_testing_card,
+          resultado,
+          hallazgo,
+          estado,
+          created_at,
+          updated_at,
+          testing_card:learning_card_id_testing_card_fkey (
+            id_testing_card,
+            titulo,
+            hipotesis,
+            descripcion,
+            status,
+            id_secuencia,
+            secuencia:testing_card_id_secuencia_fkey (
+              id_secuencia,
+              nombre,
+              descripcion,
+              id_proyecto,
+              estado,
+              proyecto:secuencia_id_proyecto_fkey (
+                id_proyecto,
+                titulo
+              )
+            ),
+            responsable:testing_card_id_empleado_fkey (
+              id_empleado,
+              nombre_pila,
+              apellido_paterno,
+              apellido_materno
+            )
+          )
+        `)
+        .or(
+          `resultado.ilike.%${term}%,hallazgo.ilike.%${term}%`
+        )
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error al buscar learning cards:', error);
+        throw new ApiError(
+          `Error al buscar learning cards: ${error.message}`,
+          500
+        );
+      }
+
+      return data || [];
+    } catch (err) {
+      console.error('Error en LearningCardRepository.buscarPorTexto:', err);
+      if (err instanceof ApiError) {
+        throw err;
+      }
+      throw new ApiError('Error al buscar learning cards', 500);
+    }
+  }
 }
 
 export default LearningCardRepository;

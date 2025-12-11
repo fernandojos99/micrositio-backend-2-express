@@ -27,7 +27,7 @@ import plantillaTestingCardRoutes from './routes/plantillaTestingCardRoutes.js';
 import plantillaMetricaTcRoutes from './routes/plantillaMetricaTcRoutes.js';
 import plantillaSecuenciaRoutes from './routes/plantillaSecuenciaRoutes.js';
 import notificacionRoutes from './routes/notificacionRoutes.js';
-// import testRoutes from './routes/testRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
  
  
  
@@ -89,8 +89,7 @@ app.use('/plantilla_testing_card', plantillaTestingCardRoutes);
 app.use('/plantilla_metrica_tc', plantillaMetricaTcRoutes);
 app.use('/plantilla_secuencia', plantillaSecuenciaRoutes);
 app.use('/notificaciones', notificacionRoutes);
-// app.use('/debug', testRoutes);
-//app.use('/debug', testRoutes);
+app.use('/search', searchRoutes);
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {

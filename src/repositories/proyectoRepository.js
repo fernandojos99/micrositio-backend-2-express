@@ -42,7 +42,11 @@ class ProyectoRepository {
       throw new ApiError(`Error al actualizar proyecto: ${error.message}`, 500);
     }
 
-    return data ? Proyecto.fromDatabase(data[0]) : null;
+    if (!data || data.length === 0) {
+      throw new ApiError(`Proyecto con ID ${id_proyecto} no encontrado`, 404);
+    }
+
+    return Proyecto.fromDatabase(data[0]);
   }
 
   async eliminar(id_proyecto) {
@@ -86,6 +90,31 @@ class ProyectoRepository {
     }
 
     return data.map(proyecto => Proyecto.fromDatabase(proyecto));
+  }
+
+  /**
+   * Buscar proyectos por texto.
+   * @param {string} q - Texto de búsqueda.
+   * @returns {Promise<Array>} Lista de proyectos que coinciden con el texto.
+   */
+  async buscarPorTexto(q) {
+    try {
+      const { data, error } = await supabase
+        .from('proyecto')
+        .select('*')
+        .or(
+          `titulo.ilike.%${q}%,descripcion.ilike.%${q}%`
+        );
+
+      if (error) {
+        throw new ApiError(`Error al buscar proyectos: ${error.message}`, 500);
+      }
+
+      return data.map((proyecto) => Proyecto.fromDatabase(proyecto));
+    } catch (error) {
+      console.error('Error en ProyectoRepository.buscarPorTexto:', error);
+      throw error;
+    }
   }
 }
 
