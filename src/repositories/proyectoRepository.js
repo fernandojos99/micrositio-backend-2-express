@@ -102,15 +102,15 @@ class ProyectoRepository {
       const { data, error } = await supabase
         .from('proyecto')
         .select('*')
-        // 🔴 ANTES: .ilike('nombre', `%${q}%`)
-        // 🔵 AHORA: buscamos en titulo y descripcion, que sí existen
-        .or(`titulo.ilike.%${q}%,descripcion.ilike.%${q}%`);
+        .or(
+          `titulo.ilike.%${q}%,descripcion.ilike.%${q}%`
+        );
 
       if (error) {
         throw new ApiError(`Error al buscar proyectos: ${error.message}`, 500);
       }
 
-      return (data || []).map(proyecto => Proyecto.fromDatabase(proyecto));
+      return data.map((proyecto) => Proyecto.fromDatabase(proyecto));
     } catch (error) {
       console.error('Error en ProyectoRepository.buscarPorTexto:', error);
       throw error;

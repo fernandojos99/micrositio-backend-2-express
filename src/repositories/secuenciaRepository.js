@@ -143,14 +143,27 @@ class SecuenciaRepository {
     try {
       const { data, error } = await supabase
         .from('secuencia')
-        .select('*')
-        .or(`nombre.ilike.%${q}%,descripcion.ilike.%${q}%`);
+        .select(`
+          id_secuencia,
+          id_proyecto,
+          nombre,
+          descripcion,
+          estado,
+          proyecto:proyecto (
+            id_proyecto,
+            titulo
+          )
+        `)
+        .or(
+          `nombre.ilike.%${q}%,descripcion.ilike.%${q}%`
+        );
 
       if (error) {
         throw new ApiError(`Error al buscar secuencias: ${error.message}`, 500);
       }
 
-      return (data || []).map(sec => new Secuencia(sec));
+      // devolvemos objetos "crudos" con la relación anidada proyecto
+      return data;
     } catch (error) {
       console.error('Error en SecuenciaRepository.buscarPorTexto:', error);
       throw error;

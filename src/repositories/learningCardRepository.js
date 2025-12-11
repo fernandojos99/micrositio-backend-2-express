@@ -150,27 +150,71 @@ class LearningCardRepository {
   }
 
   /**
-   * Busca learning cards por texto en los campos 'resultado' y 'hallazgo'
-   * @async
-   * @param {string} q - Texto a buscar
-   * @returns {Promise<Array>} Lista de learning cards encontradas
-   * @throws {ApiError} Si ocurre un error
+   * Busca learning cards por texto, incluyendo:
+   * - testing card asociada
+   * - secuencia y proyecto de esa testing card
+   * - responsable (empleado) de la testing card
    */
   async buscarPorTexto(q) {
     try {
+      const term = q.trim();
+
       const { data, error } = await supabase
         .from('learning_card')
-        .select('*')
-        .or(`resultado.ilike.%${q}%,hallazgo.ilike.%${q}%`);
+        .select(`
+          id,
+          id_testing_card,
+          resultado,
+          hallazgo,
+          estado,
+          created_at,
+          updated_at,
+          testing_card:learning_card_id_testing_card_fkey (
+            id_testing_card,
+            titulo,
+            hipotesis,
+            descripcion,
+            status,
+            id_secuencia,
+            secuencia:testing_card_id_secuencia_fkey (
+              id_secuencia,
+              nombre,
+              descripcion,
+              id_proyecto,
+              estado,
+              proyecto:secuencia_id_proyecto_fkey (
+                id_proyecto,
+                titulo
+              )
+            ),
+            responsable:testing_card_id_empleado_fkey (
+              id_empleado,
+              nombre_pila,
+              apellido_paterno,
+              apellido_materno
+            )
+          )
+        `)
+        .or(
+          `resultado.ilike.%${term}%,hallazgo.ilike.%${term}%`
+        )
+        .order('created_at', { ascending: false });
 
       if (error) {
-        throw new ApiError(`Error al buscar learning cards: ${error.message}`, 500);
+        console.error('Error al buscar learning cards:', error);
+        throw new ApiError(
+          `Error al buscar learning cards: ${error.message}`,
+          500
+        );
       }
 
-      return (data || []).map(row => new LearningCard(row));
-    } catch (error) {
-      console.error('Error en LearningCardRepository.buscarPorTexto:', error);
-      throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error en LearningCardRepository.buscarPorTexto:', err);
+      if (err instanceof ApiError) {
+        throw err;
+      }
+      throw new ApiError('Error al buscar learning cards', 500);
     }
   }
 }
