@@ -32,4 +32,18 @@ router.post('/', authMiddleware, soloEditores, validar(upsertNodePositionSchema)
  */
 router.delete('/:id_secuencia', authMiddleware, soloEditores, nodePositionController.eliminarPorSecuencia.bind(nodePositionController));
 
+/**
+ * Obtiene position_x y position_y por identificadores.
+ * @name get/node-positions/:node_id/:node_type/:id_secuencia
+ * @function
+ */
+router.get('/:node_id/:node_type/:id_secuencia', nodePositionController.getPositionByIdentifiers.bind(nodePositionController));
+
+/**
+ * Obtiene todas las posiciones.
+ * @name get/node-positions
+ * @function
+ */
+router.get('/', nodePositionController.getAllNodePositions.bind(nodePositionController));
+
 export default router;

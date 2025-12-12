@@ -5,6 +5,7 @@ import LearningCardRepository from '../repositories/learningCardRepository.js';
 import TestingCardRepository from '../repositories/testingCardRepository.js';
 import { upsertNodePositionSchema } from '../middlewares/validation/nodePositionSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { supabase } from '../config/database.js';
 
 class NodePositionController {
   constructor() {
@@ -76,6 +77,58 @@ class NodePositionController {
       res.status(204).end();
     } catch (error) {
       next(error);
+    }
+  }
+
+  /**
+   * Obtiene una posición específica de un nodo por sus identificadores
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   */
+  async getPositionByIdentifiers(req, res) {
+    try {
+      const { node_id, node_type, id_secuencia } = req.params;
+
+      const { data, error } = await supabase
+        .from('node_positions')
+        .select('position_x, position_y')
+        .eq('node_id', node_id)
+        .eq('node_type', node_type)
+        .eq('id_secuencia', id_secuencia)
+        .single();
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      if (!data) {
+        return res.status(404).json({ message: 'Position not found' });
+      }
+
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Obtiene todas las posiciones de nodos
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   */
+  async getAllNodePositions(req, res) {
+    try {
+      const { data, error } = await supabase
+        .from('node_positions')
+        .select('*');
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   }
 }
