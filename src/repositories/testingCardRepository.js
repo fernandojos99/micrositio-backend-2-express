@@ -181,6 +181,70 @@ class TestingCardRepository {
 
     return testingCardCopia;
   }
+
+  /**
+   * Busca testing cards por texto, incluyendo:
+   * - secuencia asociada
+   * - proyecto de la secuencia
+   * - responsable (empleado)
+   */
+  async buscarPorTexto(q) {
+    try {
+      const term = q.trim();
+
+      const { data, error } = await supabase
+        .from('testing_card')
+        .select(`
+          id_testing_card,
+          id_secuencia,
+          titulo,
+          hipotesis,
+          descripcion,
+          status,
+          dia_inicio,
+          dia_fin,
+          created_at,
+          updated_at,
+          secuencia:testing_card_id_secuencia_fkey (
+            id_secuencia,
+            nombre,
+            descripcion,
+            id_proyecto,
+            estado,
+            proyecto:secuencia_id_proyecto_fkey (
+              id_proyecto,
+              titulo
+            )
+          ),
+          responsable:testing_card_id_empleado_fkey (
+            id_empleado,
+            nombre_pila,
+            apellido_paterno,
+            apellido_materno
+          )
+        `)
+        .or(
+          `titulo.ilike.%${term}%,hipotesis.ilike.%${term}%,descripcion.ilike.%${term}%`
+        )
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error al buscar testing cards:', error);
+        throw new ApiError(
+          `Error al buscar testing cards: ${error.message}`,
+          500
+        );
+      }
+
+      return data || [];
+    } catch (err) {
+      console.error('Error en TestingCardRepository.buscarPorTexto:', err);
+      if (err instanceof ApiError) {
+        throw err;
+      }
+      throw new ApiError('Error al buscar testing cards', 500);
+    }
+  }
 }
 
 export default TestingCardRepository;
