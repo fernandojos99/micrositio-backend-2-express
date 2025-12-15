@@ -37,7 +37,7 @@ router.delete('/:id_secuencia', authMiddleware, soloEditores, nodePositionContro
  * @name get/node-positions/:node_id/:node_type/:id_secuencia
  * @function
  */
-router.get('/:node_id/:node_type/:id_secuencia', nodePositionController.getPositionByIdentifiers.bind(nodePositionController));
+router.get('/:node_id/:node_type/:id_secuencia', authMiddleware, nodePositionController.obtenerPosicionPorId.bind(nodePositionController));
 
 /**
  * Obtiene todas las posiciones.

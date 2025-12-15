@@ -40,6 +40,10 @@ class NodePositionService {
   async eliminarPorSecuencia(id_secuencia) {
     return this.repo.eliminarPorSecuencia(id_secuencia);
   }
+
+  async obtenerPosicionPorId(node_id, node_type, id_secuencia) {
+    return this.repo.obtenerPosicionPorId(node_id, node_type, id_secuencia);
+  }
 }
 
 export default NodePositionService;

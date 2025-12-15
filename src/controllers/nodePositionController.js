@@ -5,7 +5,6 @@ import LearningCardRepository from '../repositories/learningCardRepository.js';
 import TestingCardRepository from '../repositories/testingCardRepository.js';
 import { upsertNodePositionSchema } from '../middlewares/validation/nodePositionSchema.js';
 import ApiError from '../utils/ApiError.js';
-import { supabase } from '../config/database.js';
 
 class NodePositionController {
   constructor() {
@@ -84,30 +83,20 @@ class NodePositionController {
    * Obtiene una posición específica de un nodo por sus identificadores
    * @param {Object} req - Request de Express
    * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
    */
-  async getPositionByIdentifiers(req, res) {
+  async obtenerPosicionPorId(req, res, next) {
     try {
       const { node_id, node_type, id_secuencia } = req.params;
 
-      const { data, error } = await supabase
-        .from('node_positions')
-        .select('position_x, position_y')
-        .eq('node_id', node_id)
-        .eq('node_type', node_type)
-        .eq('id_secuencia', id_secuencia)
-        .single();
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
+      if (!node_id || !node_type || !id_secuencia) {
+        throw new ApiError('Se requieren los parámetros node_id, node_type e id_secuencia', 400);
       }
 
-      if (!data) {
-        return res.status(404).json({ message: 'Position not found' });
-      }
-
-      res.json(data);
+      const posicion = await this.nodePositionService.obtenerPosicionPorId(node_id, node_type, Number(id_secuencia));
+      res.json(posicion);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      next(error);
     }
   }
 
