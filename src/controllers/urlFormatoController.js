@@ -16,13 +16,13 @@ class UrlFormatoController {
    */
   async obtenerPorId(req, res, next) {
     try {
-      const { id_url_formato } = req.query;
+      const { id } = req.params;
 
-      if (!id_url_formato) {
-        throw new ApiError('Se requiere el campo id_url_formato en el query', 400);
+      if (!id) {
+        throw new ApiError('Se requiere el ID en la URL', 400);
       }
 
-      const url = await this.urlService.obtenerPorId(id_url_formato);
+      const url = await this.urlService.obtenerPorId(id);
       res.json(url);
     } catch (error) {
       next(error);
@@ -68,13 +68,14 @@ class UrlFormatoController {
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id_url_formato) {
-        throw new ApiError('Se requiere el campo id_url_formato en el body', 400);
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ApiError('Se requiere el ID en la URL', 400);
       }
 
-      const { id_url_formato, ...updateData } = req.body;
-      const validatedData = urlFormatoUpdateSchema.parse(updateData);
-      const url = await this.urlService.actualizar(id_url_formato, validatedData);
+      const validatedData = urlFormatoUpdateSchema.parse(req.body);
+      const url = await this.urlService.actualizar(id, validatedData);
       res.json(url);
     } catch (error) {
       next(error);
@@ -89,11 +90,13 @@ class UrlFormatoController {
    */
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id_url_formato) {
-        throw new ApiError('Se requiere el campo id_url_formato en el body', 400);
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ApiError('Se requiere el ID en la URL', 400);
       }
 
-      await this.urlService.eliminar(req.body.id_url_formato);
+      await this.urlService.eliminar(id);
       res.status(204).end();
     } catch (error) {
       next(error);
