@@ -1,5 +1,5 @@
 // src/repositories/urlFormatoRepository.js
-import supabase from '../config/database.js';
+import supabase from '../config/supabaseClient.js';
 import UrlFormatoModel from '../models/urlFormatoModel.js';
 import ApiError from '../utils/ApiError.js';
 

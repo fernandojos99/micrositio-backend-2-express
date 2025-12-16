@@ -1,229 +1,131 @@
-import FormatoService from '../services/formatoService.js';
+import formatoService from '../services/formatoService.js';
 
 class FormatoController {
-  static async uploadDocument(req, res) {
+  
+  async uploadDocument(req, res) {
     try {
-      // Validar que se haya proporcionado un archivo
-      if (!req.file) {
+      const file = req.file;
+
+      if (!file) {
         return res.status(400).json({
           success: false,
-          message: 'No file provided',
-          error: 'FILE_REQUIRED'
+          message: 'No se ha proporcionado ningún archivo'
         });
       }
 
-      const result = await FormatoService.uploadDocument(req.file);
+      const document = await formatoService.uploadDocument(file);
 
-      return res.status(201).json({
+      res.status(201).json({
         success: true,
-        message: 'Document uploaded successfully',
-        data: {
-          document: result.document,
-          uploadPath: result.uploadPath,
-          publicUrl: result.publicUrl
-        }
+        message: 'Documento subido exitosamente',
+        data: document
       });
-    } catch (error) {
-      console.error('Error in uploadDocument controller:', error);
 
-      // Manejar errores específicos
-      if (error.message.includes('File size exceeds')) {
+    } catch (error) {
+      console.error('Error al subir documento:', error);
+      
+      // Manejar error específico de tamaño de archivo
+      if (error.message.includes('50MB')) {
         return res.status(413).json({
           success: false,
-          message: error.message,
-          error: 'FILE_TOO_LARGE'
+          message: error.message
         });
       }
 
-      if (error.message.includes('File type not allowed')) {
-        return res.status(400).json({
-          success: false,
-          message: error.message,
-          error: 'INVALID_FILE_TYPE'
-        });
-      }
-
-      if (error.message.includes('Failed to upload file')) {
-        return res.status(500).json({
-          success: false,
-          message: 'Storage upload failed',
-          error: 'STORAGE_ERROR',
-          details: error.message
-        });
-      }
-
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_ERROR',
-        details: error.message
+        message: error.message || 'Error interno del servidor'
       });
     }
   }
 
-  static async getDocuments(req, res) {
+  async getDocuments(req, res) {
     try {
-      const documents = await FormatoService.getAllDocuments();
+      const documents = await formatoService.getAllDocuments();
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        message: 'Documents retrieved successfully',
-        data: {
-          documents,
-          count: documents.length
-        }
+        data: documents
       });
-    } catch (error) {
-      console.error('Error in getDocuments controller:', error);
 
-      return res.status(500).json({
+    } catch (error) {
+      console.error('Error al obtener documentos:', error);
+      res.status(500).json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_ERROR',
-        details: error.message
+        message: error.message || 'Error interno del servidor'
       });
     }
   }
 
-  static async deleteDocument(req, res) {
+  async getDocumentById(req, res) {
     try {
-      const { documentId } = req.params;
+      const { id } = req.params;
 
-      // Validar documentId como UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!documentId || !uuidRegex.test(documentId)) {
+      if (!id) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid document ID format. Expected UUID.',
-          error: 'INVALID_DOCUMENT_ID'
+          message: 'ID de documento requerido'
         });
       }
 
-      const result = await FormatoService.deleteDocument(documentId);
+      const document = await formatoService.getDocumentById(id);
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        message: 'Document deleted successfully',
-        data: {
-          document: result.document,
-          storageDeleted: result.storageDeleted
-        }
+        data: document
       });
-    } catch (error) {
-      console.error('Error in deleteDocument controller:', error);
 
-      if (error.message === 'Document not found') {
+    } catch (error) {
+      console.error('Error al obtener documento:', error);
+      
+      if (error.message.includes('no encontrado')) {
         return res.status(404).json({
           success: false,
-          message: 'Document not found',
-          error: 'DOCUMENT_NOT_FOUND'
+          message: error.message
         });
       }
 
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_ERROR',
-        details: error.message
+        message: error.message || 'Error interno del servidor'
       });
     }
   }
 
-  static async getDocumentById(req, res) {
+  async deleteDocument(req, res) {
     try {
-      const { documentId } = req.params;
+      const { id } = req.params;
 
-      // Validar documentId como UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!documentId || !uuidRegex.test(documentId)) {
+      if (!id) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid document ID format. Expected UUID.',
-          error: 'INVALID_DOCUMENT_ID'
+          message: 'ID de documento requerido'
         });
       }
 
-      const document = await FormatoService.getDocumentById(documentId);
+      await formatoService.deleteDocument(id);
 
-      if (!document) {
+      res.status(200).json({
+        success: true,
+        message: 'Documento eliminado exitosamente'
+      });
+
+    } catch (error) {
+      console.error('Error al eliminar documento:', error);
+      
+      if (error.message.includes('no encontrado')) {
         return res.status(404).json({
           success: false,
-          message: 'Document not found',
-          error: 'DOCUMENT_NOT_FOUND'
+          message: error.message
         });
       }
 
-      return res.status(200).json({
-        success: true,
-        message: 'Document retrieved successfully',
-        data: {
-          document
-        }
-      });
-    } catch (error) {
-      console.error('Error in getDocumentById controller:', error);
-
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_ERROR',
-        details: error.message
-      });
-    }
-  }
-
-  static async updateDocument(req, res) {
-    try {
-      const { documentId } = req.params;
-      const updateData = req.body;
-
-      // Validar documentId como UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!documentId || !uuidRegex.test(documentId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid document ID format. Expected UUID.',
-          error: 'INVALID_DOCUMENT_ID'
-        });
-      }
-
-      // Validar que se proporcionaron datos para actualizar
-      if (!updateData || Object.keys(updateData).length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'No data provided for update',
-          error: 'NO_UPDATE_DATA'
-        });
-      }
-
-      const updatedDocument = await FormatoService.updateDocument(documentId, updateData);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Document updated successfully',
-        data: {
-          document: updatedDocument
-        }
-      });
-    } catch (error) {
-      console.error('Error in updateDocument controller:', error);
-
-      if (error.message === 'Document not found') {
-        return res.status(404).json({
-          success: false,
-          message: 'Document not found',
-          error: 'DOCUMENT_NOT_FOUND'
-        });
-      }
-
-      return res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: 'INTERNAL_ERROR',
-        details: error.message
+        message: error.message || 'Error interno del servidor'
       });
     }
   }
 }
 
-export default FormatoController;
+export default new FormatoController();

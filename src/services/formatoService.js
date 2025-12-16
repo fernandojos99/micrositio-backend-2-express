@@ -1,151 +1,117 @@
+import supabase from '../config/supabaseClient.js';
 import FormatoRepository from '../repositories/formatoRepository.js';
-import path from 'path';
-import fs from 'fs/promises';
+import { v4 as uuidv4 } from 'uuid';
 
 class FormatoService {
-  static async uploadDocument(file) {
+  
+  async uploadDocument(file) {
     try {
-      // Validaciones del archivo
-      const maxFileSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxFileSize) {
-        throw new Error('File size exceeds maximum limit of 10MB');
-      }
-
-      // Tipos de archivo permitidos
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'video/mp4', 'video/avi'];
-      if (!allowedTypes.includes(file.mimetype)) {
-        throw new Error('File type not allowed. Allowed types: PDF, JPEG, JPG, PNG, MP4, AVI');
-      }
-
-      // Determinar el tipo de documento basado en mimetype
-      let documentType;
-      if (file.mimetype === 'application/pdf') {
-        documentType = 'pdf';
-      } else if (file.mimetype.startsWith('image/')) {
-        documentType = 'image';
-      } else if (file.mimetype.startsWith('video/')) {
-        documentType = 'video';
-      } else {
-        documentType = 'other';
-      }
-
-      // Crear directorio si no existe
-      const uploadDir = path.join(process.cwd(), 'uploads', 'formatos');
-      try {
-        await fs.mkdir(uploadDir, { recursive: true });
-      } catch (error) {
-        console.error('Error creating upload directory:', error);
+      // Validar tamaño del archivo (50MB máximo)
+      const maxSize = 50 * 1024 * 1024; // 50MB en bytes
+      if (file.size > maxSize) {
+        throw new Error('El archivo excede el tamaño máximo permitido de 50MB');
       }
 
       // Generar nombre único para el archivo
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
-      const fileExtension = path.extname(file.originalname);
-      const fileName = `formato_${timestamp}_${randomString}${fileExtension}`;
-      const filePath = path.join(uploadDir, fileName);
+      const fileExtension = file.originalname.split('.').pop();
+      const uniqueFileName = `${uuidv4()}.${fileExtension}`;
+      const filePath = `formatos/${uniqueFileName}`;
 
-      try {
-        // Guardar archivo
-        await fs.writeFile(filePath, file.buffer);
-      } catch (error) {
-        console.error('Error writing file:', error);
-        throw new Error('Failed to upload file to storage');
+      // Subir archivo a Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('formato-docs')
+        .upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+          duplex: 'half'
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir archivo: ${uploadError.message}`);
       }
 
-      // Crear URL pública del archivo
-      const publicUrl = `/uploads/formatos/${fileName}`;
+      // Obtener URL pública del archivo
+      const { data: urlData } = supabase.storage
+        .from('formato-docs')
+        .getPublicUrl(filePath);
 
-      // Guardar información en la base de datos
-      const formatoData = {
+      // Determinar tipo de documento basado en mimetype
+      const documentType = this.getDocumentType(file.mimetype);
+
+      // Crear registro en la base de datos
+      const documentData = {
         document_name: file.originalname,
-        document_url: publicUrl,
+        document_url: urlData.publicUrl,
         document_type: documentType
       };
 
-      const document = await FormatoRepository.create(formatoData);
+      const document = await FormatoRepository.create(documentData);
+      return document;
 
-      return {
-        document,
-        uploadPath: filePath,
-        publicUrl
-      };
     } catch (error) {
-      console.error('Error in FormatoService.uploadDocument:', error);
       throw error;
     }
   }
 
-  static async getAllDocuments() {
+  async getAllDocuments() {
     try {
-      const documents = await FormatoRepository.findAll();
-      return documents;
+      return await FormatoRepository.findAll();
     } catch (error) {
-      console.error('Error in FormatoService.getAllDocuments:', error);
-      throw new Error('Failed to retrieve documents');
+      throw error;
     }
   }
 
-  static async getDocumentById(documentId) {
+  async getDocumentById(id) {
     try {
-      const document = await FormatoRepository.findById(documentId);
+      const document = await FormatoRepository.findById(id);
+      if (!document) {
+        throw new Error('Documento no encontrado');
+      }
       return document;
     } catch (error) {
-      console.error('Error in FormatoService.getDocumentById:', error);
-      throw new Error('Failed to retrieve document');
+      throw error;
     }
   }
 
-  static async deleteDocument(documentId) {
+  async deleteDocument(documentId) {
     try {
-      // Obtener información del documento antes de eliminarlo
+      // Obtener información del documento
       const document = await FormatoRepository.findById(documentId);
-      
       if (!document) {
-        throw new Error('Document not found');
+        throw new Error('Documento no encontrado');
       }
 
-      // Eliminar archivo físico si existe
-      let storageDeleted = false;
-      if (document.document_url) {
-        try {
-          // Construir la ruta del archivo basada en la URL
-          const filePath = path.join(process.cwd(), document.document_url.replace(/^\//, ''));
-          await fs.unlink(filePath);
-          storageDeleted = true;
-        } catch (fileError) {
-          console.warn('Warning: Could not delete physical file:', fileError.message);
-          // No lanzar error aquí, ya que el archivo podría no existir
-        }
+      // Extraer el path del archivo de la URL
+      const url = new URL(document.document_url);
+      const filePath = url.pathname.split('/').slice(-2).join('/'); // Obtiene "formatos/filename"
+
+      // Eliminar archivo de Supabase Storage
+      const { error: deleteError } = await supabase.storage
+        .from('formato-docs')
+        .remove([filePath]);
+
+      if (deleteError) {
+        console.warn(`Warning: No se pudo eliminar el archivo del storage: ${deleteError.message}`);
       }
 
       // Eliminar registro de la base de datos
-      const deletedDocument = await FormatoRepository.delete(documentId);
+      await FormatoRepository.delete(documentId);
+      return true;
 
-      return {
-        document: deletedDocument,
-        storageDeleted
-      };
     } catch (error) {
-      console.error('Error in FormatoService.deleteDocument:', error);
       throw error;
     }
   }
 
-  static async updateDocument(documentId, updateData) {
-    try {
-      const existingDocument = await FormatoRepository.findById(documentId);
-      
-      if (!existingDocument) {
-        throw new Error('Document not found');
-      }
-
-      const updatedDocument = await FormatoRepository.update(documentId, updateData);
-      return updatedDocument;
-    } catch (error) {
-      console.error('Error in FormatoService.updateDocument:', error);
-      throw error;
-    }
+  getDocumentType(mimetype) {
+    if (mimetype.startsWith('image/')) return 'image';
+    if (mimetype === 'application/pdf') return 'pdf';
+    if (mimetype.startsWith('video/')) return 'video';
+    if (mimetype.startsWith('audio/')) return 'audio';
+    if (mimetype.includes('document') || mimetype.includes('word')) return 'document';
+    if (mimetype.includes('sheet') || mimetype.includes('excel')) return 'spreadsheet';
+    if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return 'presentation';
+    return 'other';
   }
 }
 
-export default FormatoService;
+export default new FormatoService();

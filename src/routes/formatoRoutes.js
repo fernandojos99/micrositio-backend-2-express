@@ -1,33 +1,36 @@
 import express from 'express';
-import multer from 'multer';
-import FormatoController from '../controllers/formatoController.js';
+import formatoController from '../controllers/formatoController.js';
+import { upload, handleMulterError } from '../middlewares/uploadMiddleware.js';
+import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Configuración de multer para manejar archivos en memoria
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
-  },
-  fileFilter: (req, file, cb) => {
-    // Tipos de archivo permitidos
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'video/mp4', 'video/avi'];
-    
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('File type not allowed. Allowed types: PDF, JPEG, JPG, PNG, MP4, AVI'), false);
-    }
-  }
-});
+// Subir documento
+router.post('/upload', 
+  authMiddleware,
+  soloEditores,
+  upload.single('document'), 
+  handleMulterError,
+  formatoController.uploadDocument
+);
 
-// Rutas para formato
-router.post('/upload', upload.single('document'), FormatoController.uploadDocument);
-router.get('/', FormatoController.getDocuments);
-router.get('/:documentId', FormatoController.getDocumentById);
-router.put('/:documentId', FormatoController.updateDocument);
-router.delete('/:documentId', FormatoController.deleteDocument);
+// Obtener todos los documentos
+router.get('/', 
+  authMiddleware,
+  formatoController.getDocuments
+);
+
+// Obtener documento por ID
+router.get('/:id', 
+  authMiddleware,
+  formatoController.getDocumentById
+);
+
+// Eliminar un documento específico
+router.delete('/:id', 
+  authMiddleware,
+  soloEditores,
+  formatoController.deleteDocument
+);
 
 export default router;
