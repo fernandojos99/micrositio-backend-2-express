@@ -21,11 +21,11 @@ const metricaUpdateSchema = z.object({
     .min(1, 'El operador es requerido')
     .optional(),
   criterio: z.string().min(1, 'El criterio es requerido').optional(),
-  resultado: z.string().max(30, 'El resultado no puede exceder los 30 caracteres').optional()
+  resultado: z.string().max(30).optional().nullable()
 });
 
 const metricaResultadoUpdateSchema = z.object({
-  resultado: z.string().max(30, 'El resultado no puede exceder los 30 caracteres')
+  resultado: z.string().max(30).nullable()
 });
 
 export { metricaCreateSchema, metricaUpdateSchema, metricaResultadoUpdateSchema };
