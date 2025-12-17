@@ -78,6 +78,48 @@ class NodePositionController {
       next(error);
     }
   }
+
+  /**
+   * Obtiene una posición específica de un nodo por sus identificadores
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
+   */
+  async obtenerPosicionPorId(req, res, next) {
+    try {
+      const { node_id, node_type, id_secuencia } = req.params;
+
+      if (!node_id || !node_type || !id_secuencia) {
+        throw new ApiError('Se requieren los parámetros node_id, node_type e id_secuencia', 400);
+      }
+
+      const posicion = await this.nodePositionService.obtenerPosicionPorId(node_id, node_type, Number(id_secuencia));
+      res.json(posicion);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Obtiene todas las posiciones de nodos
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   */
+  async getAllNodePositions(req, res) {
+    try {
+      const { data, error } = await supabase
+        .from('node_positions')
+        .select('*');
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 export default NodePositionController;
