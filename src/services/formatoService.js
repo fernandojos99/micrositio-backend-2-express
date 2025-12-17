@@ -73,6 +73,23 @@ class FormatoService {
     }
   }
 
+  async updateDocument(id, categoria) {
+    try {
+      // Verificar que el documento existe
+      const document = await FormatoRepository.findById(id);
+      if (!document) {
+        throw new Error('Documento no encontrado');
+      }
+
+      // Actualizar solo la categoría
+      const updatedDocument = await FormatoRepository.update(id, { categoria });
+      return updatedDocument;
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async deleteDocument(documentId) {
     try {
       // Obtener información del documento

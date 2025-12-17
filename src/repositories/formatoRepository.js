@@ -42,18 +42,16 @@ class FormatoRepository {
     return data;
   }
 
-  static async update(id, formatoData) {
-    const { document_name, document_url, document_type, categoria } = formatoData;
+  static async update(id, updateData) {
+    // Solo actualizar los campos proporcionados
+    const dataToUpdate = {
+      ...updateData,
+      updated_at: new Date().toISOString()
+    };
     
     const { data, error } = await supabase
       .from('formato')
-      .update({
-        document_name,
-        document_url,
-        document_type,
-        categoria,
-        updated_at: new Date().toISOString()
-      })
+      .update(dataToUpdate)
       .eq('id', id)
       .select()
       .single();

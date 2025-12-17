@@ -2,7 +2,7 @@ import express from 'express';
 import formatoController from '../controllers/formatoController.js';
 import { upload, handleMulterError } from '../middlewares/uploadMiddleware.js';
 import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
-import { validateUploadDocument, validateDocumentId } from '../middlewares/validation/formatoValidation.js';
+import { validateUploadDocument, validateDocumentId, validateUpdateDocument } from '../middlewares/validation/formatoValidation.js';
 
 const router = express.Router();
 
@@ -27,6 +27,15 @@ router.get('/:id',
   authMiddleware,
   validateDocumentId,
   formatoController.getDocumentById
+);
+
+// Actualizar categoría de un documento
+router.patch('/:id', 
+  authMiddleware,
+  soloEditores,
+  validateDocumentId,
+  validateUpdateDocument,
+  formatoController.updateDocument
 );
 
 // Eliminar un documento específico

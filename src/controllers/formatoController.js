@@ -93,6 +93,43 @@ class FormatoController {
     }
   }
 
+  async updateDocument(req, res) {
+    try {
+      const { id } = req.params;
+      const { categoria } = req.body;
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de documento requerido'
+        });
+      }
+
+      const document = await formatoService.updateDocument(id, categoria);
+
+      res.status(200).json({
+        success: true,
+        message: 'Documento actualizado exitosamente',
+        data: document
+      });
+
+    } catch (error) {
+      console.error('Error al actualizar documento:', error);
+      
+      if (error.message.includes('no encontrado')) {
+        return res.status(404).json({
+          success: false,
+          message: error.message
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error interno del servidor'
+      });
+    }
+  }
+
   async deleteDocument(req, res) {
     try {
       const { id } = req.params;
