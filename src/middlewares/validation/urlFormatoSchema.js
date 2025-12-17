@@ -19,14 +19,23 @@ export const urlFormatoUpdateSchema = z.object({
     .url('Debe ser una URL válida')
     .optional(),
   categoria: z.string()
+    .min(1, 'La categoría no puede estar vacía')
     .max(20, 'La categoría no puede exceder 20 caracteres')
     .optional(),
   descripcion: z.string()
+    .min(1, 'La descripción no puede estar vacía')
     .max(255, 'La descripción no puede exceder 255 caracteres')
     .optional()
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'Debe proporcionar al menos un campo para actualizar'
-});
+}).refine(
+  data => {
+    // Filtrar campos undefined o null
+    const validFields = Object.entries(data).filter(([_, value]) => value !== undefined && value !== null);
+    return validFields.length > 0;
+  },
+  {
+    message: 'Debe proporcionar al menos un campo para actualizar'
+  }
+);
 
 export default {
   urlFormatoCreateSchema,
