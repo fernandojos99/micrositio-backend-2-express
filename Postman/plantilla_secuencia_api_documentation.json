@@ -1,0 +1,257 @@
+{
+  "plantilla_secuencia_api_documentation": {
+    "base_url": "http://localhost:3000",
+    "authentication": {
+      "type": "Bearer Token",
+      "header": "Authorization",
+      "description": "Todos los endpoints requieren autenticación JWT"
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/plantilla_secuencia",
+        "description": "Obtener todas las plantillas secuencia",
+        "auth_required": true,
+        "request": {
+          "headers": {
+            "Authorization": "Bearer <token>"
+          }
+        },
+        "response": {
+          "success": {
+            "status": 200,
+            "body": {
+              "success": true,
+              "message": "Plantillas secuencia obtenidas exitosamente",
+              "data": [
+                {
+                  "id_plantilla_secuencia": "123e4567-e89b-12d3-a456-426614174000",
+                  "id_secuencia": 1,
+                  "id_empleado": 5,
+                  "creado": "2025-01-15T10:30:00.000Z",
+                  "actualizado": "2025-01-15T10:30:00.000Z"
+                }
+              ],
+              "total": 1
+            }
+          },
+          "error": {
+            "status": 401,
+            "body": {
+              "success": false,
+              "message": "Token no válido"
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/plantilla_secuencia/{id}",
+        "description": "Obtener una plantilla secuencia por ID",
+        "auth_required": true,
+        "parameters": {
+          "id": {
+            "type": "UUID",
+            "required": true,
+            "description": "ID único de la plantilla secuencia"
+          }
+        },
+        "request": {
+          "headers": {
+            "Authorization": "Bearer <token>"
+          }
+        },
+        "response": {
+          "success": {
+            "status": 200,
+            "body": {
+              "success": true,
+              "message": "Plantilla secuencia obtenida exitosamente",
+              "data": {
+                "id_plantilla_secuencia": "123e4567-e89b-12d3-a456-426614174000",
+                "id_secuencia": 1,
+                "id_empleado": 5,
+                "creado": "2025-01-15T10:30:00.000Z",
+                "actualizado": "2025-01-15T10:30:00.000Z"
+              }
+            }
+          },
+          "error": {
+            "status": 404,
+            "body": {
+              "success": false,
+              "message": "Plantilla secuencia no encontrada"
+            }
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/plantilla_secuencia",
+        "description": "Crear una nueva plantilla secuencia",
+        "auth_required": true,
+        "request": {
+          "headers": {
+            "Authorization": "Bearer <token>",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "id_secuencia": 1,
+            "id_empleado": 5
+          }
+        },
+        "validation": {
+          "required_fields": ["id_secuencia", "id_empleado"],
+          "field_types": {
+            "id_secuencia": "integer (positive)",
+            "id_empleado": "integer (positive)"
+          }
+        },
+        "response": {
+          "success": {
+            "status": 201,
+            "body": {
+              "success": true,
+              "message": "Plantilla secuencia creada exitosamente",
+              "data": {
+                "id_plantilla_secuencia": "123e4567-e89b-12d3-a456-426614174000",
+                "id_secuencia": 1,
+                "id_empleado": 5,
+                "creado": "2025-01-15T10:30:00.000Z",
+                "actualizado": "2025-01-15T10:30:00.000Z"
+              }
+            }
+          },
+          "error": {
+            "status": 400,
+            "body": {
+              "success": false,
+              "message": "Validación fallida: id_secuencia es requerido"
+            }
+          }
+        }
+      },
+      {
+        "method": "PUT",
+        "path": "/plantilla_secuencia/{id}",
+        "description": "Actualizar una plantilla secuencia",
+        "auth_required": true,
+        "parameters": {
+          "id": {
+            "type": "UUID",
+            "required": true,
+            "description": "ID único de la plantilla secuencia"
+          }
+        },
+        "request": {
+          "headers": {
+            "Authorization": "Bearer <token>",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "id_secuencia": 2,
+            "id_empleado": 7
+          }
+        },
+        "validation": {
+          "required_fields": "Al menos un campo debe ser proporcionado",
+          "field_types": {
+            "id_secuencia": "integer (positive, optional)",
+            "id_empleado": "integer (positive, optional)"
+          }
+        },
+        "response": {
+          "success": {
+            "status": 200,
+            "body": {
+              "success": true,
+              "message": "Plantilla secuencia actualizada exitosamente",
+              "data": {
+                "id_plantilla_secuencia": "123e4567-e89b-12d3-a456-426614174000",
+                "id_secuencia": 2,
+                "id_empleado": 7,
+                "creado": "2025-01-15T10:30:00.000Z",
+                "actualizado": "2025-01-15T11:45:00.000Z"
+              }
+            }
+          },
+          "error": {
+            "status": 404,
+            "body": {
+              "success": false,
+              "message": "Plantilla secuencia no encontrada"
+            }
+          }
+        }
+      },
+      {
+        "method": "DELETE",
+        "path": "/plantilla_secuencia/{id}",
+        "description": "Eliminar una plantilla secuencia",
+        "auth_required": true,
+        "parameters": {
+          "id": {
+            "type": "UUID",
+            "required": true,
+            "description": "ID único de la plantilla secuencia"
+          }
+        },
+        "request": {
+          "headers": {
+            "Authorization": "Bearer <token>"
+          }
+        },
+        "response": {
+          "success": {
+            "status": 200,
+            "body": {
+              "success": true,
+              "message": "Plantilla secuencia eliminada exitosamente"
+            }
+          },
+          "error": {
+            "status": 404,
+            "body": {
+              "success": false,
+              "message": "Plantilla secuencia no encontrada"
+            }
+          }
+        }
+      }
+    ],
+    "common_errors": {
+      "400": {
+        "description": "Bad Request - Datos de entrada inválidos",
+        "causes": ["Campos requeridos faltantes", "Tipos de datos incorrectos", "Validación fallida"]
+      },
+      "401": {
+        "description": "Unauthorized - Token de autenticación inválido",
+        "causes": ["Token expirado", "Token malformado", "Token no proporcionado"]
+      },
+      "404": {
+        "description": "Not Found - Recurso no encontrado",
+        "causes": ["ID no existe", "Plantilla secuencia eliminada"]
+      },
+      "409": {
+        "description": "Conflict - Conflicto con el estado actual",
+        "causes": ["Plantilla secuencia duplicada", "Violación de restricción única"]
+      },
+      "500": {
+        "description": "Internal Server Error - Error interno del servidor",
+        "causes": ["Error de base de datos", "Error de conexión"]
+      }
+    },
+    "database_relationships": {
+      "foreign_keys": {
+        "id_secuencia": {
+          "references": "secuencia(id_secuencia)",
+          "description": "Referencia a la tabla secuencia"
+        },
+        "id_empleado": {
+          "references": "empleado(id_empleado)",
+          "description": "Referencia a la tabla empleado"
+        }
+      }
+    }
+  }
+}

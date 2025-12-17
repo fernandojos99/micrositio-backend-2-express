@@ -1,0 +1,471 @@
+{
+	"info": {
+		"_postman_id": "url-formato-collection-id",
+		"name": "URL Formato API - Micrositio Iris",
+		"description": "Colección para probar todos los endpoints del módulo de URL Formato",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "URL Formato - CRUD",
+			"item": [
+				{
+					"name": "1. Crear URL formato",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('id_url_formato', response.id_url_formato);",
+									"    console.log('URL formato creada - ID:', response.id_url_formato);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/crear",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"crear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Crear segunda URL formato",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://google.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/crear",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"crear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Crear tercera URL formato",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://github.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/crear",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"crear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Obtener todas las URLs formato",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/url-formato/obtener-todas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"obtener-todas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Obtener URL formato por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/url-formato/obtener-por-id?id_url_formato={{id_url_formato}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"obtener-por-id"
+							],
+							"query": [
+								{
+									"key": "id_url_formato",
+									"value": "{{id_url_formato}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Obtener URL formato por ID específico (ID=1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/url-formato/obtener-por-id?id_url_formato=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"obtener-por-id"
+							],
+							"query": [
+								{
+									"key": "id_url_formato",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7. Actualizar URL formato",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_url_formato\": 1,\n  \"url\": \"https://updated-example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/actualizar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"actualizar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8. Eliminar URL formato",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_url_formato\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/eliminar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"eliminar"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Casos de Error",
+			"item": [
+				{
+					"name": "Error: Crear URL con formato inválido",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"url-invalida\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/crear",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"crear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Crear URL sin datos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/crear",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"crear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Obtener URL con ID inexistente",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/url-formato/obtener-por-id?id_url_formato=9999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"obtener-por-id"
+							],
+							"query": [
+								{
+									"key": "id_url_formato",
+									"value": "9999"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Obtener URL sin ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/url-formato/obtener-por-id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"obtener-por-id"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Actualizar URL inexistente",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_url_formato\": 9999,\n  \"url\": \"https://example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/actualizar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"actualizar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Actualizar sin ID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/actualizar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"actualizar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Eliminar URL inexistente",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_url_formato\": 9999\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/eliminar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"eliminar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Eliminar sin ID",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/url-formato/eliminar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"url-formato",
+								"eliminar"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api"
+		}
+	]
+}

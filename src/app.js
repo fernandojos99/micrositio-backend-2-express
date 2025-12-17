@@ -28,6 +28,8 @@ import plantillaMetricaTcRoutes from './routes/plantillaMetricaTcRoutes.js';
 import plantillaSecuenciaRoutes from './routes/plantillaSecuenciaRoutes.js';
 import notificacionRoutes from './routes/notificacionRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import urlFormatoRoutes from './routes/urlFormatoRoutes.js';
+import formatoRoutes from './routes/formatoRoutes.js';
  
  
  
@@ -90,6 +92,8 @@ app.use('/plantilla_metrica_tc', plantillaMetricaTcRoutes);
 app.use('/plantilla_secuencia', plantillaSecuenciaRoutes);
 app.use('/notificaciones', notificacionRoutes);
 app.use('/search', searchRoutes);
+app.use('/url_formato', urlFormatoRoutes);
+app.use('/formato', formatoRoutes);
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {
