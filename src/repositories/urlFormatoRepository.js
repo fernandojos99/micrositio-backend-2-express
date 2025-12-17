@@ -70,15 +70,17 @@ class UrlFormatoRepository {
   }
 
   /**
-   * Actualiza una URL formato
+   * Actualiza una URL formato (PATCH - actualización parcial)
    * @param {number} id_url_formato 
    * @param {Object} updateData 
    * @returns {Promise<UrlFormatoModel>}
    */
   async actualizar(id_url_formato, updateData) {
-    const urlFormato = new UrlFormatoModel(updateData);
-    const dataToUpdate = urlFormato.toDatabase();
-    dataToUpdate.updated_at = new Date().toISOString();
+    // Solo actualizar los campos que vienen en updateData
+    const dataToUpdate = {
+      ...updateData,
+      updated_at: new Date().toISOString()
+    };
 
     const { data, error } = await supabase
       .from(this.tableName)

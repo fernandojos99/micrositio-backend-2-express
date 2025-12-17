@@ -1,3 +1,5 @@
+import { de } from "zod/v4/locales";
+
 // src/models/urlFormatoModel.js
 class UrlFormatoModel {
   constructor(data = {}) {
@@ -5,6 +7,8 @@ class UrlFormatoModel {
     this.url = data.url || '';
     this.created_at = data.created_at || null;
     this.updated_at = data.updated_at || null;
+    this.categoria = data.categoria || null;
+    this.descripcion = data.descripcion || null;
   }
 
   static fromDatabase(row) {
@@ -12,13 +16,16 @@ class UrlFormatoModel {
       id_url_formato: row.id_url_formato,
       url: row.url,
       created_at: row.created_at,
-      updated_at: row.updated_at
+      updated_at: row.updated_at,
+      categoria: row.categoria,
+      descripcion: row.descripcion
     });
   }
 
   toDatabase() {
     const data = {
-      url: this.url
+      url: this.url,
+      categoria: this.categoria
     };
 
     if (this.id_url_formato) {

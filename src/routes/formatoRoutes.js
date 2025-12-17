@@ -2,6 +2,7 @@ import express from 'express';
 import formatoController from '../controllers/formatoController.js';
 import { upload, handleMulterError } from '../middlewares/uploadMiddleware.js';
 import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
+import { validateUploadDocument, validateDocumentId } from '../middlewares/validation/formatoValidation.js';
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.post('/upload',
   soloEditores,
   upload.single('document'), 
   handleMulterError,
+  validateUploadDocument,
   formatoController.uploadDocument
 );
 
@@ -23,6 +25,7 @@ router.get('/',
 // Obtener documento por ID
 router.get('/:id', 
   authMiddleware,
+  validateDocumentId,
   formatoController.getDocumentById
 );
 
@@ -30,6 +33,7 @@ router.get('/:id',
 router.delete('/:id', 
   authMiddleware,
   soloEditores,
+  validateDocumentId,
   formatoController.deleteDocument
 );
 

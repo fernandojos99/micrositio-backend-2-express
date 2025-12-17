@@ -10,7 +10,7 @@ const urlFormatoController = new UrlFormatoController();
 router.post('/crear', authMiddleware, urlFormatoController.crear.bind(urlFormatoController));
 router.get('/', authMiddleware, urlFormatoController.obtenerTodas.bind(urlFormatoController));
 router.get('/:id', authMiddleware, urlFormatoController.obtenerPorId.bind(urlFormatoController));
-router.put('/:id', authMiddleware, urlFormatoController.actualizar.bind(urlFormatoController));
+router.patch('/:id', authMiddleware, urlFormatoController.actualizar.bind(urlFormatoController));
 router.delete('/:id', authMiddleware, urlFormatoController.eliminar.bind(urlFormatoController));
 
 export default router;
