@@ -5,6 +5,7 @@ class FormatoController {
   async uploadDocument(req, res) {
     try {
       const file = req.file;
+      const { categoria } = req.body;
 
       if (!file) {
         return res.status(400).json({
@@ -13,7 +14,7 @@ class FormatoController {
         });
       }
 
-      const document = await formatoService.uploadDocument(file);
+      const document = await formatoService.uploadDocument(file, categoria);
 
       res.status(201).json({
         success: true,

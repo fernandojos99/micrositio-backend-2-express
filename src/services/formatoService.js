@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 class FormatoService {
   
-  async uploadDocument(file) {
+  async uploadDocument(file, categoria = null) {
     try {
       // Validar tamaño del archivo (50MB máximo)
       const maxSize = 50 * 1024 * 1024; // 50MB en bytes
@@ -41,7 +41,8 @@ class FormatoService {
       const documentData = {
         document_name: file.originalname,
         document_url: urlData.publicUrl,
-        document_type: documentType
+        document_type: documentType,
+        categoria: categoria
       };
 
       const document = await FormatoRepository.create(documentData);

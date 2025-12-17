@@ -2,7 +2,7 @@ import supabase from '../config/supabaseClient.js';
 
 class FormatoRepository {
   static async create(formatoData) {
-    const { document_name, document_url, document_type } = formatoData;
+    const { document_name, document_url, document_type, categoria } = formatoData;
     
     const { data, error } = await supabase
       .from('formato')
@@ -10,7 +10,8 @@ class FormatoRepository {
         {
           document_name,
           document_url,
-          document_type
+          document_type,
+          categoria
         }
       ])
       .select()
@@ -42,7 +43,7 @@ class FormatoRepository {
   }
 
   static async update(id, formatoData) {
-    const { document_name, document_url, document_type } = formatoData;
+    const { document_name, document_url, document_type, categoria } = formatoData;
     
     const { data, error } = await supabase
       .from('formato')
@@ -50,6 +51,7 @@ class FormatoRepository {
         document_name,
         document_url,
         document_type,
+        categoria,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
