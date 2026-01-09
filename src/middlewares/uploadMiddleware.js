@@ -24,8 +24,13 @@ const upload = multer({
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      
+      // PowerPoint - Todos los formatos
+      'application/vnd.ms-powerpoint', // .ppt
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+      'application/vnd.ms-powerpoint.presentation.macroEnabled.12', // .pptm
+      'application/vnd.oasis.opendocument.presentation', // .odp
+      
       'text/plain',
       'text/csv',
       

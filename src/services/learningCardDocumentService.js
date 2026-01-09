@@ -14,11 +14,14 @@ class LearningCardDocumentService {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-powerpoint.presentation.macroEnabled.12', // .pptm
+    'application/vnd.oasis.opendocument.presentation', // .odp
     'text/plain',
     'image/jpeg',
     'image/png',
     'image/gif',
-    'image/webp'
+    'image/webp',
+    'image/svg+xml'
   ];
 
   static async uploadDocument(learningCardId, file) {

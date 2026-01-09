@@ -12,6 +12,37 @@ class TestingCardDocumentService {
         throw new Error('El archivo excede el tamaño máximo permitido de 50MB');
       }
 
+      // Validar tipos de archivo permitidos
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+        'application/vnd.oasis.opendocument.presentation',
+        'text/plain',
+        'text/csv',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/svg+xml',
+        'video/mp4',
+        'video/mpeg',
+        'video/quicktime',
+        'video/webm',
+        'audio/mpeg',
+        'audio/wav',
+        'audio/ogg'
+      ];
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new Error(`Tipo de archivo no permitido: ${file.mimetype}`);
+      }
+
       // Generar nombre único para el archivo
       const fileExtension = file.originalname.split('.').pop();
       const uniqueFileName = `${testingCardId}_${uuidv4()}.${fileExtension}`;
@@ -99,7 +130,8 @@ class TestingCardDocumentService {
     if (mimetype.startsWith('audio/')) return 'audio';
     if (mimetype.includes('document') || mimetype.includes('word')) return 'document';
     if (mimetype.includes('sheet') || mimetype.includes('excel')) return 'spreadsheet';
-    if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return 'presentation';
+    if (mimetype.includes('presentation') || mimetype.includes('powerpoint') || mimetype.includes('vnd.ms-powerpoint') || mimetype.includes('vnd.oasis.opendocument.presentation')) return 'presentation';
+    if (mimetype.includes('text/')) return 'text';
     return 'other';
   }
 }
