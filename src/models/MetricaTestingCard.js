@@ -89,7 +89,7 @@ class MetricaTestingCard {
    * @returns {Object} Objeto para respuesta API
    */  toAPI() {
     return {
-      id: this.id_metrica,
+      id_metrica: this.id_metrica,
       id_testing_card: this.id_testing_card,
       nombre: this.nombre,
       operador: this.operador,
