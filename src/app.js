@@ -99,7 +99,21 @@ app.use('/formato', formatoRoutes);
 app.get('/', (req, res) => {
   res.send('API funcionando');
 });
- 
+
+// 🔥 Endpoint de health check para mantener el servicio activo
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    service: 'Micrositio IRIS Backend',
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
+    }
+  });
+});
+
 // Manejo de errores
 app.use(errorHandler);
  
