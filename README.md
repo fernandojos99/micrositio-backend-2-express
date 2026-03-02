@@ -78,6 +78,6 @@ cp .env.example .env
 cd src
 node app.js
 
-<!--test of build-->
+<!--test of build 2-->
 
 
