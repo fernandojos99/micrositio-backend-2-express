@@ -76,6 +76,8 @@ cp .env.example .env
 
 # 4. Iniciar servidor
 cd src
-node app.js 
+node app.js
+
+<!--test of build-->
 
 
