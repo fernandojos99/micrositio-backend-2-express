@@ -23,6 +23,10 @@ router.get('/:id', accionableController.obtenerPorId);
  */
 router.post('/', accionableController.crear);
 
+/**
+ * PUT /accionables/sync
+ */
+router.put("/sync", accionableController.sync);
 
 /**
  * PUT /accionables/:id

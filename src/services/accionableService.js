@@ -15,7 +15,7 @@ const learningCardRepo = new LearningCardRepository();
  */
 export async function obtenerPorId(id) {
   if (!Number.isInteger(id)) {
-    throw new ApiError('ID de accionable inválido', 400);
+    throw new ApiError('ID de accionable inválido  no rd nurto 2 ', 400);
   }
 
   const accionable = await accionableRepo.obtenerPorId(id);
@@ -71,7 +71,7 @@ export async function crear(accionableData) {
  */
 export async function actualizar(id, updateData) {
   if (!Number.isInteger(id)) {
-    throw new ApiError('ID de accionable inválido', 400);
+    throw new ApiError('ID de accionable inválido no es numero', 400);
   }
 
   const accionable = await accionableRepo.actualizar(id, updateData);
@@ -86,6 +86,71 @@ export async function eliminar(id) {
   return accionable.fromRow();
 }
 
+
+
+
+
+
+
+/**
+ * Función de sincronización de accionables para una learning card
+ * 
+*/
+
+export async function sync(accionables) {
+
+  if (!Array.isArray(accionables)) {
+    throw new ApiError('Se esperaba un arreglo de accionables', 400);
+  }
+
+  if (accionables.length === 0) return [];
+
+  const learningCardId = accionables[0].id_learning_card;
+
+  // Obtener accionables actuales en BD
+  const existentes = await accionableRepo.obtenerPorLearningCard(learningCardId);
+
+  const existentesMap = new Map(
+    existentes.map(a => [a.id_accionable, a])
+  );
+
+  const idsEnviados = new Set();
+
+  const resultados = [];
+
+  for (const accionable of accionables) {
+
+    // CREATE
+    if (!accionable.id_accionable) {
+      const nuevo = await accionableRepo.crear(accionable);
+      resultados.push(nuevo.fromRow());
+      continue;
+    }
+
+    idsEnviados.add(accionable.id_accionable);
+
+    // UPDATE
+    if (existentesMap.has(accionable.id_accionable)) {
+      const actualizado = await accionableRepo.actualizar(
+        accionable.id_accionable,
+        accionable
+      );
+      resultados.push(actualizado.fromRow());
+    }
+
+  }
+
+  // DELETE (los que estaban en BD pero no vinieron en request)
+  for (const existente of existentes) {
+
+    if (!idsEnviados.has(existente.id_accionable)) {
+      await accionableRepo.eliminar(existente.id_accionable);
+    }
+
+  }
+
+  return resultados;
+}
 
 
 

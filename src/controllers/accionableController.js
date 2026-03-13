@@ -105,3 +105,24 @@ export async function eliminar(req, res, next) {
     next(error);
   }
 }
+
+
+/**
+ * Sincronizar accionables de una learning card
+ */
+export async function sync(req, res, next) {
+  try {
+
+    const accionables = req.body;
+
+    const result = await accionableService.sync(accionables);
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}

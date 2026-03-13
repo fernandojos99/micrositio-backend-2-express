@@ -122,6 +122,24 @@ export async function eliminar(id) {
 }
 
 
+
+export async function obtenerPorLearningCard(idLearningCard) {
+
+  const { data, error } = await supabase
+    .from('accionable')
+    .select('*')
+    .eq('id_learning_card', idLearningCard);
+
+  if (error) {
+    throw new ApiError(`Error al obtener accionables: ${error.message}`, 500);
+  }
+
+  return data.map(item => new Accionable(item));
+}
+
+
+
+
 /**
  * Buscar accionable por texto
  */
