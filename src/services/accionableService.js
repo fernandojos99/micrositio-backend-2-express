@@ -155,8 +155,7 @@ export async function eliminar(id) {
  */
 
 
-// Se inicializa por si viene undefaid en accionable
-export async function sync(learningCardId, accionables=[]) {
+export async function sync(learningCardId, accionables = []) {
 
     const id = Number(learningCardId)
     if (!Number.isInteger(id)) {
@@ -165,85 +164,51 @@ export async function sync(learningCardId, accionables=[]) {
 
     const existentes = await accionableRepo.obtenerPorLearningCard(id);
 
-    // De los que hay crea un mapa [id_accionable,RowAccionable]
     const existentesMap = new Map(
-            existentes.map(a => [a.id_accionable, a])
-            );
-        
+        existentes.map(a => [a.id_accionable, a])
+    );
+
     const idsEnviados = new Set();
     const resultados = [];
 
+    // CREATE y UPDATE
+    for (const accionable of accionables) {
 
-    //Para create y update
-    if (accionables.length != 0)
-        
-        {
-        
-       
-            //Para los valores que llegaron
-            for (const accionable of accionables) {
-        
-            // CREATE
-            // como el id.accionable viene como default se convierte en true con "!"y por eso
-            // crea un nuevo elemento 
-            if (accionable.id_accionable==0) {
-                console.log("el que llega",accionable.id_accionable)
-                 // si por alguna razón ya existe con ese id no crear
-                //if (accionable.id_accionable && existentesMap.has(accionable.id_accionable)) {
-                //continue;
-                //}
+        const existente = existentes.find(e =>
+            e.contenido === accionable.contenido &&
+            e.impacto === accionable.impacto &&
+            e.esfuerzo === accionable.esfuerzo
+        );
 
-                const { id_accionable, ...accionableSinId } = accionable;
-                //console.log(accionableSinId);
-                const nuevo = await accionableRepo.crear(accionableSinId);
-                resultados.push(nuevo.fromRow());
-                continue;
-            }
-        
-            idsEnviados.add(accionable.id_accionable);
-        
-            // UPDATE
-            // Verifica si existe por medio de su id
-            if (existentesMap.has(accionable.id_accionable)) {
-                const actualizado = await accionableRepo.actualizar(
-                accionable.id_accionable,
+        // UPDATE
+        if (existente) {
+
+            idsEnviados.add(existente.id_accionable);
+
+            const actualizado = await accionableRepo.actualizar(
+                existente.id_accionable,
                 accionable
-                );
-                resultados.push(actualizado.fromRow());
-            }
+            );
 
-         /*       // DELETE
-            for (const existente of existentes) {
-                if (!idsEnviados.has(existente.id_accionable)) {
-                    await accionableRepo.eliminar(existente.id_accionable);
-                }
-            }
-            return resultados;
-             */
-
-            }
-        
-        
-            return resultados;
-        }
-        
-        else{
-            // DELETE
-            for (const existente of existentes) {
-            if (!idsEnviados.has(existente.id_accionable)) {
-                await accionableRepo.eliminar(existente.id_accionable);
-            }
-            }
-            return resultados;
-            
+            resultados.push(actualizado.fromRow());
         }
 
+        // CREATE
+        else {
+
+            const nuevo = await accionableRepo.crear(accionable);
+            resultados.push(nuevo.fromRow());
+        }
+    }
+    // DELETE
+    for (const existente of existentes) {
+        if (!idsEnviados.has(existente.id_accionable)) {
+            await accionableRepo.eliminar(existente.id_accionable);
+        }
+    }
+
+    return resultados;
 }
-
-    
-
-
-
 
 
 /**
