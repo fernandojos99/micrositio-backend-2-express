@@ -26,7 +26,7 @@ router.post('/', accionableController.crear);
 /**
  * PUT /accionables/sync
  */
-router.put("/sync", accionableController.sync);
+router.put("/sync/:id", accionableController.sync);
 
 /**
  * PUT /accionables/:id
@@ -41,5 +41,10 @@ router.put('/:id', accionableController.actualizar);
  */
 router.delete('/:id', accionableController.eliminar);
 
+
+router.get(
+  '/learning-card/:id/accionables',
+  accionableController.obtenerPorLearningCard
+);
 
 export default router;

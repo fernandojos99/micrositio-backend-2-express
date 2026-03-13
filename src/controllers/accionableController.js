@@ -50,8 +50,9 @@ export async function obtenerTodos(req, res, next) {
 export async function crear(req, res, next) {
   try {
     const accionableData = req.body;
+    const id=req.params.id;
 
-    const nuevoAccionable = await accionableService.crear(accionableData);
+    const nuevoAccionable = await accionableService.crear(id,accionableData);
 
     res.status(201).json({
       success: true,
@@ -114,12 +115,36 @@ export async function sync(req, res, next) {
   try {
 
     const accionables = req.body;
+   const idLearningCard = parseInt(req.params.id);
+   console.log("esta es la learningCard",idLearningCard);
+   console.log("El body",accionables)
 
-    const result = await accionableService.sync(accionables);
+    const result = await accionableService.sync(idLearningCard,accionables);
 
     res.status(200).json({
       success: true,
       data: result
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+/**
+ * Obtener accionables por Learning Card
+ */
+export async function obtenerPorLearningCard(req, res, next) {
+  try {
+
+    const idLearningCard = parseInt(req.params.id);
+
+    const accionables = await accionableService.obtenerPorLearningCard(idLearningCard);
+
+    res.status(200).json({
+      success: true,
+      data: accionables
     });
 
   } catch (error) {
