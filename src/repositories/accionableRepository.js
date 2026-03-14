@@ -2,22 +2,6 @@ import supabase from '../config/supabaseClient.js'
 import ApiError from '../utils/ApiError.js'
 import Accionable from '../models/Accionable.js'
 
-/**
- * Obtener accionables por learning card
- */
-export async function obtenerPorLearningCard(idLearningCard) {
-
-  const { data, error } = await supabase
-    .from('accionable')
-    .select('*')
-    .eq('id_learning_card', idLearningCard)
-
-  if (error) {
-    throw new ApiError(`Error al obtener accionables: ${error.message}`, 500)
-  }
-
-  return data.map(item => new Accionable(item))
-}
 
 
 /**
@@ -99,4 +83,24 @@ export async function eliminar(id) {
   }
 
   return new Accionable(data)
+}
+
+
+
+
+/**
+ * Obtener accionables por learning card
+ */
+export async function obtenerPorLearningCard(idLearningCard) {
+
+  const { data, error } = await supabase
+    .from('accionable')
+    .select('*')
+    .eq('id_learning_card', idLearningCard)
+
+  if (error) {
+    throw new ApiError(`Error al obtener accionables: ${error.message}`, 500)
+  }
+
+  return data.map(item => new Accionable(item))
 }
