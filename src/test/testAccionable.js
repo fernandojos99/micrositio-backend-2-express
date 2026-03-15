@@ -1,10 +1,12 @@
 import {
-    obtenerTodos,
+    //obtenerTodos,
     crear,
     obtenerPorId,
     actualizar,
     eliminar,
-    obtenerAccionablesPorProyecto,
+    obtenerPorProyecto,
+    obtenerPorTestingCard,
+    obtenerPorSecuencia,
   } from '../repositories/accionableRepository.js';
   
   async function test() {
@@ -76,12 +78,36 @@ import {
   
   
 
-    // // const accionables =await obtenerAccionablesPorProyecto(idProyecto);
-    const accionables =await obtenerAccionablesPorProyecto(80);
-    console.log(accionables);
 
-    // const accionables =await obtenerPorTestingCard(3);
-    // console.log(accionables);
+  //============================ Por Testing Card ============================================
+
+console.log("Accionables por testing card...");
+
+const testing = await obtenerPorTestingCard(465);
+
+console.log(testing);
+
+
+
+
+//============================ Por Secuencia ============================================
+
+console.log("Accionables por secuencia...");
+
+const secuencia = await obtenerPorSecuencia(161);
+
+console.log(secuencia);
+
+
+
+
+//============================ Por Proyecto ============================================
+
+console.log("Accionables por proyecto...");
+
+const proyecto = await obtenerPorProyecto(87);
+
+console.log(proyecto);
 
 
      } catch (err) {
@@ -89,4 +115,4 @@ import {
     }
   }
   
- // test();
+//test();

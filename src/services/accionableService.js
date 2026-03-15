@@ -35,10 +35,10 @@ export async function obtenerPorId(id) {
 /**
  * Obtener todos los accionables
  */
-export async function obtenerTodos() {
-  const accionables = await accionableRepo.obtenerTodos();
-  return accionables.map(a => a.fromRow());
-}
+// export async function obtenerTodos() {
+//   const accionables = await accionableRepo.obtenerTodos();
+//   return accionables.map(a => a.fromRow());
+// }
 
 
 
@@ -88,6 +88,38 @@ export async function eliminar(id) {
 
 
 
+
+
+/**
+ * Obtener accionables por Learning Card
+ */
+export async function obtenerPorLearningCard(idLearningCard) {
+
+  if (!Number.isInteger(idLearningCard)) {
+    throw new ApiError('ID de learning card inválido', 400);
+  }
+
+  // Verificar que la learning card exista
+  const learningCard = await learningCardRepo.obtenerPorId(idLearningCard);
+
+  if (!learningCard) {
+    throw new ApiError('Learning card no encontrada', 404);
+  }
+
+  // Obtener accionables
+  const accionables = await accionableRepo.obtenerPorLearningCard(idLearningCard);
+
+  return accionables.map(a => a.fromRow());
+}
+
+
+
+
+/**
+ * Sincronizar accionables de una learning card
+ * Recibe un array de accionables y actualiza la base de datos para que coincida exactamente con ese array
+ * Crea nuevos, actualiza existentes y elimina los que no estén en el array
+ */
 export async function sync(learningCardId, accionables = []) {
 
     const id = Number(learningCardId)
@@ -144,27 +176,52 @@ export async function sync(learningCardId, accionables = []) {
 }
 
 
+
 /**
- * Obtener accionables por Learning Card
- */
-export async function obtenerPorLearningCard(idLearningCard) {
 
-  if (!Number.isInteger(idLearningCard)) {
-    throw new ApiError('ID de learning card inválido', 400);
+* Obtener accionables por testing card
+  */
+export async function obtenerPorTestingCard(idTestingCard) {
+
+  if (!Number.isInteger(idTestingCard)) {
+  throw new ApiError('ID de testing card inválido', 400);
   }
-
-  // Verificar que la learning card exista
-  const learningCard = await learningCardRepo.obtenerPorId(idLearningCard);
-
-  if (!learningCard) {
-    throw new ApiError('Learning card no encontrada', 404);
-  }
-
-  // Obtener accionables
-  const accionables = await accionableRepo.obtenerPorLearningCard(idLearningCard);
-
+  
+  const accionables = await accionableRepo.obtenerPorTestingCard(idTestingCard);
+  
   return accionables.map(a => a.fromRow());
-}
+  }
+  
+  /**
+  
+  * Obtener accionables por secuencia
+    */
+    export async function obtenerPorSecuencia(idSecuencia) {
+  
+  if (!Number.isInteger(idSecuencia)) {
+  throw new ApiError('ID de secuencia inválido', 400);
+  }
+  
+  const accionables = await accionableRepo.obtenerPorSecuencia(idSecuencia);
+  
+  return accionables.map(a => a.fromRow());
+  }
+  
+  /**
+  
+  * Obtener accionables por proyecto
+    */
+    export async function obtenerPorProyecto(idProyecto) {
+  
+  if (!Number.isInteger(idProyecto)) {
+  throw new ApiError('ID de proyecto inválido', 400);
+  }
+  
+  const accionables = await accionableRepo.obtenerPorProyecto(idProyecto);
+  
+  return accionables.map(a => a.fromRow());
+  }
+  
 
 
 
@@ -172,44 +229,3 @@ export async function obtenerPorLearningCard(idLearningCard) {
 
 
 
-
-
-
-
-
-/**
- * Obtener accionables por proyecto (Pendiente de implementación completa)
- */
-
-
-// export async function obtenerPorProyecto(idProyecto) {
-//   if (!Number.isInteger(idProyecto)) {
-//     throw new ApiError('ID de proyecto inválido', 400);
-//   }
-
-//   try {
-//     // 1. Obtener secuencias del proyecto
-//     const secuencias = await testingCardRepo.obtenerSecuenciasPorProyecto(idProyecto);
-//     if (!secuencias.length) return [];
-
-//     const secuenciaIds = secuencias.map(s => s.id_secuencia);
-
-//     // 2. Obtener testing cards de esas secuencias
-//     const testingCards = await testingCardRepo.obtenerPorSecuencias(secuenciaIds);
-//     if (!testingCards.length) return [];
-
-//     const testingCardIds = testingCards.map(tc => tc.id_testing_card);
-
-//     // 3. Obtener learning cards de esas testing cards
-//     const learningCards = await learningCardRepo.obtenerPorTestingCards(testingCardIds);
-//     if (!learningCards.length) return [];
-
-//     const learningCardIds = learningCards.map(lc => lc.id);
-
-//     // 4. Finalmente, obtener los accionables
-//     const accionables = await accionableRepo.obtenerPorLearningCards(learningCardIds);
-//     return accionables.map(a => a.fromRow());
-//   } catch (err) {
-//     throw new ApiError(`Error al obtener accionables por proyecto: ${err.message}`, 500);
-//   }
-// }

@@ -24,19 +24,19 @@ export async function obtenerPorId(req, res, next) {
 /**
  * Obtener todos los accionables
  */
-export async function obtenerTodos(req, res, next) {
-  try {
-    const accionables = await accionableService.obtenerTodos();
+// export async function obtenerTodos(req, res, next) {
+//   try {
+//     const accionables = await accionableService.obtenerTodos();
 
-    res.status(200).json({
-      success: true,
-      data: accionables
-    });
+//     res.status(200).json({
+//       success: true,
+//       data: accionables
+//     });
 
-  } catch (error) {
-    next(error);
-  }
-}
+//   } catch (error) {
+//     next(error);
+//   }
+// }
 
 
 
@@ -118,8 +118,8 @@ export async function sync(req, res, next) {
 
     const accionables = req.body;
    const idLearningCard = parseInt(req.params.id);
-   console.log("esta es la learningCard",idLearningCard);
-   console.log("El body",accionables)
+   //console.log("esta es la learningCard",idLearningCard);
+   //console.log("El body",accionables)
 
     const result = await accionableService.sync(idLearningCard,accionables);
 
@@ -152,4 +152,70 @@ export async function obtenerPorLearningCard(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+
+
+
+/**
+
+* Obtener accionables por Testing Card
+  */
+export async function obtenerPorTestingCard(req, res, next) {
+  try {
+
+  const idTestingCard = parseInt(req.params.id);
+
+  const accionables = await accionableService.obtenerPorTestingCard(idTestingCard);
+
+  res.status(200).json({
+  success: true,
+  data: accionables
+  });
+
+} catch (error) {
+next(error);
+}
+}
+
+/**
+
+* Obtener accionables por Secuencia
+  */
+  export async function obtenerPorSecuencia(req, res, next) {
+  try {
+
+  const idSecuencia = parseInt(req.params.id);
+
+  const accionables = await accionableService.obtenerPorSecuencia(idSecuencia);
+
+  res.status(200).json({
+  success: true,
+  data: accionables
+  });
+
+} catch (error) {
+next(error);
+}
+}
+
+/**
+
+* Obtener accionables por Proyecto
+  */
+  export async function obtenerPorProyecto(req, res, next) {
+  try {
+
+  const idProyecto = parseInt(req.params.id);
+
+  const accionables = await accionableService.obtenerPorProyecto(idProyecto);
+
+  res.status(200).json({
+  success: true,
+  data: accionables
+  });
+
+} catch (error) {
+next(error);
+}
 }

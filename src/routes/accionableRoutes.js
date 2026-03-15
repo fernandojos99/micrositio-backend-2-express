@@ -7,7 +7,7 @@ const router = Router();
  * GET /accionables
  * Obtener todos los accionables
  */
-router.get('/', accionableController.obtenerTodos);
+// router.get('/', accionableController.obtenerTodos);
 
 
 /**
@@ -46,5 +46,23 @@ router.get(
   '/learning-card/:id/accionables',
   accionableController.obtenerPorLearningCard
 );
+
+
+/**
+ * GET /accionables/testing-card/:id
+ * Obtener accionables por testing card
+ */
+router.get('/testing-card/:id/accionables',accionableController.obtenerPorTestingCard);
+/**
+ * GET /accionables/secuencia/:id
+ * Obtener accionables por secuencia
+ */
+router.get('/secuencia/:id/accionables', accionableController.obtenerPorSecuencia);
+/**
+ * GET /accionables/proyecto/:id
+ * Obtener accionables por proyecto
+ */
+router.get('/proyecto/:id/accionables', accionableController.obtenerPorProyecto);
+
 
 export default router;
