@@ -14,36 +14,36 @@ const router = Router();
  * GET /accionables/:id
  * Obtener accionable por ID
  */
-router.get('/:id', accionableController.obtenerPorId);
+router.get('/:id',authMiddleware, accionableController.obtenerPorId);
 
 
 /**
  * POST /accionables
  * Crear accionable
  */
-router.post('/', accionableController.crear);
+router.post('/', authMiddleware,accionableController.crear);
 
 /**
  * PUT /accionables/sync
  */
-router.put("/sync/:id", accionableController.sync);
+router.put("/sync/:id", authMiddleware,accionableController.sync);
 
 /**
  * PUT /accionables/:id
  * Actualizar accionable
  */
-router.put('/:id', accionableController.actualizar);
+router.put('/:id', authMiddleware,accionableController.actualizar);
 
 
 /**
  * DELETE /accionables/:id
  * Eliminar accionable
  */
-router.delete('/:id', accionableController.eliminar);
+router.delete('/:id', authMiddleware,accionableController.eliminar);
 
 
 router.get(
-  '/learning-card/:id/accionables',
+  '/learning-card/:id/accionables',authMiddleware,
   accionableController.obtenerPorLearningCard
 );
 
@@ -66,3 +66,4 @@ router.get('/proyecto/:id/accionables', accionableController.obtenerPorProyecto)
 
 
 export default router;
+
