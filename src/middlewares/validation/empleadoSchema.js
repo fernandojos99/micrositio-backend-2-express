@@ -24,7 +24,7 @@ const empleadoCreateSchema = z.object({
     .optional(),
   correo: z.string()
     .email('Debe ser un correo electrónico válido')
-    .max(40, 'El correo no puede exceder los 40 caracteres'),
+    .max(60, 'El correo no puede exceder los 40 caracteres'),
   numero_empleado: z.string()
     .length(6, 'El número de empleado debe tener exactamente 6 caracteres'),
   activo: z.boolean()
