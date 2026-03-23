@@ -13,6 +13,7 @@ const empleadoController = new EmpleadoController();
 
 /**
  * Ruta GET para obtener un empleado por ID.
+ * <Pendiente checar esto porque deberia ser get>
  * @name get/empleados/
  * @function
  */
@@ -23,7 +24,7 @@ router.post('/', authMiddleware, empleadoController.obtenerPorId.bind(empleadoCo
  * @name post/empleados
  * @function
  */
-router.post('/', authMiddleware, soloEditores, empleadoController.crear.bind(empleadoController));
+router.post('/create', authMiddleware, soloEditores, empleadoController.crear.bind(empleadoController));
 
 /**
  * Ruta PATCH para actualizar un empleado existente.

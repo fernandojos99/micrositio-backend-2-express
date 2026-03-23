@@ -76,6 +76,7 @@ class EmpleadoRepository {
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
   async actualizar(id, empleadoData) {
+    console.log("Datos a actualizar en repositorio", empleadoData);
     const { data, error } = await supabase
       .from('empleado')
       .update(empleadoData)

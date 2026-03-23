@@ -141,6 +141,8 @@ class LearningCardRepository {
       .select('*')
       .eq('id_testing_card', idTestingCard);
 
+      console.log('Data obtenida por ID de testing card:', data);
+
     if (error) {
       throw new ApiError(`Error al obtener learning cards: ${error.message}`, 500);
     }
