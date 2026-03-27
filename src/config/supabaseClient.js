@@ -1,17 +1,19 @@
 // src/config/supabaseClient.js
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 
-// Cargar variables de entorno
-dotenv.config();
-
-// Verificar variables
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-  console.error('ERROR: Las variables SUPABASE_URL y SUPABASE_KEY deben estar definidas en .env');
-  process.exit(1); // Detener la aplicación si faltan variables
+// Solo cargar dotenv en desarrollo
+if (process.env.NODE_ENV !== 'production') {
+  const dotenv = await import('dotenv');
+  dotenv.config();
 }
 
-// Crear cliente Supabase
+// Validación de variables
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+  console.error('ERROR: SUPABASE_URL y SUPABASE_KEY deben estar definidas');
+  process.exit(1);
+}
+
+// Crear cliente
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY

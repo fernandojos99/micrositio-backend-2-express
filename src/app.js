@@ -43,7 +43,19 @@ import servicioRoutes from './routes/servicioRoutes.js';
  
  
 // Configurar dotenv
-dotenv.config();
+//dotenv.config();
+
+
+
+// 👇 PONLO AQUÍ (después de imports)
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+
  
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,7 +79,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Middleware adicional para manejar preflight OPTIONS
+//Middleware adicional para manejar preflight OPTIONS
 app.options('*', (req, res) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -77,11 +89,21 @@ app.options('*', (req, res) => {
 });
 
 // Middleware para parsear JSON
-app.use(bodyParser.json()); 
+//app.use(bodyParser.json()); 
 app.use(express.json());
 
+<<<<<<< HEAD
 
 
+=======
+//Para debuguear las solicitudes entrantes
+app.use((req, res, next) => {
+  console.log("PATH:", req.path);
+  console.log("METHOD:", req.method);
+  console.log("BODY:", req.body);
+  next();
+});
+>>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
 // Rutas
 app.use('/proyectos', proyectoRoutes);
 app.use('/celula_proyecto', celulaProyectoRoutes);
@@ -135,6 +157,7 @@ app.get('/health', (req, res) => {
   });
 });
 
+<<<<<<< HEAD
 // ============  Imagenes Acomodar despues ==================
 
 
@@ -232,6 +255,9 @@ app.get('/health', (req, res) => {
 // ========================================================
 
 // Manejo de errores
+=======
+// Manejo de errores (volver a poner despues)
+>>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
 app.use(errorHandler);
 
 
@@ -239,7 +265,15 @@ app.use(errorHandler);
 
  
 // Iniciar servidor
+<<<<<<< HEAD
 app.listen(PORT,async () => {
   //await initStorage();
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+=======
+// app.listen(PORT, () => {
+//   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+// });
+
+export default app;
+>>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
