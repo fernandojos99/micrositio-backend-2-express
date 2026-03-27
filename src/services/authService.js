@@ -1,3 +1,5 @@
+//import bcrypt from 'bcryptjs';
+
 import bcrypt from 'bcryptjs';
 import supabase from '../config/supabaseClient.js';
 import JWTUtils from '../utils/jwtUtils.js';
@@ -10,6 +12,7 @@ class AuthService {
   async login(alias, password) {
     try {
       // 1. Buscar usuario por alias
+      console.log(`Intentando login para alias: ${alias}`);
       const { data: usuario, error: userError } = await supabase
         .from('usuarios')
         .select('*')
@@ -20,13 +23,56 @@ class AuthService {
       if (userError || !usuario) {
         throw new ApiError('Credenciales inválidas', 401);
       }
-
+      console.log(`Usuario encontradoOOOOOOOO: ${usuario.id_usuario}, tipo: ${usuario.tipo}`);
       // 2. Verificar password
-      const passwordValido = await bcrypt.compare(password, usuario.password_hash);
-      if (!passwordValido) {
-        throw new ApiError('Credenciales inválidas', 401);
+
+
+      // 🔥 TEST BCRYPT (ponlo AQUÍ)
+      console.log("TEST BCRYPT LOCAL");
+
+      const testHash = await bcrypt.hash("123456", 10);
+      const testCompare = await bcrypt.compare("123456", testHash);
+
+      console.log("BCRYPT TEST RESULT:", testCompare);
+
+
+
+      console.log("HASH DEBUG", {
+        hash: usuario.password_hash,
+        length: usuario.password_hash?.length,
+        startsWith: usuario.password_hash?.slice(0, 4)
+      });
+
+     // const passwordValido = true;
+    //  2. Verificar password
+        let passwordValido = false;
+      try {
+        passwordValido = await bcrypt.compare(password, usuario.password_hash);
+      } catch (bcryptError) {
+        throw new ApiError(
+          'Error al validar contraseña',
+          500,
+          {
+            originalError: bcryptError,
+            details: {
+              passwordLength: password?.length,
+              hash: usuario.password_hash
+            }
+          }
+        );
       }
 
+
+
+
+
+
+      console.log(`Comparando password para usuario ${usuario.id_usuario}: ${passwordValido ? 'válido' : 'inválido'}`);
+      if (!passwordValido) {
+        console.log(`Password inválido para usuario ${usuario.id_usuario}`);
+        throw new ApiError('Credenciales inválidas', 401);
+      }
+      console.log('Password válido, generando token...');
       // 3. Obtener proyectos si es visitante
       let proyectos = null;
       if (usuario.tipo === 'VISITANTE') {
@@ -47,7 +93,7 @@ class AuthService {
 
       // 5. Preparar respuesta (sin password)
       const { password_hash, ...usuarioSinPassword } = usuario;
-
+      console.log(`Login exitoso para usuario ${usuario.id_usuario}, token generado`);
       return {
         token,
         usuario: {
