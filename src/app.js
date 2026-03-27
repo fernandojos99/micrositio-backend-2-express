@@ -45,7 +45,7 @@ app.use(cors({
     'https://micrositio-iris-front.vercel.app',
     //'http://localhost:3000',
     //'http://localhost:3001',
-    'https://micrositio-iris-front-git-dev3-iris-star-up-labs-projects.vercel.app/',
+    'https://micrositio-iris-front-git-dev3-iris-star-up-labs-projects.vercel.app',
     'http://localhost:5173',
     'http://localhost:5174'
   ],
