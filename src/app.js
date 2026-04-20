@@ -31,6 +31,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import urlFormatoRoutes from './routes/urlFormatoRoutes.js';
 import formatoRoutes from './routes/formatoRoutes.js';
 import accionableRoutes from './routes/accionableRoutes.js';
+import habilidadRoutes from './routes/habilidadRoutes.js';
  
  
 // Configurar dotenv
@@ -96,6 +97,7 @@ app.use('/search', searchRoutes);
 app.use('/url_formato', urlFormatoRoutes);
 app.use('/formato', formatoRoutes);
 app.use('/accionables', accionableRoutes);
+app.use('/habilidad',habilidadRoutes);
 
 
 // Ruta básica de prueba
