@@ -15,15 +15,19 @@ class Empleado {
     this.id_empleado = data.id_empleado;
     this.nombre_pila = data.nombre_pila;
     this.apellido_paterno = data.apellido_paterno;
-    this.apellido_materno = data.apellido_materno || null;
-    this.celular = data.celular || null;
+    this.apellido_materno = data.apellido_materno ?? null;
+    this.celular = data.celular ?? null;
     this.correo = data.correo;
     this.numero_empleado = data.numero_empleado;
     this.activo = data.activo !== undefined ? data.activo : true;
-    this.created_at = new Date(data.created_at || Date.now());
-    this.updated_at = new Date(data.updated_at || Date.now());
+    this.created_at = new Date(data.created_at ?? Date.now());
+    this.updated_at = new Date(data.updated_at ?? Date.now());
+  
+    // ✅ nuevos campos corregidos
+    this.cargo = data.cargo ?? "";
+    this.departamento = data.departamento ?? "";
+    this.infopersonal = data.infopersonal ?? "";
   }
-
   /**
    * Valida los datos del empleado al crear.
    * @static
@@ -71,7 +75,12 @@ class Empleado {
       numero_empleado: dbData.numero_empleado,
       activo: dbData.activo,
       created_at: new Date(dbData.created_at),
-      updated_at: new Date(dbData.updated_at)
+      updated_at: new Date(dbData.updated_at),
+  
+      // 🔽 nuevos campos
+      cargo: dbData.cargo ?? "",
+      departamento: dbData.departamento ?? "",
+      infopersonal: dbData.infopersonal ?? ""
     });
   }
 
@@ -87,7 +96,11 @@ class Empleado {
       celular: this.celular,
       correo: this.correo,
       numero_empleado: this.numero_empleado,
-      activo: this.activo
+      activo: this.activo,
+      cargo: this.cargo,
+      departamento: this.departamento,
+      infopersonal: this.infopersonal
+
     };
   }
 
@@ -106,7 +119,12 @@ class Empleado {
       numero_empleado: this.numero_empleado,
       activo: this.activo,
       creado: this.created_at.toISOString(),
-      actualizado: this.updated_at.toISOString()
+      actualizado: this.updated_at.toISOString(),
+  
+      // 🔽 nuevos campos
+      cargo: this.cargo,
+      departamento: this.departamento,
+      infopersonal: this.infopersonal
     };
   }
 }

@@ -62,16 +62,22 @@ class EmpleadoService {
    * @throws {ApiError} Si el empleado no existe.
    */
   async actualizar(id, empleadoData) {
-    const datosValidados = Empleado.validateUpdate(empleadoData);
+    // 🔽 validas incluyendo los nuevos campos
+    const datosValidados = Empleado.validateUpdate({
+      ...empleadoData,
+      cargo: empleadoData.cargo,
+      departamento: empleadoData.departamento,
+      infopersonal: empleadoData.infopersonal
+    });
+  
     const empleado = await this.empleadoRepo.actualizar(id, datosValidados);
-
+  
     if (!empleado) {
       throw new ApiError('Empleado no encontrado', 404);
     }
-
+  
     return empleado.toAPI();
   }
-
   /**
    * Desactiva un empleado (eliminación lógica).
    * @async

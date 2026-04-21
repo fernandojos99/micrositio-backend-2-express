@@ -25,7 +25,8 @@ class EmpleadoRepository {
     if (error && error.code !== 'PGRST116') {
       throw new ApiError(`Error al obtener empleado: ${error.message}`, 500);
     }
-
+    console.log("Empleado encontrado en repositorio", data);
+    console.log("Empleado formateado", Empleado.fromDatabase(data) );
     return data ? Empleado.fromDatabase(data) : null;
   }
 
