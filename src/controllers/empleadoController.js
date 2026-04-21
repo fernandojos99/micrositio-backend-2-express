@@ -92,6 +92,25 @@ class EmpleadoController {
     }
   }
 
+
+    async actualizarInfoPersonal(req, res, next) {
+    try {
+      if (!req.body.id) {
+        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      }
+      
+      const { id, habilidades } = req.body;
+      //const validatedData = empleadoUpdateSchema.parse(updateData);
+      console.log('Datos recibidos para actualizar info personal:', { id, habilidades });
+      const empleado = await this.empleadoService.actualizarHabilidades(id, { habilidades });
+      res.json(empleado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+
   /**
    * Maneja la desactivación de un empleado (DELETE /empleados/:id).
    * @param {Object} req - Request de Express.

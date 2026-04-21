@@ -30,7 +30,7 @@ const empleadoCreateSchema = z.object({
     .optional()
     .describe("Estado activo/inactivo del empleado"),
 
-  // 🔽 nuevos campos
+  // Campos de perfil
   cargo: z.string()
     .max(50, 'El cargo no puede exceder los 50 caracteres')
     .optional(),
@@ -41,7 +41,13 @@ const empleadoCreateSchema = z.object({
 
   infopersonal: z.string()
     .max(255, 'La información personal no puede exceder los 255 caracteres')
+    .optional(),
+
+  // 🔽 Nuevo campo de habilidades
+  habilidades: z.array(z.string())
     .optional()
+    .default([])
+    .describe("Lista de nombres de habilidades del empleado")
 });
 
 const empleadoUpdateSchema = empleadoCreateSchema.partial();

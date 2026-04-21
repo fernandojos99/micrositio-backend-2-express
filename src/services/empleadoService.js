@@ -6,6 +6,7 @@
 import EmpleadoRepository from '../repositories/empleadoRepository.js';
 import ApiError from '../utils/ApiError.js';
 import Empleado from '../models/Empleado.js';
+import Habilidad from '../models/Habilidad.js';
 
 class EmpleadoService {
   /**
@@ -78,6 +79,40 @@ class EmpleadoService {
   
     return empleado.toAPI();
   }
+
+
+
+
+    /**
+   * Actualiza un empleado existente.
+   * @async
+   * @param {number} id - ID del empleado a actualizar.
+   * @param {Object} empleadoData - Datos a actualizar.
+   * @returns {Promise<Object>} Empleado actualizado.
+   * @throws {ApiError} Si el empleado no existe.
+   */
+  async actualizar(id, empleadoData) {
+    // 🔽 validas incluyendo los nuevos campos
+    const datosValidados = Empleado.validateUpdate({
+      ...empleadoData,
+      cargo: empleadoData.cargo,
+      departamento: empleadoData.departamento,
+      infopersonal: empleadoData.infopersonal,
+      habilidades: empleadoData.habilidades
+    });
+  
+    const empleado = await this.empleadoRepo.actualizar(id, datosValidados);
+  
+    if (!empleado) {
+      throw new ApiError('Empleado no encontrado', 404);
+    }
+  
+    return empleado.toAPI();
+  }
+
+
+
+
   /**
    * Desactiva un empleado (eliminación lógica).
    * @async

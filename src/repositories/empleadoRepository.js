@@ -76,20 +76,72 @@ class EmpleadoRepository {
    * @returns {Promise<Object>} Empleado actualizado.
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
-  async actualizar(id, empleadoData) {
-    console.log("Datos a actualizar en repositorio", empleadoData);
-    const { data, error } = await supabase
-      .from('empleado')
-      .update(empleadoData)
-      .eq('id_empleado', id)
-      .select();
+/**
+ * Actualiza la información de un empleado y sincroniza sus habilidades
+ * @param {number|string} id - El id_empleado
+ * @param {Object} empleadoData - Datos del empleado incluyendo el array 'habilidades'
+ */
+async actualizar(id, empleadoData) {
+    console.log("Datos a actualizar en repositorio:", empleadoData);
 
-    if (error) {
-      throw new ApiError(`Error al actualizar empleado: ${error.message}`, 500);
+    // 1. Extraemos 'habilidades' para que no choque con la tabla 'empleado'
+    // 'datosParaTablaEmpleado' contendrá: cargo, departamento, infopersonal, etc.
+    const { habilidades, ...datosParaTablaEmpleado } = empleadoData;
+
+    try {
+        // 2. Actualizar la tabla principal 'empleado'
+        const { data: dataEmp, error: errorEmp } = await supabase
+            .from('empleado')
+            .update(datosParaTablaEmpleado)
+            .eq('id_empleado', id)
+            .select();
+
+        if (errorEmp) {
+            throw new ApiError(`Error al actualizar tabla empleado: ${errorEmp.message}`, 500);
+        }
+
+        // 3. Sincronizar la tabla 'habilidades' (Borrado y Re-inserción)
+        if (habilidades && Array.isArray(habilidades)) {
+            
+            // A. Eliminamos todas las habilidades actuales de este empleado
+            const { error: deleteError } = await supabase
+                .from('habilidades')
+                .delete()
+                .eq('id_empleado', id);
+
+            if (deleteError) {
+                throw new ApiError(`Error al limpiar habilidades previas: ${deleteError.message}`, 500);
+            }
+
+            // B. Si el usuario dejó habilidades, las insertamos como nuevas filas
+            if (habilidades.length > 0) {
+                const habilidadesInsert = habilidades.map(nombre => ({
+                    id_empleado: id,
+                    nombre_habilidad: nombre,
+                    nivel: 'Intermedio' // Valor por defecto según tu esquema
+                }));
+
+                const { error: insertError } = await supabase
+                    .from('habilidades')
+                    .insert(habilidadesInsert);
+
+                if (insertError) {
+                    throw new ApiError(`Error al insertar nuevas habilidades: ${insertError.message}`, 500);
+                }
+            }
+        }
+
+        // 4. Retornamos el empleado actualizado formateado
+        return Empleado.fromDatabase(dataEmp[0]);
+
+    } catch (error) {
+        // Si no es un ApiError ya capturado, lo envolvemos
+        if (!(error instanceof ApiError)) {
+            throw new ApiError(`Error inesperado en repositorio: ${error.message}`, 500);
+        }
+        throw error;
     }
-
-    return Empleado.fromDatabase(data[0]);
-  }
+}
 
   /**
    * Desactiva un empleado (eliminación lógica).
