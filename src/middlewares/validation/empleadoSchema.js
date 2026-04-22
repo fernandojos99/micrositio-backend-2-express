@@ -2,6 +2,15 @@
 
 import { z } from 'zod';
 
+// 🔥 helper para fechas
+const fechaSchema = z.preprocess((val) => {
+  if (!val) return undefined; // permite optional
+  const date = new Date(val);
+  return isNaN(date.getTime()) ? undefined : date;
+}, z.date({
+  invalid_type_error: "Fecha inválida"
+}));
+
 const empleadoCreateSchema = z.object({
   nombre_pila: z.string()
     .min(2, 'El nombre debe tener al menos 2 caracteres')
@@ -27,8 +36,12 @@ const empleadoCreateSchema = z.object({
     .length(6, 'El número de empleado debe tener exactamente 6 caracteres'),
 
   activo: z.boolean()
+    .optional(),
+
+  // 🔽 NUEVO
+  fecha_ingreso: fechaSchema
     .optional()
-    .describe("Estado activo/inactivo del empleado"),
+    .default(new Date()),
 
   // Campos de perfil
   cargo: z.string()
@@ -40,16 +53,14 @@ const empleadoCreateSchema = z.object({
     .optional(),
 
   infopersonal: z.string()
-    .max(255, 'La información personal no puede exceder los 255 caracteres')
     .optional(),
 
-  // 🔽 Nuevo campo de habilidades
   habilidades: z.array(z.string())
     .optional()
     .default([])
-    .describe("Lista de nombres de habilidades del empleado")
 });
 
+// Esta linea convierte todos los campos a opcionales para el update, pero mantiene las validaciones de tipo y formato
 const empleadoUpdateSchema = empleadoCreateSchema.partial();
 
 export { empleadoCreateSchema, empleadoUpdateSchema };

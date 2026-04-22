@@ -68,14 +68,9 @@ class EmpleadoRepository {
     return data; // O mapea si tienes un modelo
   }
 
-  /**
-   * Actualiza un empleado existente.
-   * @async
-   * @param {number} id - ID del empleado a actualizar.
-   * @param {Object} empleadoData - Datos a actualizar.
-   * @returns {Promise<Object>} Empleado actualizado.
-   * @throws {ApiError} Si ocurre un error al actualizar.
-   */
+
+
+  
 /**
  * Actualiza la información de un empleado y sincroniza sus habilidades
  * @param {number|string} id - El id_empleado

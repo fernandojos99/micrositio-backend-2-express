@@ -83,6 +83,7 @@ class EmpleadoController {
         throw new ApiError('Se requiere el campo "id" en el body', 400);
       }
       
+      console.log('Datos recibidos para actualizar empleado en controller:', req.body);
       const { id, ...updateData } = req.body;
       const validatedData = empleadoUpdateSchema.parse(updateData);
       const empleado = await this.empleadoService.actualizar(id, validatedData);
@@ -93,7 +94,7 @@ class EmpleadoController {
   }
 
 
-    async actualizarInfoPersonal(req, res, next) {
+    async actualizarHabilidades(req, res, next) {
     try {
       if (!req.body.id) {
         throw new ApiError('Se requiere el campo "id" en el body', 400);

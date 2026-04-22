@@ -34,11 +34,11 @@ router.post('/create', authMiddleware, soloEditores, empleadoController.crear.bi
 router.patch('/', authMiddleware, soloEditores, empleadoController.actualizar.bind(empleadoController));
 
 /**
- * Ruta PATCH para actualizar un empleado existente.
+ * Ruta PATCH para actualizar un empleado existente pero solo para sus habilidades
  * @name patch/empleados/
  * @function
  */
-router.patch('/infopersonal', authMiddleware, soloEditores, empleadoController.actualizarInfoPersonal.bind(empleadoController));
+router.patch('/infopersonal', authMiddleware, soloEditores, empleadoController.actualizarHabilidades.bind(empleadoController));
 
 
 
