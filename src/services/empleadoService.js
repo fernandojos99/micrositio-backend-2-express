@@ -28,7 +28,7 @@ class EmpleadoService {
     if (!empleado) {
       throw new ApiError('Empleado no encontrado', 404);
     }
-
+    console.log("Empleado encontrado en servicio antes de toAPI", empleado);
     return empleado.toAPI();
   }
 
@@ -61,16 +61,19 @@ class EmpleadoService {
    * @returns {Promise<Object>} Empleado actualizado.
    * @throws {ApiError} Si el empleado no existe.
    */
+
   async actualizar(id, empleadoData) {
-    const datosValidados = Empleado.validateUpdate(empleadoData);
-    const empleado = await this.empleadoRepo.actualizar(id, datosValidados);
-
-    if (!empleado) {
-      throw new ApiError('Empleado no encontrado', 404);
-    }
-
-    return empleado.toAPI();
+      const datosValidados = Empleado.validateUpdate(empleadoData);
+    
+      const empleado = await this.empleadoRepo.actualizar(id, datosValidados);
+    
+      if (!empleado) {
+        throw new ApiError('Empleado no encontrado', 404);
+      }
+    
+      return empleado.toAPI();
   }
+
 
   /**
    * Desactiva un empleado (eliminación lógica).
