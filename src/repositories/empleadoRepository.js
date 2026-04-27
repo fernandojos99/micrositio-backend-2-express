@@ -30,14 +30,18 @@ class EmpleadoRepository {
     return data ? Empleado.fromDatabase(data) : null;
   }
 
+
+
   /**
    * Crea un nuevo empleado.
    * @async
    * @param {Object} empleadoData - Datos del empleado.
    * @returns {Promise<Object>} Empleado creado.
    * @throws {ApiError} Si ocurre un error al crear.
+   * 
+   * Se le quita el campo habilidades porque no pertenece a la tabla empleado
+   * , sino a la tabla habilidades.(fallaba )
    */
-
 
   async crear(empleadoData) {
   // 🔥 quitamos habilidades

@@ -360,6 +360,43 @@ class UsuarioController {
       next(error);
     }
   }
+
+
+    /**
+ * Actualiza la imagen de un usuario
+ * PATCH /usuarios/:id/imagen
+ */
+
+
+    // Nota : Este metodo puede que este de mas porque no le hice route
+async actualizarImagen(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { image } = req.body;
+
+    // 🔹 Validar UUID
+    usuarioIdSchema.parse({ id_usuario: id });
+
+    // 🔹 Validar que venga la imagen
+    if (!image || typeof image !== 'string') {
+      throw new ApiError('La URL de la imagen es requerida', 400);
+    }
+
+    const usuario = await this.usuarioService.actualizarImagen(id, image);
+
+    res.json({
+      success: true,
+      message: 'Imagen actualizada exitosamente',
+      data: usuario
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+
 }
 
 export default UsuarioController;

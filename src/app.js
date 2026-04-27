@@ -1,12 +1,15 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
+import supabase from './config/supabaseClient.js';
+
 import proyectoRoutes from './routes/proyectoRoutes.js';
 import celulaProyectoRoutes from './routes/celulaProyectoRoutes.js';
 import empleadoRoutes from './routes/empleadoRoutes.js'; 
 import secuenciaRoutes from './routes/secuenciaRoutes.js';
-import categotiaRoutes from './routes/categoriaRoutes.js'
-import experimentosTipoRoutes from './routes/experimentoTipoRoutes.js'
+import categotiaRoutes from './routes/categoriaRoutes.js';
+import experimentosTipoRoutes from './routes/experimentoTipoRoutes.js';
 import testingCardRoutes from './routes/testingCardRoutes.js';
 import learningCardRoutes from './routes/learningCardRoutes.js';
 import metricaTestingCardRoutes from './routes/metricaTestingCardRoutes.js';
@@ -32,20 +35,25 @@ import urlFormatoRoutes from './routes/urlFormatoRoutes.js';
 import formatoRoutes from './routes/formatoRoutes.js';
 import accionableRoutes from './routes/accionableRoutes.js';
 import habilidadRoutes from './routes/habilidadRoutes.js';
- 
- 
-// Configurar dotenv
+
+import UsuarioService from './services/usuarioService.js';
+import {authMiddleware} from './middlewares/authMiddleware.js'; // 👈 IMPORTANTE
+
 dotenv.config();
- 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
- 
-// Configuración de CORS
+
+// 🔹 Bucket de Supabase
+const BUCKET = "image";
+
+// 🔹 Instancia del service
+const usuarioService = new UsuarioService();
+
+// ================= CORS =================
 app.use(cors({
   origin: [
     'https://micrositio-iris-front.vercel.app',
-    //'http://localhost:3000',
-    //'http://localhost:3001',
     'https://micrositio-iris-front-git-dev3-iris-star-up-labs-projects.vercel.app',
     'http://localhost:5173',
     'http://localhost:5174'
@@ -55,7 +63,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Middleware adicional para manejar preflight OPTIONS
 app.options('*', (req, res) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -64,23 +71,23 @@ app.options('*', (req, res) => {
   res.sendStatus(200);
 });
 
-// Middleware para parsear JSON
+// ================= MIDDLEWARE =================
 app.use(bodyParser.json()); 
 app.use(express.json());
 
-// Rutas
+// ================= ROUTES =================
 app.use('/proyectos', proyectoRoutes);
 app.use('/celula_proyecto', celulaProyectoRoutes);
 app.use('/empleados', empleadoRoutes);
 app.use('/secuencias', secuenciaRoutes);
 app.use('/categorias', categotiaRoutes);
 app.use('/experimento_tipo', experimentosTipoRoutes);
-app.use('/testing_card', testingCardRoutes)
-app.use('/learning_card', learningCardRoutes)
-app.use('/metrica_testing_card', metricaTestingCardRoutes)
-app.use('/url_testing_card', urlTestingCardRoutes)
-app.use('/url_learning_card', urlLearningCardRoutes)
-app.use('/flow-positions', nodePositionRoutes)
+app.use('/testing_card', testingCardRoutes);
+app.use('/learning_card', learningCardRoutes);
+app.use('/metrica_testing_card', metricaTestingCardRoutes);
+app.use('/url_testing_card', urlTestingCardRoutes);
+app.use('/url_learning_card', urlLearningCardRoutes);
+app.use('/flow-positions', nodePositionRoutes);
 app.use('/testing_card_playbook', testingCardPlaybookRoutes);
 app.use('/api', testingCardDocumentRoutes);
 app.use('/api/learning-card', learningCardDocumentRoutes);
@@ -97,33 +104,125 @@ app.use('/search', searchRoutes);
 app.use('/url_formato', urlFormatoRoutes);
 app.use('/formato', formatoRoutes);
 app.use('/accionables', accionableRoutes);
-app.use('/habilidad',habilidadRoutes);
+app.use('/habilidad', habilidadRoutes);
 
-
-// Ruta básica de prueba
+// ================= HEALTH =================
 app.get('/', (req, res) => {
   res.send('API funcionando');
 });
 
-// 🔥 Endpoint de health check para mantener el servicio activo
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    service: 'Micrositio IRIS Backend',
-    memory: {
-      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
-      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
-    }
+    uptime: process.uptime()
   });
 });
 
-// Manejo de errores
-app.use(errorHandler);
- 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+// ================= MULTER =================
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    file.mimetype.startsWith("image/")
+      ? cb(null, true)
+      : cb(new Error("Solo imágenes"));
+  },
 });
 
+// ================= UPLOAD =================
+app.post(
+  "/upload",
+  authMiddleware, // 👈 NECESARIO para obtener req.user
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No se recibió imagen" });
+      }
+
+      // 🔥 ID del usuario desde JWT
+      //const userId = req.user?.id_usuario;
+      const userId = req.user?.user_id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // 🔥 Nombre único
+      const filename = `${Date.now()}-${Math.random()}-${req.file.originalname}`;
+
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(filename, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+        });
+
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+
+      // 🔹 URL pública
+      const { data } = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(filename);
+
+      const imageUrl = data.publicUrl;
+
+      // 🔥 ACTUALIZAR USUARIO AUTOMÁTICAMENTE
+      await usuarioService.actualizarImagen(userId, imageUrl);
+
+      res.json({
+        message: "Imagen subida y asignada al usuario",
+        image: imageUrl,
+        filename
+      });
+
+    } catch (err) {
+      console.error("Error en upload:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// ================= GET IMAGE =================
+app.get("/images/:filename", async (req, res) => {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(req.params.filename, 60 * 60);
+
+  if (error) {
+    return res.status(404).json({ error: "Imagen no encontrada" });
+  }
+
+  res.json({ url: data.signedUrl });
+});
+
+// ================= INIT BUCKET =================
+async function initStorage() {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets.some((b) => b.name === BUCKET);
+
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(BUCKET, {
+      public: true,
+    });
+
+    if (error) {
+      console.error("Error creando bucket:", error.message);
+    } else {
+      console.log(`Bucket "${BUCKET}" creado`);
+    }
+  } else {
+    console.log(`Bucket "${BUCKET}" ya existe`);
+  }
+}
+
+// ================= ERROR HANDLER =================
+app.use(errorHandler);
+
+// ================= START =================
+app.listen(PORT, async () => {
+  // await initStorage();
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
