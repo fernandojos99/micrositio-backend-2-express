@@ -37,18 +37,23 @@ class EmpleadoRepository {
    * @returns {Promise<Object>} Empleado creado.
    * @throws {ApiError} Si ocurre un error al crear.
    */
+
+
   async crear(empleadoData) {
-    const { data, error } = await supabase
-      .from('empleado')
-      .insert(empleadoData)
-      .select();
+  // 🔥 quitamos habilidades
+  const { habilidades, ...empleadoSinHabilidades } = empleadoData;
 
-    if (error) {
-      throw new ApiError(`Error al crear empleado: ${error.message}`, 500);
-    }
+  const { data, error } = await supabase
+    .from('empleado')
+    .insert(empleadoSinHabilidades)
+    .select();
 
-    return Empleado.fromDatabase(data[0]);
+  if (error) {
+    throw new ApiError(`Error al crear empleado: ${error.message}`, 500);
   }
+
+  return Empleado.fromDatabase(data[0]);
+}
 
   /**
    * Obtiene todos los empleados.
