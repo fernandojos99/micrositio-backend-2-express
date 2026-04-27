@@ -51,6 +51,8 @@ function guardarPassword(key,nuevaPassword) {
   fs.appendFileSync(archivo, linea + '\n', 'utf8');
 
   console.log(`🔐 ${key} -> ${nuevaPassword}`);
+  console.log(`🔐 ${key} -> ${nuevaPassword}`);
+console.log("Archivo en:", archivo);
 
   return nuevaPassword; // importante para reutilizar
 }
