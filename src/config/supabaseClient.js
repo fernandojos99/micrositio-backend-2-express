@@ -12,9 +12,19 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 }
 
 // Crear cliente Supabase
+// const supabase = createClient(
+// const supabase = createClient(
+
+//   process.env.SUPABASE_URL,
+//   process.env.SUPABASE_KEY
+// );
+
+
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+
+  "https://tfouyrwfxofithkzeezt.supabase.co",
+  "sb_publishable_bVVOp1f4VKPKAJ-XrZynOg_IBbwkvzk"
 );
+
 
 export default supabase;
