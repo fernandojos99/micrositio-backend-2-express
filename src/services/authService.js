@@ -119,6 +119,33 @@ class AuthService {
       throw new ApiError('Error interno del servidor', 500);
     }
   }
+
+
+
+  /**
+ * Obtiene un usuario completo desde la BD por su ID
+ */
+async obtenerUsuarioPorId(id_usuario) {
+  try {
+    const { data: usuario, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id_usuario', id_usuario)
+      .single();
+
+    if (error || !usuario) {
+      throw new ApiError('Usuario no encontrado', 404);
+    }
+
+    // Quitar password de la respuesta
+    const { password_hash, ...usuarioSinPassword } = usuario;
+    return usuarioSinPassword;
+
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError('Error interno del servidor', 500);
+  }
+}
 }
 
 export default AuthService;

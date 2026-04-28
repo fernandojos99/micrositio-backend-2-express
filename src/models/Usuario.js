@@ -21,6 +21,7 @@ class Usuario {
     this.activo = data.activo !== undefined ? data.activo : true;
     this.created_at = new Date(data.created_at || Date.now());
     this.updated_at = new Date(data.updated_at || Date.now());
+    this.image = data.image || null; // Campo adicional para la imagen del usuario
   }
 
   /**
@@ -68,7 +69,8 @@ class Usuario {
       id_empleado: dbData.id_empleado,
       activo: dbData.activo,
       created_at: dbData.created_at,
-      updated_at: dbData.updated_at
+      updated_at: dbData.updated_at,
+      image: dbData.image // Asegurarse de que el campo image esté presente en la base de datos
     });
   }
 
@@ -120,7 +122,8 @@ class Usuario {
       id_empleado: this.id_empleado,
       activo: this.activo,
       created_at: this.created_at.toISOString(),
-      updated_at: this.updated_at.toISOString()
+      updated_at: this.updated_at.toISOString(),
+      image: this.image || null
     };
   }
 
