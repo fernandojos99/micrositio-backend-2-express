@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import supabase from './config/supabaseClient.js';
+//import jwt from 'jsonwebtoken'; // para leer el id_usuario del token
+import JWTUtils from './utils/jwtUtils.js'; // tu utilitario de JWT
 
 import proyectoRoutes from './routes/proyectoRoutes.js';
 import celulaProyectoRoutes from './routes/celulaProyectoRoutes.js';
@@ -137,7 +139,7 @@ const upload = multer({
   },
 });
 
-
+/* 
 // ─── SUBIR IMAGEN ─────────────────────────────────────────
 // POST /upload  →  multipart/form-data, campo "image"
 app.post("/upload", upload.single("image"), async (req, res) => {
@@ -158,7 +160,48 @@ app.post("/upload", upload.single("image"), async (req, res) => {
   
     res.json({ message: "Imagen subida a Supabase", url: data.publicUrl, filename });
   });
-  
+   */
+
+
+  app.post("/upload", upload.single("image"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
+
+  // ✅ Leer y verificar token con tu utilitario
+  let userId;
+  try {
+    const token = JWTUtils.extraerTokenDelHeader(req.headers.authorization);
+    const decoded = JWTUtils.verificarToken(token);
+    userId = decoded.user_id;
+  } catch (err) {
+    return res.status(401).json({ error: err.message });
+  }
+
+  const filename = `${Date.now()}-${req.file.originalname}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+    });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+  const publicUrl = data.publicUrl;
+
+  // ✅ Guardar URL en la BD
+  const { error: dbError } = await supabase
+    .from('usuarios')
+    .update({ image: publicUrl })
+    .eq('id_usuario', userId);
+
+  if (dbError) return res.status(500).json({ error: dbError.message });
+
+  res.json({ message: "Imagen subida a Supabase", url: publicUrl, filename });
+});
+
+
+
 
     // ─── OBTENER URL DE IMAGEN  (usar esta opcion solo si es privado el bucket)────────────────────────────────
   // GET /images/:filename
