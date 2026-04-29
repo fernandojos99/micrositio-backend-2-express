@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
+import supabase from './config/supabaseClient.js';
+
 import proyectoRoutes from './routes/proyectoRoutes.js';
 import celulaProyectoRoutes from './routes/celulaProyectoRoutes.js';
 import empleadoRoutes from './routes/empleadoRoutes.js'; 
@@ -32,6 +35,7 @@ import urlFormatoRoutes from './routes/urlFormatoRoutes.js';
 import formatoRoutes from './routes/formatoRoutes.js';
 import accionableRoutes from './routes/accionableRoutes.js';
 import habilidadRoutes from './routes/habilidadRoutes.js';
+
  
  
 // Configurar dotenv
@@ -39,6 +43,9 @@ dotenv.config();
  
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+//Bucket creado en supbase para almacenar las imagenes 
+const BUCKET = "image";
  
 // Configuración de CORS
 app.use(cors({
@@ -119,11 +126,88 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ============  Imagenes Acomodar despues ==================
+
+
+// Multer en memoria: NO guarda en disco, pasa el buffer directo
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    file.mimetype.startsWith("image/") ? cb(null, true) : cb(new Error("Solo imágenes"));
+  },
+});
+
+
+// ─── SUBIR IMAGEN ─────────────────────────────────────────
+// POST /upload  →  multipart/form-data, campo "image"
+app.post("/upload", upload.single("image"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
+
+  const filename = `${Date.now()}-${req.file.originalname}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+    });
+    if (error) return res.status(500).json({ error: error.message });
+
+    // URL pública (el bucket debe ser público, o usar createSignedUrl para privado)
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+  
+    res.json({ message: "Imagen subida a Supabase", url: data.publicUrl, filename });
+  });
+  
+
+    // ─── OBTENER URL DE IMAGEN  (usar esta opcion solo si es privado el bucket)────────────────────────────────
+  // GET /images/:filename
+  app.get("/images/:filename", async (req, res) => {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(req.params.filename, 60 * 60); // URL válida por 1 hora
+
+    if (error) return res.status(404).json({ error: "Imagen no encontrada" });
+
+    res.json({ url: data.signedUrl });
+  });
+
+
+
+
+// Agrega esto antes de definir las rutas
+async function initStorage() {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets.some((b) => b.name === BUCKET);
+
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(BUCKET, {
+      public: true, // false si quieres URLs firmadas privadas
+    });
+
+    if (error) {
+      console.error("Error creando bucket:", error.message);
+    } else {
+      console.log(`Bucket "${BUCKET}" creado`);
+    }
+  } else {
+    console.log(`Bucket "${BUCKET}" ya existe`);
+  }
+}
+
+
+// ========================================================
+
 // Manejo de errores
 app.use(errorHandler);
+
+
+
+
  
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT,async () => {
+  //await initStorage();
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 

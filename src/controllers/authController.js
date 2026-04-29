@@ -51,17 +51,39 @@ class AuthController {
   /**
    * Verifica si el token es válido
    */
+  // async verificarToken(req, res, next) {
+  //   try {
+
+  //     const usuarioCompleto = await this.authService.obtenerUsuarioPorId(req.user.user_id);
+  //     // El middleware ya verificó el token y agregó req.user
+  //     res.json({
+  //       success: true,
+  //       message: 'Token válido',
+  //       data: {
+  //         usuario: req.user
+  //       }
+  //     });
+
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
+
+
   async verificarToken(req, res, next) {
     try {
       // El middleware ya verificó el token y agregó req.user
+      // Consultamos la BD para obtener el usuario completo (incluye image)
+      const usuarioCompleto = await this.authService.obtenerUsuarioPorId(req.user.user_id);
+  
       res.json({
         success: true,
         message: 'Token válido',
         data: {
-          usuario: req.user
+          usuario: usuarioCompleto
         }
       });
-
+  
     } catch (error) {
       next(error);
     }

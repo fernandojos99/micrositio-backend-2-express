@@ -371,6 +371,40 @@ class UsuarioService {
     return resultado.toAPI();
 
   }
+
+  /**
+ * Actualiza la imagen de un usuario
+ * @async
+ * @param {string} id_usuario - UUID del usuario
+ * @param {string} imageUrl - URL de la imagen
+ * @returns {Promise<Object>} Usuario actualizado
+ */
+  async actualizarImagen(id_usuario, imageUrl) {
+    // 🔹 Validar que exista el usuario
+    const usuario = await this.usuarioRepo.obtenerPorId(id_usuario);
+    if (!usuario) {
+      throw new ApiError('Usuario no encontrado', 404);
+    }
+
+    // 🔹 Validar que venga la URL
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      throw new ApiError('La URL de la imagen es requerida', 400);
+    }
+
+    // 🔹 Actualizar solo el campo image
+    const usuarioActualizado = await this.usuarioRepo.actualizar(id_usuario, {
+      image: imageUrl
+    });
+
+    if (!usuarioActualizado) {
+      throw new ApiError('Error al actualizar la imagen del usuario', 500);
+    }
+
+    return usuarioActualizado.toAPI();
+  }
+
+
+
 }
 
 export default UsuarioService;

@@ -304,6 +304,39 @@ class UsuarioRepository {
 
     return stats;
   }
+
+  /**
+ * Actualiza la imagen (URL) de un usuario.
+ * @async
+ * @param {string} id_usuario - UUID del usuario.
+ * @param {string} imageUrl - URL de la imagen.
+ * @returns {Promise<Usuario|null>} Usuario actualizado o null.
+ * @throws {ApiError} Si ocurre un error.
+ */
+async actualizarImagen(id_usuario, imageUrl) {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update({
+      image: imageUrl,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id_usuario', id_usuario)
+    .select()
+    .single();
+
+  if (error) {
+    throw new ApiError(`Error al actualizar imagen del usuario: ${error.message}`, 500);
+  }
+
+  return data ? Usuario.fromDatabase(data) : null;
 }
+
+
+}
+
+
+
+
+
 
 export default UsuarioRepository;
