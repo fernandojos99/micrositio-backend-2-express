@@ -20,9 +20,11 @@ class UrlLearningCardService {
     }
 
     const urls = await this.urlRepo.obtenerPorLearningCard(idLearningCard);
-    if (urls.length === 0) {
-      throw new ApiError('La learning card no tiene URLs asociadas', 404);
-    }
+
+    //Segun no debe de mandar este error 
+    // if (urls.length === 0) {
+    //   throw new ApiError('La learning card no tiene URLs asociadas', 404);
+    // }
 
     return urls.map(u => u.toAPI());
   }
