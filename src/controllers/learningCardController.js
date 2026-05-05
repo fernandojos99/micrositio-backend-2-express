@@ -33,18 +33,46 @@ class LearningCardController {
    * @param {Object} res - Response de Express
    * @param {Function} next - Next middleware
    */
+
+  // Se comenta por que no deberia mandar el id en el body
+  // async obtenerPorId(req, res, next) {
+  //   try {
+  //     if (!req.body.id_learning_card) {
+  //       throw new ApiError('Se requiere id_learning_card en el body', 400);
+  //     }
+
+  //     const learningCard = await this.learningCardService.obtenerPorId(req.body.id_learning_card);
+  //     res.json(learningCard);
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
+
+
+  // En esta version igual se usa en el body pero pa no romper lo ya existente 
   async obtenerPorId(req, res, next) {
     try {
-      if (!req.body.id_learning_card) {
-        throw new ApiError('Se requiere id_learning_card en el body', 400);
+      // 🔑 Acepta múltiples fuentes (no rompe a nadie)
+      const id =
+        req.query?.id_learning_card ??
+        req.body?.id_learning_card ??
+        req.params?.id_learning_card;
+  
+      if (!id) {
+        throw new ApiError('Se requiere id_learning_card', 400);
       }
-
-      const learningCard = await this.learningCardService.obtenerPorId(req.body.id_learning_card);
+  
+      const learningCard = await this.learningCardService.obtenerPorId(id);
       res.json(learningCard);
     } catch (error) {
       next(error);
     }
   }
+
+  
+
+
+
 
   /**
    * Obtiene todas las learning cards
