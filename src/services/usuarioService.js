@@ -405,6 +405,41 @@ class UsuarioService {
 
 
 
+  /**
+   *Funcion para subir imagen a bucket y actualizar el campo image del usuario
+   * @param {*} file 
+   * @param {*} userId 
+   * @returns 
+   */
+
+async  uploadUserImage(file, userId) {
+
+  if (!file) {
+    throw new ApiError('No se recibió imagen', 400);
+  }
+
+  const filename = `${Date.now()}-${file.originalname}`;
+
+  // Sube informacion al bucket y obtiene la URL pública
+  const publicUrl = await this.usuarioRepo.uploadToBucket(
+    filename,
+    file.buffer,
+    file.mimetype
+  );
+
+  // Actualiza el campo image del usuario con la URL pública
+  await this.usuarioRepo.updateUserImage(
+    userId,
+    publicUrl
+  );
+
+  return {
+    url: publicUrl,
+    filename
+  };
+}
+
+
 }
 
 export default UsuarioService;

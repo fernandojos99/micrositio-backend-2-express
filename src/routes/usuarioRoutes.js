@@ -7,6 +7,7 @@
 import express from 'express';
 import UsuarioController from '../controllers/usuarioController.js';
 import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
+import { uploadImages } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 const usuarioController = new UsuarioController();
@@ -709,5 +710,10 @@ router.patch('/:id/tipo', authMiddleware, soloEditores, usuarioController.actual
 router.get('/:id', authMiddleware, soloEditores, usuarioController.obtenerPorId.bind(usuarioController));
 router.patch('/:id', usuarioController.actualizar.bind(usuarioController));
 router.delete('/:id', authMiddleware, soloEditores, usuarioController.eliminar.bind(usuarioController));
+
+//Para actualizar la imagen de perfil del usuario
+router.post('/upload',authMiddleware,uploadImages.single('image'),usuarioController.uploadImage.bind(usuarioController));
+
+
 
 export default router;

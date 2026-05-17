@@ -362,40 +362,32 @@ class UsuarioController {
   }
 
 
-    /**
- * Actualiza la imagen de un usuario
- * PATCH /usuarios/:id/imagen
+
+/**
+ * Para actualizar la imagen del usuario
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
  */
-
-
-    // Nota : Este metodo puede que este de mas porque no le hice route
-async actualizarImagen(req, res, next) {
+async  uploadImage(req, res, next) {
   try {
-    const { id } = req.params;
-    const { image } = req.body;
 
-    // 🔹 Validar UUID
-    usuarioIdSchema.parse({ id_usuario: id });
+    const userId = req.user.user_id;
 
-    // 🔹 Validar que venga la imagen
-    if (!image || typeof image !== 'string') {
-      throw new ApiError('La URL de la imagen es requerida', 400);
-    }
-
-    const usuario = await this.usuarioService.actualizarImagen(id, image);
+    const result = await this.usuarioService.uploadUserImage(
+      req.file,
+      userId
+    );
 
     res.json({
-      success: true,
-      message: 'Imagen actualizada exitosamente',
-      data: usuario
+      message: "Imagen subida a Supabase",
+      ...result
     });
 
   } catch (error) {
     next(error);
   }
 }
-
-
 
 }
 
