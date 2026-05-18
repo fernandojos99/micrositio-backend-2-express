@@ -46,8 +46,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Usaba esto cuando subi imagenes desde aqui
 //Bucket creado en supbase para almacenar las imagenes 
-const BUCKET = "image";
+//const BUCKET = "image";
  
 // Configuración de CORS
 app.use(cors({
@@ -131,112 +132,95 @@ app.get('/health', (req, res) => {
 // ============  Imagenes Acomodar despues ==================
 
 
-// Multer en memoria: NO guarda en disco, pasa el buffer directo
-const upload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: (req, file, cb) => {
-    file.mimetype.startsWith("image/") ? cb(null, true) : cb(new Error("Solo imágenes"));
-  },
-});
-
-/* 
-// ─── SUBIR IMAGEN ─────────────────────────────────────────
-// POST /upload  →  multipart/form-data, campo "image"
-app.post("/upload", upload.single("image"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
-
-  const filename = `${Date.now()}-${req.file.originalname}`;
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filename, req.file.buffer, {
-      contentType: req.file.mimetype,
-      upsert: false,
-    });
-    if (error) return res.status(500).json({ error: error.message });
-
-    // URL pública (el bucket debe ser público, o usar createSignedUrl para privado)
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-  
-    res.json({ message: "Imagen subida a Supabase", url: data.publicUrl, filename });
-  });
-   */
-
-
-  app.post("/upload", upload.single("image"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
-
-  // ✅ Leer y verificar token con tu utilitario
-  let userId;
-  try {
-    const token = JWTUtils.extraerTokenDelHeader(req.headers.authorization);
-    const decoded = JWTUtils.verificarToken(token);
-    userId = decoded.user_id;
-  } catch (err) {
-    return res.status(401).json({ error: err.message });
-  }
-
-  const filename = `${Date.now()}-${req.file.originalname}`;
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filename, req.file.buffer, {
-      contentType: req.file.mimetype,
-      upsert: false,
-    });
-  if (error) return res.status(500).json({ error: error.message });
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-  const publicUrl = data.publicUrl;
-
-  // ✅ Guardar URL en la BD
-  const { error: dbError } = await supabase
-    .from('usuarios')
-    .update({ image: publicUrl })
-    .eq('id_usuario', userId);
-
-  if (dbError) return res.status(500).json({ error: dbError.message });
-
-  res.json({ message: "Imagen subida a Supabase", url: publicUrl, filename });
-});
+// // Multer en memoria: NO guarda en disco, pasa el buffer directo
+// const upload = multer({
+//   storage: multer.memoryStorage(),
+//   fileFilter: (req, file, cb) => {
+//     file.mimetype.startsWith("image/") ? cb(null, true) : cb(new Error("Solo imágenes"));
+//   },
+// });
 
 
 
 
-    // ─── OBTENER URL DE IMAGEN  (usar esta opcion solo si es privado el bucket)────────────────────────────────
-  // GET /images/:filename
-  app.get("/images/:filename", async (req, res) => {
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrl(req.params.filename, 60 * 60); // URL válida por 1 hora
+// El bueno
+//   app.post("/upload", upload.single("image"), async (req, res) => {
+//   if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
 
-    if (error) return res.status(404).json({ error: "Imagen no encontrada" });
+//   // ✅ Leer y verificar token con tu utilitario
+//   let userId;
+//   try {
+//     const token = JWTUtils.extraerTokenDelHeader(req.headers.authorization);
+//     const decoded = JWTUtils.verificarToken(token);
+//     userId = decoded.user_id;
+//   } catch (err) {
+//     return res.status(401).json({ error: err.message });
+//   }
 
-    res.json({ url: data.signedUrl });
-  });
+//   const filename = `${Date.now()}-${req.file.originalname}`;
+
+//   const { error } = await supabase.storage
+//     .from(BUCKET)
+//     .upload(filename, req.file.buffer, {
+//       contentType: req.file.mimetype,
+//       upsert: false,
+//     });
+//   if (error) return res.status(500).json({ error: error.message });
+
+//   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+//   const publicUrl = data.publicUrl;
+
+//   // ✅ Guardar URL en la BD
+//   const { error: dbError } = await supabase
+//     .from('usuarios')
+//     .update({ image: publicUrl })
+//     .eq('id_usuario', userId);
+
+//   if (dbError) return res.status(500).json({ error: dbError.message });
+
+//   res.json({ message: "Imagen subida a Supabase", url: publicUrl, filename });
+// });
 
 
 
 
-// Agrega esto antes de definir las rutas
-async function initStorage() {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  const exists = buckets.some((b) => b.name === BUCKET);
 
-  if (!exists) {
-    const { error } = await supabase.storage.createBucket(BUCKET, {
-      public: true, // false si quieres URLs firmadas privadas
-    });
 
-    if (error) {
-      console.error("Error creando bucket:", error.message);
-    } else {
-      console.log(`Bucket "${BUCKET}" creado`);
-    }
-  } else {
-    console.log(`Bucket "${BUCKET}" ya existe`);
-  }
-}
+//  ─── OBTENER URL DE IMAGEN  (usar esta opcion solo si es privado el bucket)────────────────────────────────
+//
+//    GET /images/:filename
+//   app.get("/images/:filename", async (req, res) => {
+//     const { data, error } = await supabase.storage
+//       .from(BUCKET)
+//       .createSignedUrl(req.params.filename, 60 * 60); // URL válida por 1 hora
+
+//     if (error) return res.status(404).json({ error: "Imagen no encontrada" });
+
+//     res.json({ url: data.signedUrl });
+//   });
+
+
+
+
+//  Agrega esto antes de definir las rutas
+// async function initStorage() {
+//   const { data: buckets } = await supabase.storage.listBuckets();
+//   const exists = buckets.some((b) => b.name === BUCKET);
+
+//   if (!exists) {
+//     const { error } = await supabase.storage.createBucket(BUCKET, {
+//       public: true, // false si quieres URLs firmadas privadas
+//     });
+
+//     if (error) {
+//       console.error("Error creando bucket:", error.message);
+//     } else {
+//       console.log(`Bucket "${BUCKET}" creado`);
+//     }
+//   } else {
+//     console.log(`Bucket "${BUCKET}" ya existe`);
+//   }
+// }
 
 
 // ========================================================

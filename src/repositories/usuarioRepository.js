@@ -332,11 +332,62 @@ async actualizarImagen(id_usuario, imageUrl) {
 }
 
 
+
+
+/**
+ *   Metodos para subir imagenes a supabase y actualizar el campo image del usuario (funcionaba)
+ * @param {
+ } filename 
+ * @param {*} buffer 
+ * @param {*} mimetype 
+ * @returns 
+ */
+
+
+async uploadToBucket(
+  filename,
+  buffer,
+  mimetype
+  ) {
+    
+  const BUCKET = 'image';
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, buffer, {
+      contentType: mimetype,
+      upsert: false
+    });
+
+  if (error) {
+    throw new ApiError(error.message, 500);
+  }
+
+  const { data } = supabase.storage
+    .from(BUCKET)
+    .getPublicUrl(filename);
+
+  return data.publicUrl;
+}
+
+async  updateUserImage(userId, imageUrl) {
+
+  const { error } = await supabase
+    .from('usuarios')
+    .update({ image: imageUrl })
+    .eq('id_usuario', userId);
+
+  if (error) {
+    throw new ApiError(error.message, 500);
+  }
 }
 
 
 
 
 
+
+
+
+} 
 
 export default UsuarioRepository;

@@ -56,6 +56,16 @@ const upload = multer({
   }
 });
 
+
+const uploadImages = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    file.mimetype.startsWith("image/") ? cb(null, true) : cb(new Error("Solo imágenes"));
+  },
+});
+
+
+
 // Middleware para manejar errores de Multer
 const handleMulterError = (error, req, res, next) => {
   if (error instanceof multer.MulterError) {
@@ -89,4 +99,4 @@ const handleMulterError = (error, req, res, next) => {
   next(error);
 };
 
-export { upload, handleMulterError };
+export { upload,uploadImages, handleMulterError };
