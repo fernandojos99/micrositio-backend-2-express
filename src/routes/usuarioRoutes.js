@@ -7,6 +7,7 @@
 import express from 'express';
 import UsuarioController from '../controllers/usuarioController.js';
 import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
+// Corregir la ruta de importación del middleware de subida de imágenes ERA el upload2  
 import { uploadImages } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();

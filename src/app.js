@@ -46,8 +46,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Usaba esto cuando subi imagenes desde aqui
 //Bucket creado en supbase para almacenar las imagenes 
-const BUCKET = "image";
+//const BUCKET = "image";
  
 // Configuración de CORS
 app.use(cors({
@@ -139,28 +140,6 @@ app.get('/health', (req, res) => {
 //   },
 // });
 
-/* 
-// ─── SUBIR IMAGEN ─────────────────────────────────────────
-// POST /upload  →  multipart/form-data, campo "image"
-app.post("/upload", upload.single("image"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
-
-  const filename = `${Date.now()}-${req.file.originalname}`;
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filename, req.file.buffer, {
-      contentType: req.file.mimetype,
-      upsert: false,
-    });
-    if (error) return res.status(500).json({ error: error.message });
-
-    // URL pública (el bucket debe ser público, o usar createSignedUrl para privado)
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-  
-    res.json({ message: "Imagen subida a Supabase", url: data.publicUrl, filename });
-  });
-   */
 
 
 
