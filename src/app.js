@@ -5,6 +5,8 @@ import multer from 'multer';
 import supabase from './config/supabaseClient.js';
 //import jwt from 'jsonwebtoken'; // para leer el id_usuario del token
 import JWTUtils from './utils/jwtUtils.js'; // tu utilitario de JWT
+import axios from 'axios';
+import { Readable } from 'stream';
 
 import proyectoRoutes from './routes/proyectoRoutes.js';
 import celulaProyectoRoutes from './routes/celulaProyectoRoutes.js';
@@ -45,6 +47,8 @@ dotenv.config();
  
 const app = express();
 const PORT = process.env.PORT || 3000;
+// const AGENT_API_URL = process.env.AGENT_API_URL || 'http://localhost:8000';
+const AGENT_API_URL =  'https://2iuf62w3yz3tdqbdtghk4n5suy0ygvcr.lambda-url.us-east-1.on.aws/';
 
 // Usaba esto cuando subi imagenes desde aqui
 //Bucket creado en supbase para almacenar las imagenes 
@@ -77,6 +81,68 @@ app.options('*', (req, res) => {
 // Middleware para parsear JSON
 app.use(bodyParser.json()); 
 app.use(express.json());
+
+// ==================== NUEVO ENDPOINT PARA CHAT STREAM ====================
+app.post('/api/chat/stream', async (req, res) => {
+  console.log('NUEVA CONEXION DE CHAT STREAM backend local');
+  const controller = new AbortController();
+
+  //res.on('close', () => controller.abort());
+  res.on('close', () => {
+
+    console.log('CLIENTE DESCONECTADO EN EXPRESS');
+  
+    controller.abort();
+  });
+
+  try {
+    const { message, thread_id } = req.body;
+    const response = await axios({
+      method: 'POST',
+      url: `${AGENT_API_URL}/chat/stream`,
+      data: { message, thread_id },
+      responseType: 'stream',
+      signal: controller.signal
+    });
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+
+    const stream = response.data;
+    stream.on('data', (chunk) => {
+      const lines = chunk.toString().split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          if (!res.writableEnded) res.write(`${line}\n\n`);
+        }
+      }
+    });
+
+    stream.on('end', () => { if (!res.writableEnded) res.end(); });
+    stream.on('error', (err) => {
+      if (!axios.isCancel(err)) console.error('Stream error:', err);
+      if (!res.writableEnded) res.end();
+    });
+  } catch (error) {
+    //if (axios.isCancel(error)) return;
+    if (axios.isCancel(error)) {
+
+      console.log('AXIOS CANCELO REQUEST');
+    
+      return;
+    }
+
+    console.error('Error connecting to agent:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+// ========================================================================
 
 // Rutas
 app.use('/proyectos', proyectoRoutes);
@@ -237,4 +303,3 @@ app.listen(PORT,async () => {
   //await initStorage();
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
-
