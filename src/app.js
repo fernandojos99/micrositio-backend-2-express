@@ -47,8 +47,10 @@ dotenv.config();
  
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// URL del agente que esta en una lambda 
 // const AGENT_API_URL = process.env.AGENT_API_URL || 'http://localhost:8000';
-// Tenia este error 
+// Tenia este error donde tenia un slash de ma 
 // const AGENT_API_URL =  'https://2iuf62w3yz3tdqbdtghk4n5suy0ygvcr.lambda-url.us-east-1.on.aws/';
 const AGENT_API_URL =  'https://2iuf62w3yz3tdqbdtghk4n5suy0ygvcr.lambda-url.us-east-1.on.aws';
 
@@ -86,13 +88,13 @@ app.use(express.json());
 
 // ==================== NUEVO ENDPOINT PARA CHAT STREAM ====================
 app.post('/api/chat/stream', async (req, res) => {
-  console.log('NUEVA CONEXION DE CHAT STREAM backend local');
+  // console.log('NUEVA CONEXION DE CHAT STREAM backend local');
   const controller = new AbortController();
 
   //res.on('close', () => controller.abort());
   res.on('close', () => {
 
-    console.log('CLIENTE DESCONECTADO EN EXPRESS');
+    //console.log('CLIENTE DESCONECTADO EN EXPRESS');
   
     controller.abort();
   });
@@ -133,7 +135,7 @@ app.post('/api/chat/stream', async (req, res) => {
     //if (axios.isCancel(error)) return;
     if (axios.isCancel(error)) {
 
-      console.log('AXIOS CANCELO REQUEST');
+      //console.log('AXIOS CANCELO REQUEST');
     
       return;
     }
