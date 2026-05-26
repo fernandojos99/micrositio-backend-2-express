@@ -48,7 +48,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 // const AGENT_API_URL = process.env.AGENT_API_URL || 'http://localhost:8000';
-const AGENT_API_URL =  'https://2iuf62w3yz3tdqbdtghk4n5suy0ygvcr.lambda-url.us-east-1.on.aws/';
+// Tenia este error 
+// const AGENT_API_URL =  'https://2iuf62w3yz3tdqbdtghk4n5suy0ygvcr.lambda-url.us-east-1.on.aws/';
+const AGENT_API_URL =  'https://2iuf62w3yz3tdqbdtghk4n5suy0ygvcr.lambda-url.us-east-1.on.aws';
 
 // Usaba esto cuando subi imagenes desde aqui
 //Bucket creado en supbase para almacenar las imagenes 
