@@ -6,6 +6,7 @@ import supabase from './config/supabaseClient.js';
 //import jwt from 'jsonwebtoken'; // para leer el id_usuario del token
 import JWTUtils from './utils/jwtUtils.js'; // tu utilitario de JWT
 import chatRoutes from './routes/chatRoutes.js';
+import sesionRoutes from './routes/sesionRoutes.js';
 import proyectoRoutes from './routes/proyectoRoutes.js';
 import celulaProyectoRoutes from './routes/celulaProyectoRoutes.js';
 import empleadoRoutes from './routes/empleadoRoutes.js'; 
@@ -110,6 +111,7 @@ app.use('/url_formato', urlFormatoRoutes);
 app.use('/formato', formatoRoutes);
 app.use('/accionables', accionableRoutes);
 app.use('/habilidad',habilidadRoutes);
+app.use('/api/chat', sesionRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Ruta básica de prueba

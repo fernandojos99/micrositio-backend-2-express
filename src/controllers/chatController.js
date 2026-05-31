@@ -15,9 +15,11 @@ class ChatController {
 
     try {
       const { message, thread_id } = req.body;
-      const stream = await this.chatService.streamChat(message, thread_id, abortController.signal);
+      const result = await this.chatService.streamChat(message, thread_id, req.user.id_empleado, abortController.signal);
 
-      if (!stream) return;
+      if (!result) return;
+
+      const { stream, thread_id: resolvedThreadId } = result;
 
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -25,6 +27,10 @@ class ChatController {
         'Connection': 'keep-alive',
         'X-Accel-Buffering': 'no'
       });
+
+      if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'thread_id', thread_id: resolvedThreadId })}\n\n`);
+      }
 
       stream.on('data', (chunk) => {
         const lines = chunk.toString().split('\n');
