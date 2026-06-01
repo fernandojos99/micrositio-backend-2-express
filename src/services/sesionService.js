@@ -1,8 +1,8 @@
 import SesionRepository from '../repositories/sesionRepository.js';
 import ApiError from '../utils/ApiError.js';
 import axios from 'axios';
-
-const AGENT_API_URL = process.env.AGENT_API_URL || 'http://localhost:8000';
+//Trae la url del agente
+import { AGENT_CONFIG } from '../config/agentConfig.js';
 
 class SesionService {
   constructor() {
@@ -19,7 +19,7 @@ class SesionService {
 
   async obtenerMensajes(thread_id) {
     try {
-      const response = await axios.get(`${AGENT_API_URL}/sessions/${thread_id}/messages`);
+      const response = await axios.get(`${AGENT_CONFIG.apiUrl}/sessions/${thread_id}/messages`);
       const data = response.data;
       if (data && Array.isArray(data.messages)) {
         data.messages = data.messages.filter(m => m.role !== 'tool');
