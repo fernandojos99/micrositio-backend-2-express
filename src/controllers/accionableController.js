@@ -50,9 +50,8 @@ export async function obtenerPorId(req, res, next) {
 export async function crear(req, res, next) {
   try {
     const accionableData = req.body;
-    const id=req.params.id;
 
-    const nuevoAccionable = await accionableService.crear(id,accionableData);
+    const nuevoAccionable = await accionableService.crear(accionableData);
 
     res.status(201).json({
       success: true,

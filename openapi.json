@@ -5733,66 +5733,19 @@
         }
       }
     },
-    "/accionables": {
-      "post": {
-        "tags": [
-          "Accionables"
-        ],
-        "summary": "Crear accionable",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Accionable"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/accionables/sync/{id}": {
       "put": {
         "tags": [
           "Accionables"
         ],
-        "summary": "Sincronizar accionables",
+        "summary": "Crear y sincronizar accionables",
+        "description": "Método principal para crear accionables. Recibe un array y sincroniza con BD: crea los que no existan (match por contenido+impacto+esfuerzo), actualiza los que ya estén y elimina los que no estén en el array. El :id es el id_learning_card.",
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
+        "description": "Cada item del array debe incluir id_learning_card, contenido, impacto, esfuerzo. realizado es opcional. Si no existe un accionable con mismo contenido+impacto+esfuerzo, se crea uno nuevo.",
         "parameters": [
           {
             "name": "id",
@@ -5800,7 +5753,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID de la learning card a sincronizar"
           }
         ],
         "requestBody": {
@@ -5810,7 +5764,24 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "id_learning_card": {
+                      "type": "integer"
+                    },
+                    "contenido": {
+                      "type": "string"
+                    },
+                    "impacto": {
+                      "type": "integer"
+                    },
+                    "esfuerzo": {
+                      "type": "integer"
+                    },
+                    "realizado": {
+                      "type": "boolean"
+                    }
+                  }
                 }
               }
             }
@@ -5828,7 +5799,10 @@
                       "type": "boolean"
                     },
                     "data": {
-                      "type": "object"
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Accionable"
+                      }
                     }
                   }
                 }
@@ -5847,9 +5821,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -5891,9 +5862,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -5911,7 +5879,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "id_learning_card": {
+                    "type": "integer"
+                  },
+                  "contenido": {
+                    "type": "string"
+                  },
+                  "impacto": {
+                    "type": "integer"
+                  },
+                  "esfuerzo": {
+                    "type": "integer"
+                  },
+                  "realizado": {
+                    "type": "boolean"
+                  }
+                }
               }
             }
           }
@@ -5945,9 +5930,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -5991,9 +5973,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -6022,9 +6001,6 @@
                       "items": {
                         "$ref": "#/components/schemas/Accionable"
                       }
-                    },
-                    "total": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -6043,9 +6019,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -6074,9 +6047,6 @@
                       "items": {
                         "$ref": "#/components/schemas/Accionable"
                       }
-                    },
-                    "total": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -6095,9 +6065,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -6126,9 +6093,6 @@
                       "items": {
                         "$ref": "#/components/schemas/Accionable"
                       }
-                    },
-                    "total": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -6147,9 +6111,6 @@
         "security": [
           {
             "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -6178,9 +6139,6 @@
                       "items": {
                         "$ref": "#/components/schemas/Accionable"
                       }
-                    },
-                    "total": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -7684,10 +7642,10 @@
         "description": "Token JWT obtenido de POST /auth/login"
       },
       "SoloEditores": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-Require-Editor",
-        "description": "Solo usuarios EDITOR pueden acceder"
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Mismo token JWT que BearerAuth. El usuario debe tener rol EDITOR en el payload del token."
       }
     },
     "schemas": {
@@ -9071,22 +9029,23 @@
       "Accionable": {
         "type": "object",
         "properties": {
-          "id": {
+          "id_accionable": {
             "type": "integer"
           },
-          "descripcion": {
+          "id_learning_card": {
+            "type": "integer"
+          },
+          "contenido": {
             "type": "string"
           },
-          "completado": {
+          "impacto": {
+            "type": "integer"
+          },
+          "esfuerzo": {
+            "type": "integer"
+          },
+          "realizado": {
             "type": "boolean"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
