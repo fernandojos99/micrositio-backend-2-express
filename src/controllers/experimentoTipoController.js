@@ -6,6 +6,7 @@
 import ExperimentoTipoService from '../services/experimentoTipoService.js';
 import { experimentoTipoCreateSchema, experimentoTipoUpdateSchema } from '../middlewares/validation/experimentoTipoSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { success, created, noContent } from '../utils/responseHelper.js';
 
 class ExperimentoTipoController {
   constructor() {
@@ -13,19 +14,19 @@ class ExperimentoTipoController {
   }
 
   /**
-   * Maneja la obtención de un tipo de experimento por ID (GET /experimento_tipo/e).
+   * Maneja la obtención de un tipo de experimento por ID (GET /experimento_tipo/:id).
    * @param {Object} req - Request de Express.
    * @param {Object} res - Response de Express.
    * @param {Function} next - Función para pasar al siguiente middleware.
    */
   async obtenerPorId(req, res, next) {
     try {
-      if (!req.body.id_experimento_tipo) {
-        throw new ApiError('Se requiere el campo "id_experimento_tipo" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
 
-      const tipo = await this.experimentoTipoService.obtenerPorId(req.body.id_experimento_tipo);
-      res.json(tipo);
+      const tipo = await this.experimentoTipoService.obtenerPorId(req.params.id);
+      success(res, tipo);
     } catch (error) {
       next(error);
     }
@@ -40,7 +41,7 @@ class ExperimentoTipoController {
   async obtenerTodos(req, res, next) {
     try {
       const tipos = await this.experimentoTipoService.obtenerTodos();
-      res.json(tipos);
+      success(res, tipos);
     } catch (error) {
       next(error);
     }
@@ -56,47 +57,47 @@ class ExperimentoTipoController {
     try {
       const validatedData = experimentoTipoCreateSchema.parse(req.body);
       const tipo = await this.experimentoTipoService.crear(validatedData);
-      res.status(201).json(tipo);
+      created(res, tipo);
     } catch (error) {
       next(new ApiError(error.message, 400));
     }
   }
 
   /**
-   * Maneja la actualización de un tipo de experimento (PATCH /experimento_tipo).
+   * Maneja la actualización de un tipo de experimento (PATCH /experimento_tipo/:id).
    * @param {Object} req - Request de Express.
    * @param {Object} res - Response de Express.
    * @param {Function} next - Función para pasar al siguiente middleware.
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id_experimento_tipo) {
-        throw new ApiError('Se requiere el campo "id_experimento_tipo" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
 
       const { id_experimento_tipo, ...updateData } = req.body;
       const validatedData = experimentoTipoUpdateSchema.parse(updateData);
-      const tipo = await this.experimentoTipoService.actualizar(id_experimento_tipo, validatedData);
-      res.json(tipo);
+      const tipo = await this.experimentoTipoService.actualizar(req.params.id, validatedData);
+      success(res, tipo);
     } catch (error) {
       next(error);
     }
   }
 
   /**
-   * Maneja la eliminación de un tipo de experimento (DELETE /experimento_tipo).
+   * Maneja la eliminación de un tipo de experimento (DELETE /experimento_tipo/:id).
    * @param {Object} req - Request de Express.
    * @param {Object} res - Response de Express.
    * @param {Function} next - Función para pasar al siguiente middleware.
    */
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id_experimento_tipo) {
-        throw new ApiError('Se requiere el campo "id_experimento_tipo" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
 
-      await this.experimentoTipoService.eliminar(req.body.id_experimento_tipo);
-      res.status(204).end();
+      await this.experimentoTipoService.eliminar(req.params.id);
+      noContent(res);
     } catch (error) {
       next(error);
     }

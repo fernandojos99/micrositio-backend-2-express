@@ -6,6 +6,8 @@ import EmpleadoService from '../services/empleadoService.js';
 import EmpleadoRepository from '../repositories/empleadoRepository.js';
 import { empleadoCreateSchema, empleadoUpdateSchema } from '../middlewares/validation/empleadoSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { success, created } from '../utils/responseHelper.js';
+import { getPaginationParams } from '../utils/paginationHelper.js';
 
 class EmpleadoController {
   constructor() {
@@ -21,19 +23,18 @@ class EmpleadoController {
    */
   async obtenerPorId(req, res, next) {
     try {
-      if (!req.body || !req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
-      
-      // Convertir el ID a número entero
-    const idEmpleado = parseInt(req.body.id);
-    
-    if (isNaN(idEmpleado)) {
-      throw new ApiError('El ID debe ser un número válido', 400);
-    }
+
+      const idEmpleado = parseInt(req.params.id);
+
+      if (isNaN(idEmpleado)) {
+        throw new ApiError('El ID debe ser un número válido', 400);
+      }
 
       const empleado = await this.empleadoService.obtenerPorId(idEmpleado);
-      res.json(empleado);
+      success(res, empleado);
     } catch (error) {
       next(error);
     }
@@ -47,16 +48,17 @@ class EmpleadoController {
    */
   async listarTodos(req, res, next) {
     try {
+      const { page, limit } = getPaginationParams(req);
       const empleados = await this.empleadoService.listarTodos();
-      res.json(empleados);
+      const total = empleados.length;
+      success(res, empleados, { page, limit, total, totalPages: Math.ceil(total / limit) });
     } catch (error) {
       next(error);
     }
   }
 
-
   /**
-   * Maneja la creación de un empleado (POST /empleados).
+   * Maneja la creación de un empleado (POST /empleados/create).
    * @param {Object} req - Request de Express.
    * @param {Object} res - Response de Express.
    * @param {Function} next - Función para pasar al siguiente middleware.
@@ -65,7 +67,7 @@ class EmpleadoController {
     try {
       const validatedData = empleadoCreateSchema.parse(req.body);
       const empleado = await this.empleadoService.crear(validatedData);
-      res.status(201).json(empleado);
+      created(res, empleado);
     } catch (error) {
       next(new ApiError(error.message, 400));
     }
@@ -79,38 +81,34 @@ class EmpleadoController {
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
-      
+
       console.log('Datos recibidos para actualizar empleado en controller:', req.body);
       const { id, ...updateData } = req.body;
       const validatedData = empleadoUpdateSchema.parse(updateData);
-      const empleado = await this.empleadoService.actualizar(id, validatedData);
-      res.json(empleado);
+      const empleado = await this.empleadoService.actualizar(req.params.id, validatedData);
+      success(res, empleado);
     } catch (error) {
       next(error);
     }
   }
 
-
-    async actualizarHabilidades(req, res, next) {
+  async actualizarHabilidades(req, res, next) {
     try {
-      if (!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
-      
-      const { id, habilidades } = req.body;
-      //const validatedData = empleadoUpdateSchema.parse(updateData);
-      console.log('Datos recibidos para actualizar info personal:', { id, habilidades });
-      const empleado = await this.empleadoService.actualizarHabilidades(id, { habilidades });
-      res.json(empleado);
+
+      const { habilidades } = req.body;
+      console.log('Datos recibidos para actualizar info personal:', { id: req.params.id, habilidades });
+      const empleado = await this.empleadoService.actualizarHabilidades(req.params.id, { habilidades });
+      success(res, empleado);
     } catch (error) {
       next(error);
     }
   }
-
-
 
   /**
    * Maneja la desactivación de un empleado (DELETE /empleados/:id).
@@ -120,18 +118,18 @@ class EmpleadoController {
    */
   async desactivar(req, res, next) {
     try {
-      if (!req.body ||!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
-      }  
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
+      }
 
-    // Convertir el ID a número entero
-    const idEmpleado = parseInt(req.body.id);
-    
-    if (isNaN(idEmpleado)) {
-      throw new ApiError('El ID debe ser un número válido', 400);
-    }
+      const idEmpleado = parseInt(req.params.id);
+
+      if (isNaN(idEmpleado)) {
+        throw new ApiError('El ID debe ser un número válido', 400);
+      }
+
       const empleado = await this.empleadoService.desactivar(idEmpleado);
-      res.json(empleado);
+      success(res, empleado);
     } catch (error) {
       next(error);
     }
@@ -145,12 +143,10 @@ class EmpleadoController {
    */
   async obtenerEmpleadosSinUsuario(req, res, next) {
     try {
+      const { page, limit } = getPaginationParams(req);
       const empleados = await this.empleadoService.obtenerEmpleadosSinUsuario();
-      res.json({
-        success: true,
-        data: empleados,
-        total: empleados.length
-      });
+      const total = empleados.length;
+      success(res, empleados, { page, limit, total, totalPages: Math.ceil(total / limit) });
     } catch (error) {
       next(error);
     }

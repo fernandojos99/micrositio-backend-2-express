@@ -42,7 +42,7 @@ export const verificarAccesoProyecto = (req, res, next) => {
 
   // Visitantes solo a sus proyectos asignados
   if (user.tipo === 'VISITANTE') {
-    const proyectoId = parseInt(req.params.id_proyecto || req.body.id_proyecto);
+    const proyectoId = parseInt(req.params.id || req.params.id_proyecto || req.body.id_proyecto || req.query.proyectoId);
     
     if (!user.proyectos || !user.proyectos.includes(proyectoId)) {
       return next(new ApiError('Sin acceso a este proyecto', 403));

@@ -6,10 +6,40 @@
 import CelulaProyectoService from '../services/celulaProyectoService.js';
 import { celulaProyectoCreateSchema, celulaProyectoUpdateSchema } from '../middlewares/validation/celulaProyectoSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { success, created, noContent } from '../utils/responseHelper.js';
 
 class CelulaProyectoController {
   constructor() {
     this.celulaProyectoService = new CelulaProyectoService();
+  }
+
+  /**
+   * Obtiene relaciones célula-proyecto.
+   * Soporta filtros por query: ?empleadoId= y ?proyectoId=
+   * @async
+   * @param {Object} req - Request de Express.
+   * @param {Object} res - Response de Express.
+   * @param {Function} next - Next middleware.
+   */
+  async obtenerTodos(req, res, next) {
+    try {
+      const { empleadoId, proyectoId } = req.query;
+
+      if (empleadoId) {
+        const relaciones = await this.celulaProyectoService.obtenerPorEmpleado(empleadoId);
+        return success(res, relaciones);
+      }
+
+      if (proyectoId) {
+        const relaciones = await this.celulaProyectoService.obtenerPorProyecto(Number(proyectoId));
+        return success(res, relaciones);
+      }
+
+      const relaciones = await this.celulaProyectoService.obtenerTodos();
+      success(res, relaciones);
+    } catch (error) {
+      next(error);
+    }
   }
 
   /**
@@ -21,51 +51,32 @@ class CelulaProyectoController {
    */
   async obtenerPorEmpleado(req, res, next) {
     try {
-      if (!req.body.id_empleado) {
-        throw new ApiError('Se requiere el campo "id_empleado" en el body', 400);
+      if (!req.query.empleadoId) {
+        throw new ApiError('Se requiere el parámetro "empleadoId" en query', 400);
       }
 
-      const relaciones = await this.celulaProyectoService.obtenerPorEmpleado(req.body.id_empleado);
-      res.json(relaciones);
+      const relaciones = await this.celulaProyectoService.obtenerPorEmpleado(req.query.empleadoId);
+      success(res, relaciones);
     } catch (error) {
       next(error);
     }
   }
 
   /**
-   * Obtiene relaciones por ID de proyecto (usando req.query).
+   * Obtiene relaciones por ID de proyecto.
    * @async
    * @param {Object} req - Request de Express.
    * @param {Object} res - Response de Express.
    * @param {Function} next - Next middleware.
    */
-  // En src/controllers/celulaProyectoController.js
-
-async obtenerPorProyecto(req, res, next) {
-  try {
-    // Solo lee de la query para GET
-    const id_proyecto = req.query.id_proyecto;
-    if (!id_proyecto) {
-      throw new ApiError('Se requiere el parámetro "id_proyecto" en query', 400);
-    }
-    const relaciones = await this.celulaProyectoService.obtenerPorProyecto(Number(id_proyecto));
-    res.json(relaciones);
-  } catch (error) {
-    next(error);
-  }
-}
-
-  /**
-   * Obtiene todas las relaciones célula-proyecto.
-   * @async
-   * @param {Object} req - Request de Express.
-   * @param {Object} res - Response de Express.
-   * @param {Function} next - Next middleware.
-   */
-  async obtenerTodos(req, res, next) {
+  async obtenerPorProyecto(req, res, next) {
     try {
-      const relaciones = await this.celulaProyectoService.obtenerTodos();
-      res.json(relaciones);
+      const id_proyecto = req.query.proyectoId;
+      if (!id_proyecto) {
+        throw new ApiError('Se requiere el parámetro "proyectoId" en query', 400);
+      }
+      const relaciones = await this.celulaProyectoService.obtenerPorProyecto(Number(id_proyecto));
+      success(res, relaciones);
     } catch (error) {
       next(error);
     }
@@ -84,7 +95,7 @@ async obtenerPorProyecto(req, res, next) {
       const validatedData = celulaProyectoCreateSchema.parse(req.body);
       const { id_empleados, id_proyecto, activo } = validatedData;
       const nuevasRelaciones = await this.celulaProyectoService.crearMultiple(id_empleados, id_proyecto, activo);
-      res.status(201).json(nuevasRelaciones);
+      created(res, nuevasRelaciones);
     } catch (error) {
       next(new ApiError(error.message, 400));
     }
@@ -99,12 +110,12 @@ async obtenerPorProyecto(req, res, next) {
    */
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
 
-      await this.celulaProyectoService.eliminar(req.body.id);
-      res.status(204).end();
+      await this.celulaProyectoService.eliminar(req.params.id);
+      noContent(res);
     } catch (error) {
       next(error);
     }
@@ -119,16 +130,16 @@ async obtenerPorProyecto(req, res, next) {
    */
   async actualizarActivo(req, res, next) {
     try {
-      if (!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      if (!req.params.id) {
+        throw new ApiError('Se requiere el parámetro "id" en la URL', 400);
       }
 
       const validatedData = celulaProyectoUpdateSchema.parse(req.body);
       const relacionActualizada = await this.celulaProyectoService.actualizarActivo(
-        req.body.id, 
+        req.params.id,
         validatedData.activo
       );
-      res.json(relacionActualizada);
+      success(res, relacionActualizada);
     } catch (error) {
       next(error);
     }

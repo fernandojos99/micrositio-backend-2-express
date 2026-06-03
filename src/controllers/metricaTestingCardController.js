@@ -1,6 +1,6 @@
-// src/controllers/metricaTestingCardController.js
 import MetricaTestingCardService from '../services/metricaTestingCardService.js';
 import { metricaCreateSchema, metricaUpdateSchema, metricaResultadoUpdateSchema } from '../middlewares/validation/metricaTestingCardSchema.js';
+import { success, created, noContent } from '../utils/responseHelper.js';
 import ApiError from '../utils/ApiError.js';
 
 class MetricaTestingCardController {
@@ -9,21 +9,22 @@ class MetricaTestingCardController {
   }
 
   /**
-   * Obtiene métricas por testing card
+   * Obtiene todas las métricas o filtra por testing card
    * @param {Object} req - Request de Express
    * @param {Object} res - Response de Express
    * @param {Function} next - Next middleware
    */
-  async obtenerPorTestingCard(req, res, next) {
+  async obtenerTodas(req, res, next) {
     try {
-      const { id_testing_card } = req.query;
+      const idTestingCard = req.query.testingCardId;
 
-      if (!id_testing_card) {
-        throw new ApiError('Se requiere el campo id_testing_card en el query', 400);
+      if (idTestingCard) {
+        const metricas = await this.metricaService.obtenerPorTestingCard(idTestingCard);
+        return success(res, metricas);
       }
 
-      const metricas = await this.metricaService.obtenerPorTestingCard(id_testing_card);
-      res.json(metricas);
+      const metricas = await this.metricaService.obtenerTodas();
+      success(res, metricas);
     } catch (error) {
       next(error);
     }
@@ -37,29 +38,14 @@ class MetricaTestingCardController {
    */
   async obtenerPorId(req, res, next) {
     try {
-      const { id_metrica_testing_card } = req.query;
+      const { id } = req.params;
 
-      if (!id_metrica_testing_card) {
-        throw new ApiError('Se requiere el campo id_metrica_testing_card en el query', 400);
+      if (!id) {
+        throw new ApiError('Se requiere el campo id en la ruta', 400);
       }
 
-      const metrica = await this.metricaService.obtenerPorId(id_metrica_testing_card);
-      res.json(metrica);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Obtiene todas las métricas
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
-  async obtenerTodas(req, res, next) {
-    try {
-      const metricas = await this.metricaService.obtenerTodas();
-      res.json(metricas);
+      const metrica = await this.metricaService.obtenerPorId(id);
+      success(res, metrica);
     } catch (error) {
       next(error);
     }
@@ -75,7 +61,7 @@ class MetricaTestingCardController {
     try {
       const validatedData = metricaCreateSchema.parse(req.body);
       const metrica = await this.metricaService.crear(validatedData);
-      res.status(201).json(metrica);
+      created(res, metrica);
     } catch (error) {
       next(new ApiError(error.message, 400));
     }
@@ -89,14 +75,15 @@ class MetricaTestingCardController {
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id_metrica_testing_card) {
-        throw new ApiError('Se requiere el campo id_metrica_testing_card en el body', 400);
+      const id = req.params.id;
+
+      if (!id) {
+        throw new ApiError('Se requiere el campo id en la ruta', 400);
       }
 
-      const { id_metrica_testing_card, ...updateData } = req.body;
-      const validatedData = metricaUpdateSchema.parse(updateData);
-      const metrica = await this.metricaService.actualizar(id_metrica_testing_card, validatedData);
-      res.json(metrica);
+      const validatedData = metricaUpdateSchema.parse(req.body);
+      const metrica = await this.metricaService.actualizar(id, validatedData);
+      success(res, metrica);
     } catch (error) {
       next(error);
     }
@@ -110,14 +97,16 @@ class MetricaTestingCardController {
    */
   async actualizarResultado(req, res, next) {
     try {
-      if (!req.body.id_metrica_testing_card) {
-        throw new ApiError('Se requiere el campo id_metrica_testing_card en el body', 400);
+      const id = req.params.id;
+
+      if (!id) {
+        throw new ApiError('Se requiere el campo id en la ruta', 400);
       }
 
-      const { id_metrica_testing_card, resultado } = req.body;
+      const { resultado } = req.body;
       const validatedData = metricaResultadoUpdateSchema.parse({ resultado });
-      const metrica = await this.metricaService.actualizarResultado(id_metrica_testing_card, validatedData);
-      res.json(metrica);
+      const metrica = await this.metricaService.actualizarResultado(id, validatedData);
+      success(res, metrica);
     } catch (error) {
       next(error);
     }
@@ -131,12 +120,14 @@ class MetricaTestingCardController {
    */
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id_metrica_testing_card) {
-        throw new ApiError('Se requiere el campo id_metrica_testing_card en el body', 400);
+      const id = req.params.id;
+
+      if (!id) {
+        throw new ApiError('Se requiere el campo id en la ruta', 400);
       }
 
-      await this.metricaService.eliminar(req.body.id_metrica_testing_card);
-      res.status(204).end();
+      await this.metricaService.eliminar(id);
+      noContent(res);
     } catch (error) {
       next(error);
     }

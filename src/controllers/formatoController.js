@@ -1,60 +1,39 @@
 import formatoService from '../services/formatoService.js';
+import { success, created, fail, noContent } from '../utils/responseHelper.js';
 
 class FormatoController {
-  
+
   async uploadDocument(req, res) {
     try {
       const file = req.file;
       const { categoria } = req.body;
 
       if (!file) {
-        return res.status(400).json({
-          success: false,
-          message: 'No se ha proporcionado ningún archivo'
-        });
+        return fail(res, { message: 'No se ha proporcionado ningún archivo' });
       }
 
       const document = await formatoService.uploadDocument(file, categoria);
-
-      res.status(201).json({
-        success: true,
-        message: 'Documento subido exitosamente',
-        data: document
-      });
+      return created(res, document, { message: 'Documento subido exitosamente' });
 
     } catch (error) {
       console.error('Error al subir documento:', error);
-      
-      // Manejar error específico de tamaño de archivo
+
       if (error.message.includes('50MB')) {
-        return res.status(413).json({
-          success: false,
-          message: error.message
-        });
+        return fail(res, { message: error.message, statusCode: 413 });
       }
 
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error interno del servidor'
-      });
+      return fail(res, { message: error.message || 'Error interno del servidor', statusCode: 500 });
     }
   }
 
   async getDocuments(req, res) {
     try {
       const documents = await formatoService.getAllDocuments();
-
-      res.status(200).json({
-        success: true,
-        data: documents
-      });
+      return success(res, documents);
 
     } catch (error) {
       console.error('Error al obtener documentos:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error interno del servidor'
-      });
+      return fail(res, { message: error.message || 'Error interno del servidor', statusCode: 500 });
     }
   }
 
@@ -63,33 +42,20 @@ class FormatoController {
       const { id } = req.params;
 
       if (!id) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de documento requerido'
-        });
+        return fail(res, { message: 'ID de documento requerido' });
       }
 
       const document = await formatoService.getDocumentById(id);
-
-      res.status(200).json({
-        success: true,
-        data: document
-      });
+      return success(res, document);
 
     } catch (error) {
       console.error('Error al obtener documento:', error);
-      
+
       if (error.message.includes('no encontrado')) {
-        return res.status(404).json({
-          success: false,
-          message: error.message
-        });
+        return fail(res, { message: error.message, statusCode: 404 });
       }
 
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error interno del servidor'
-      });
+      return fail(res, { message: error.message || 'Error interno del servidor', statusCode: 500 });
     }
   }
 
@@ -99,34 +65,20 @@ class FormatoController {
       const { categoria } = req.body;
 
       if (!id) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de documento requerido'
-        });
+        return fail(res, { message: 'ID de documento requerido' });
       }
 
       const document = await formatoService.updateDocument(id, categoria);
-
-      res.status(200).json({
-        success: true,
-        message: 'Documento actualizado exitosamente',
-        data: document
-      });
+      return success(res, document, { message: 'Documento actualizado exitosamente' });
 
     } catch (error) {
       console.error('Error al actualizar documento:', error);
-      
+
       if (error.message.includes('no encontrado')) {
-        return res.status(404).json({
-          success: false,
-          message: error.message
-        });
+        return fail(res, { message: error.message, statusCode: 404 });
       }
 
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error interno del servidor'
-      });
+      return fail(res, { message: error.message || 'Error interno del servidor', statusCode: 500 });
     }
   }
 
@@ -135,33 +87,20 @@ class FormatoController {
       const { id } = req.params;
 
       if (!id) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID de documento requerido'
-        });
+        return fail(res, { message: 'ID de documento requerido' });
       }
 
       await formatoService.deleteDocument(id);
-
-      res.status(200).json({
-        success: true,
-        message: 'Documento eliminado exitosamente'
-      });
+      return noContent(res);
 
     } catch (error) {
       console.error('Error al eliminar documento:', error);
-      
+
       if (error.message.includes('no encontrado')) {
-        return res.status(404).json({
-          success: false,
-          message: error.message
-        });
+        return fail(res, { message: error.message, statusCode: 404 });
       }
 
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Error interno del servidor'
-      });
+      return fail(res, { message: error.message || 'Error interno del servidor', statusCode: 500 });
     }
   }
 }

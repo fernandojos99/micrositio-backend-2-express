@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Micrositio Iris Backend API",
-    "description": "API REST para el Micrositio Iris. Gestiona proyectos, experimentos (Testing Cards), Learning Cards, secuencias, metricas, agentes de IA, usuarios, empleados y mas.\n\n**Patrones de respuesta:**\n- CRUD basicos: retornan el objeto/array directamente (bare).\n- CRUD complejos: retornan { success, data, message, total } (structured).\n\n**Autenticacion:** JWT Bearer token en header Authorization: Bearer <token>. Tres niveles:\n- authMiddleware: cualquier token valido\n- soloEditores: solo rol EDITOR\n- verificarAccesoProyecto: visitantes filtrados por proyectos asignados\n\n**Roles:** EDITOR (acceso total), VISITANTE (solo proyectos asignados)",
+    "description": "API REST para el Micrositio Iris.\n\nTodas las respuestas usan formato unificado:\n  EXITO:   { success: true, data: <payload>, message?: string, total?: number, page?: number, limit?: number, totalPages?: number }\n  ERROR:   { success: false, message: string, errors?: [...] }\n\nAutenticacion JWT Bearer token: Authorization: Bearer <token>\nRoles:\n  - VISITANTE: puede ver solo sus proyectos asignados (errores 403 si intenta modificar)\n  - EDITOR: acceso total a lectura y escritura\n\nEndpoints de LECTURA (GET): requieren BearerAuth (cualquier token valido).\nEndpoints de ESCRITURA (POST/PATCH/PUT/DELETE): requieren BearerAuth + SoloEditores (token de usuario EDITOR).\n\nErrores HTTP estandar:\n  - 400: Parametro invalido o mal formado\n  - 401: Token JWT faltante, invalido o expirado\n  - 403: Rol insuficiente (VISITANTE intentando escribir O sin acceso al proyecto)\n  - 404: Recurso no encontrado (ID invalido, entidad eliminada)\n  - 422: Error de validacion de datos (Zod)\n  - 500: Error interno del servidor\n\nFlujo tipico para agentes:\n  1. POST /auth/login con { alias, password } para obtener token EDITOR\n  2. Usar el token en Authorization: Bearer <token> para todas las peticiones\n  3. GET para leer recursos, POST/PATCH/DELETE para modificarlos\n  4. Las respuestas SIEMPRE vienen envueltas en { success, data }",
     "version": "1.0.0"
   },
   "servers": [
@@ -57,11 +57,11 @@
       "description": "CRUD de usuarios del sistema"
     },
     {
-      "name": "Usuario-Proyecto",
+      "name": "Usuarios Proyectos",
       "description": "Asignacion usuarios a proyectos"
     },
     {
-      "name": "Celula Proyecto",
+      "name": "Celulas Proyecto",
       "description": "Asignacion empleados a proyectos"
     },
     {
@@ -77,7 +77,7 @@
       "description": "Agentes de inteligencia artificial"
     },
     {
-      "name": "Agente Categoria",
+      "name": "Agentes Categorias",
       "description": "Relacion agente-categoria"
     },
     {
@@ -113,11 +113,11 @@
       "description": "Documentos de formato general"
     },
     {
-      "name": "URL Formato",
+      "name": "URLs Formatos",
       "description": "URLs de formatos"
     },
     {
-      "name": "Node Positions",
+      "name": "Posiciones Flujo",
       "description": "Posiciones de nodos en el flow experimental"
     },
     {
@@ -129,7 +129,7 @@
       "description": "Busqueda global"
     },
     {
-      "name": "Testing Card Playbook",
+      "name": "Testing Cards Playbook",
       "description": "Playbook de reglas de testing cards"
     },
     {
@@ -372,15 +372,55 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Proyecto"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Proyecto"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -412,12 +452,68 @@
           }
         },
         "responses": {
+          "401": { "description": "Token JWT invalido o expirado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Rol insuficiente - requiere EDITOR", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Proyecto"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proyectos/{id}": {
+      "get": {
+        "tags": [
+          "Proyectos"
+        ],
+        "summary": "Obtener proyecto por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  }
                 }
               }
             }
@@ -437,27 +533,22 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_proyecto"
-                    ],
-                    "properties": {
-                      "id_proyecto": {
-                        "type": "integer"
-                      }
-                    }
-                  },
-                  {
-                    "$ref": "#/components/schemas/ProyectoUpdate"
-                  }
-                ]
+                "$ref": "#/components/schemas/ProyectoUpdate"
               }
             }
           }
@@ -468,7 +559,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Proyecto"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Proyecto"
+                    }
+                  }
                 }
               }
             }
@@ -488,111 +590,19 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_proyecto"
-                ],
-                "properties": {
-                  "id_proyecto": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
-          }
-        }
-      }
-    },
-    "/proyectos/p": {
-      "get": {
-        "tags": [
-          "Proyectos"
-        ],
-        "summary": "Obtener proyecto por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_proyecto"
-                ],
-                "properties": {
-                  "id_proyecto": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Proyecto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Proyectos"
-        ],
-        "summary": "Obtener proyecto por ID (POST alt)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_proyecto"
-                ],
-                "properties": {
-                  "id_proyecto": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Proyecto"
-                }
-              }
-            }
           }
         }
       }
@@ -652,15 +662,63 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "proyectoId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Secuencia"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Secuencia"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -692,137 +750,24 @@
           }
         },
         "responses": {
+          "401": { "description": "Token JWT invalido o expirado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Rol insuficiente - requiere EDITOR", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Secuencia"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Secuencias"
-        ],
-        "summary": "Actualizar secuencia",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_secuencia"
-                    ],
-                    "properties": {
-                      "id_secuencia": {
-                        "type": "integer"
-                      }
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Secuencia"
                     }
-                  },
-                  {
-                    "$ref": "#/components/schemas/SecuenciaUpdate"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Secuencia"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Secuencias"
-        ],
-        "summary": "Eliminar secuencia",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_secuencia"
-                ],
-                "properties": {
-                  "id_secuencia": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
-    "/secuencias/p": {
-      "get": {
-        "tags": [
-          "Secuencias"
-        ],
-        "summary": "Secuencias por proyecto",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_proyecto",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Secuencia"
                   }
                 }
               }
@@ -858,15 +803,109 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Secuencia"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Secuencia"
+                    }
+                  }
                 }
               }
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Secuencias"
+        ],
+        "summary": "Actualizar secuencia",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecuenciaUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Secuencia"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Secuencias"
+        ],
+        "summary": "Eliminar secuencia",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
-    "/secuencias/aplicar-plantilla": {
+    "/secuencias/{id}/aplicar-plantilla": {
       "patch": {
         "tags": [
           "Secuencias"
@@ -875,6 +914,19 @@
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "requestBody": {
@@ -884,13 +936,9 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id_secuencia",
                   "id_plantilla_secuencia"
                 ],
                 "properties": {
-                  "id_secuencia": {
-                    "type": "integer"
-                  },
                   "id_plantilla_secuencia": {
                     "type": "string",
                     "format": "uuid"
@@ -925,7 +973,7 @@
         }
       }
     },
-    "/testing_card": {
+    "/testing-cards": {
       "get": {
         "tags": [
           "Testing Cards"
@@ -936,15 +984,71 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "secuenciaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "padreId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -976,137 +1080,24 @@
           }
         },
         "responses": {
+          "401": { "description": "Token JWT invalido o expirado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Rol insuficiente - requiere EDITOR", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TestingCard"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Testing Cards"
-        ],
-        "summary": "Actualizar testing card",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_testing_card"
-                    ],
-                    "properties": {
-                      "id_testing_card": {
-                        "type": "integer"
-                      }
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TestingCard"
                     }
-                  },
-                  {
-                    "$ref": "#/components/schemas/TestingCardUpdate"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TestingCard"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Testing Cards"
-        ],
-        "summary": "Eliminar testing card",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_testing_card"
-                ],
-                "properties": {
-                  "id_testing_card": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
-    "/testing_card/s": {
-      "get": {
-        "tags": [
-          "Testing Cards"
-        ],
-        "summary": "Testing cards por secuencia",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_secuencia",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TestingCard"
                   }
                 }
               }
@@ -1115,7 +1106,7 @@
         }
       }
     },
-    "/testing_card/t/{id}": {
+    "/testing-cards/{id}": {
       "get": {
         "tags": [
           "Testing Cards"
@@ -1142,23 +1133,42 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TestingCard"
+                    }
+                  }
                 }
               }
             }
           }
         }
-      }
-    },
-    "/testing_card/padre": {
-      "get": {
+      },
+      "patch": {
         "tags": [
           "Testing Cards"
         ],
-        "summary": "Testing cards por padre",
+        "summary": "Actualizar testing card",
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "requestBody": {
@@ -1166,15 +1176,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "padre_id"
-                ],
-                "properties": {
-                  "padre_id": {
-                    "type": "integer"
-                  }
-                }
+                "$ref": "#/components/schemas/TestingCardUpdate"
               }
             }
           }
@@ -1185,18 +1187,55 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TestingCard"
+                    }
                   }
                 }
               }
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Testing Cards"
+        ],
+        "summary": "Eliminar testing card",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
-    "/testing_card/{id}/copiar": {
+    "/testing-cards/{id}/copiar": {
       "post": {
         "tags": [
           "Testing Cards"
@@ -1245,7 +1284,7 @@
         }
       }
     },
-    "/testing_card/aplicar-plantilla": {
+    "/testing-cards/{id}/aplicar-plantilla": {
       "patch": {
         "tags": [
           "Testing Cards"
@@ -1259,6 +1298,16 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1266,13 +1315,9 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id_testing_card",
                   "id_plantilla_testing_card"
                 ],
                 "properties": {
-                  "id_testing_card": {
-                    "type": "integer"
-                  },
                   "id_plantilla_testing_card": {
                     "type": "string",
                     "format": "uuid"
@@ -1307,7 +1352,7 @@
         }
       }
     },
-    "/testing_card/plantillas": {
+    "/testing-cards/plantillas": {
       "get": {
         "tags": [
           "Testing Cards"
@@ -1318,15 +1363,55 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -1335,7 +1420,7 @@
         }
       }
     },
-    "/learning_card": {
+    "/learning-cards": {
       "get": {
         "tags": [
           "Learning Cards"
@@ -1346,15 +1431,63 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "testingCardId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LearningCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LearningCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -1386,12 +1519,68 @@
           }
         },
         "responses": {
+          "401": { "description": "Token JWT invalido o expirado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Rol insuficiente - requiere EDITOR", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LearningCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningCard"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/learning-cards/{id}": {
+      "get": {
+        "tags": [
+          "Learning Cards"
+        ],
+        "summary": "Learning card por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningCard"
+                    }
+                  }
                 }
               }
             }
@@ -1411,27 +1600,22 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_learning_card"
-                    ],
-                    "properties": {
-                      "id_learning_card": {
-                        "type": "integer"
-                      }
-                    }
-                  },
-                  {
-                    "$ref": "#/components/schemas/LearningCardUpdate"
-                  }
-                ]
+                "$ref": "#/components/schemas/LearningCardUpdate"
               }
             }
           }
@@ -1442,7 +1626,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LearningCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningCard"
+                    }
+                  }
                 }
               }
             }
@@ -1462,24 +1657,16 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_learning_card"
-                ],
-                "properties": {
-                  "id_learning_card": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
@@ -1487,95 +1674,74 @@
         }
       }
     },
-    "/learning_card/t": {
-      "get": {
-        "tags": [
-          "Learning Cards"
-        ],
-        "summary": "Learning cards por testing card",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_testing_card",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LearningCard"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/learning_card/l": {
-      "get": {
-        "tags": [
-          "Learning Cards"
-        ],
-        "summary": "Learning card por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_learning_card",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LearningCard"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/metrica_testing_card": {
+    "/metricas-testing-card": {
       "get": {
         "tags": [
           "Metricas Testing Card"
         ],
-        "summary": "Todas las metricas (sin auth)",
-        "security": [],
+        "summary": "Todas las metricas",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "testingCardId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MetricaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MetricaTestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -1607,12 +1773,68 @@
           }
         },
         "responses": {
+          "401": { "description": "Token JWT invalido o expirado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Rol insuficiente - requiere EDITOR", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "201": {
             "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MetricaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MetricaTestingCard"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metricas-testing-card/{id}": {
+      "get": {
+        "tags": [
+          "Metricas Testing Card"
+        ],
+        "summary": "Metrica por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MetricaTestingCard"
+                    }
+                  }
                 }
               }
             }
@@ -1632,27 +1854,22 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_metrica_testing_card"
-                    ],
-                    "properties": {
-                      "id_metrica_testing_card": {
-                        "type": "integer"
-                      }
-                    }
-                  },
-                  {
-                    "$ref": "#/components/schemas/MetricaTestingCardUpdate"
-                  }
-                ]
+                "$ref": "#/components/schemas/MetricaTestingCardUpdate"
               }
             }
           }
@@ -1663,7 +1880,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MetricaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MetricaTestingCard"
+                    }
+                  }
                 }
               }
             }
@@ -1683,24 +1911,16 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_metrica_testing_card"
-                ],
-                "properties": {
-                  "id_metrica_testing_card": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
@@ -1708,80 +1928,7 @@
         }
       }
     },
-    "/metrica_testing_card/t": {
-      "get": {
-        "tags": [
-          "Metricas Testing Card"
-        ],
-        "summary": "Metricas por testing card",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_testing_card",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MetricaTestingCard"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/metrica_testing_card/m": {
-      "get": {
-        "tags": [
-          "Metricas Testing Card"
-        ],
-        "summary": "Metrica por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_metrica_testing_card",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MetricaTestingCard"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/metrica_testing_card/resultado": {
+    "/metricas-testing-card/{id}/resultado": {
       "patch": {
         "tags": [
           "Metricas Testing Card"
@@ -1795,6 +1942,16 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1802,13 +1959,9 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id_metrica_testing_card",
                   "resultado"
                 ],
                 "properties": {
-                  "id_metrica_testing_card": {
-                    "type": "integer"
-                  },
                   "resultado": {
                     "type": "string",
                     "maxLength": 30,
@@ -1825,7 +1978,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MetricaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MetricaTestingCard"
+                    }
+                  }
                 }
               }
             }
@@ -1833,7 +1997,7 @@
         }
       }
     },
-    "/url_testing_card": {
+    "/urls-testing-card": {
       "get": {
         "tags": [
           "URLs Testing Card"
@@ -1844,15 +2008,63 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "testingCardId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UrlTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UrlTestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -1889,7 +2101,61 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlTestingCard"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/urls-testing-card/{id}": {
+      "get": {
+        "tags": [
+          "URLs Testing Card"
+        ],
+        "summary": "URL por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlTestingCard"
+                    }
+                  }
                 }
               }
             }
@@ -1909,19 +2175,23 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "id_url_tc"
-                ],
                 "properties": {
-                  "id_url_tc": {
-                    "type": "integer"
-                  },
                   "url": {
                     "type": "string",
                     "format": "uri"
@@ -1937,7 +2207,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlTestingCard"
+                    }
+                  }
                 }
               }
             }
@@ -1957,24 +2238,16 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_url_tc"
-                ],
-                "properties": {
-                  "id_url_tc": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
@@ -1982,80 +2255,7 @@
         }
       }
     },
-    "/url_testing_card/t": {
-      "get": {
-        "tags": [
-          "URLs Testing Card"
-        ],
-        "summary": "URLs por testing card",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_testing_card",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UrlTestingCard"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/url_testing_card/u": {
-      "get": {
-        "tags": [
-          "URLs Testing Card"
-        ],
-        "summary": "URL por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_url_tc",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UrlTestingCard"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/url_learning_card": {
+    "/urls-learning-card": {
       "get": {
         "tags": [
           "URLs Learning Card"
@@ -2066,15 +2266,63 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "learningCardId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UrlLearningCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UrlLearningCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -2111,7 +2359,61 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlLearningCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlLearningCard"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/urls-learning-card/{id}": {
+      "get": {
+        "tags": [
+          "URLs Learning Card"
+        ],
+        "summary": "URL por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlLearningCard"
+                    }
+                  }
                 }
               }
             }
@@ -2131,19 +2433,23 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "id_url_lc"
-                ],
                 "properties": {
-                  "id_url_lc": {
-                    "type": "integer"
-                  },
                   "url": {
                     "type": "string",
                     "format": "uri"
@@ -2159,7 +2465,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlLearningCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlLearningCard"
+                    }
+                  }
                 }
               }
             }
@@ -2179,24 +2496,16 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_url_lc"
-                ],
-                "properties": {
-                  "id_url_lc": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
@@ -2204,218 +2513,73 @@
         }
       }
     },
-    "/url_learning_card/l": {
-      "get": {
-        "tags": [
-          "URLs Learning Card"
-        ],
-        "summary": "URLs por learning card",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_learning_card",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UrlLearningCard"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/url_learning_card/u": {
-      "get": {
-        "tags": [
-          "URLs Learning Card"
-        ],
-        "summary": "URL por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_url_lc",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UrlLearningCard"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/empleados": {
-      "post": {
+      "get": {
         "tags": [
           "Empleados"
         ],
-        "summary": "Obtener empleado por ID",
+        "summary": "Todos los empleados",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Actualizar empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id"
-                    ],
-                    "properties": {
-                      "id": {
-                        "type": "integer"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Empleado"
                       }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
                     }
-                  },
-                  {
-                    "$ref": "#/components/schemas/EmpleadoUpdate"
                   }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
                 }
               }
             }
           }
         }
       },
-      "delete": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Desactivar empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/empleados/create": {
       "post": {
         "tags": [
           "Empleados"
@@ -2445,7 +2609,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Empleado"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empleado"
+                    }
+                  }
                 }
               }
             }
@@ -2453,7 +2628,154 @@
         }
       }
     },
-    "/empleados/infopersonal": {
+    "/empleados/{id}": {
+      "get": {
+        "tags": [
+          "Empleados"
+        ],
+        "summary": "Obtener empleado por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empleado"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Empleados"
+        ],
+        "summary": "Actualizar empleado",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmpleadoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empleado"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Empleados"
+        ],
+        "summary": "Desactivar empleado",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empleado"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empleados/{id}/infopersonal": {
       "patch": {
         "tags": [
           "Empleados"
@@ -2467,6 +2789,16 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2474,13 +2806,9 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id",
                   "habilidades"
                 ],
                 "properties": {
-                  "id": {
-                    "type": "integer"
-                  },
                   "habilidades": {
                     "type": "array",
                     "items": {
@@ -2498,34 +2826,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/empleados/todos": {
-      "get": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Todos los empleados",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Empleado"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empleado"
+                    }
                   }
                 }
               }
@@ -2588,6 +2899,24 @@
           }
         ],
         "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
           {
             "name": "activo",
             "in": "query",
@@ -2683,136 +3012,6 @@
         }
       }
     },
-    "/usuarios/estadisticas": {
-      "get": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Estadisticas de usuarios",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/empleado/{id_empleado}": {
-      "get": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Usuarios por empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_empleado",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Usuario"
-                      }
-                    },
-                    "total": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/visitante": {
-      "post": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Crear visitante (sin auth)",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UsuarioVisitanteCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Visitante creado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/usuarios/{id}": {
       "get": {
         "tags": [
@@ -2857,7 +3056,7 @@
         "tags": [
           "Usuarios"
         ],
-        "summary": "Actualizar usuario (sin auth)",
+        "summary": "Actualizar usuario",
         "security": [],
         "parameters": [
           {
@@ -3093,6 +3292,72 @@
         }
       }
     },
+    "/usuarios/{id}/tipo": {
+      "patch": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Actualizar tipo (EDITOR/VISITANTE)",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/idUsuarioPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tipo"
+                ],
+                "properties": {
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "EDITOR",
+                      "VISITANTE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/usuarios/{id_usuario}/asignar-empleado": {
       "patch": {
         "tags": [
@@ -3161,12 +3426,48 @@
         }
       }
     },
-    "/usuarios/{id}/tipo": {
-      "patch": {
+    "/usuarios/estadisticas": {
+      "get": {
         "tags": [
           "Usuarios"
         ],
-        "summary": "Actualizar tipo (EDITOR/VISITANTE)",
+        "summary": "Estadisticas de usuarios",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuarios/empleado/{id_empleado}": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Usuarios por empleado",
         "security": [
           {
             "BearerAuth": []
@@ -3177,34 +3478,62 @@
         ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/idUsuarioPath"
+            "name": "id_empleado",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "tipo"
-                ],
-                "properties": {
-                  "tipo": {
-                    "type": "string",
-                    "enum": [
-                      "EDITOR",
-                      "VISITANTE"
-                    ]
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Usuario"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
             }
           }
+        }
+      }
+    },
+    "/usuarios/visitante": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Crear visitante (sin auth)",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioVisitanteCreate"
+              }
+            }
+          }
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Visitante creado",
             "content": {
               "application/json": {
                 "schema": {
@@ -3217,7 +3546,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "object"
+                      "$ref": "#/components/schemas/Usuario"
                     }
                   }
                 }
@@ -3282,10 +3611,10 @@
         }
       }
     },
-    "/usuario_proyecto": {
+    "/usuarios-proyectos": {
       "get": {
         "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Todas las relaciones",
         "security": [
@@ -3294,6 +3623,26 @@
           },
           {
             "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -3325,7 +3674,7 @@
       },
       "post": {
         "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Crear relacion",
         "security": [
@@ -3371,46 +3720,10 @@
         }
       }
     },
-    "/usuario_proyecto/estadisticas": {
+    "/usuarios-proyectos/usuario/{id_usuario}": {
       "get": {
         "tags": [
-          "Usuario-Proyecto"
-        ],
-        "summary": "Estadisticas",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuario_proyecto/usuario/{id_usuario}": {
-      "get": {
-        "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Proyectos de un usuario",
         "security": [
@@ -3449,7 +3762,7 @@
       },
       "delete": {
         "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Eliminar relaciones de un usuario",
         "security": [
@@ -3490,10 +3803,10 @@
         }
       }
     },
-    "/usuario_proyecto/proyecto/{id_proyecto}": {
+    "/usuarios-proyectos/proyecto/{id_proyecto}": {
       "get": {
         "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Usuarios de un proyecto",
         "security": [
@@ -3536,10 +3849,10 @@
         }
       }
     },
-    "/usuario_proyecto/asignar-multiples": {
+    "/usuarios-proyectos/asignar-multiples": {
       "post": {
         "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Asignar multiples proyectos",
         "security": [
@@ -3585,10 +3898,46 @@
         }
       }
     },
-    "/usuario_proyecto/{id_usuario}/{id_proyecto}": {
+    "/usuarios-proyectos/estadisticas": {
+      "get": {
+        "tags": [
+          "Usuarios Proyectos"
+        ],
+        "summary": "Estadisticas",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuarios-proyectos/{id_usuario}/{id_proyecto}": {
       "delete": {
         "tags": [
-          "Usuario-Proyecto"
+          "Usuarios Proyectos"
         ],
         "summary": "Eliminar relacion especifica",
         "security": [
@@ -3637,15 +3986,51 @@
         }
       }
     },
-    "/celula_proyecto": {
+    "/celulas-proyecto": {
       "get": {
         "tags": [
-          "Celula Proyecto"
+          "Celulas Proyecto"
         ],
         "summary": "Todas las relaciones",
         "security": [
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "empleadoId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "proyectoId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -3654,9 +4039,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CelulaProyecto"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CelulaProyecto"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -3666,7 +4071,7 @@
       },
       "post": {
         "tags": [
-          "Celula Proyecto"
+          "Celulas Proyecto"
         ],
         "summary": "Crear relacion(es)",
         "security": [
@@ -3693,16 +4098,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
                 }
               }
             }
           }
         }
-      },
+      }
+    },
+    "/celulas-proyecto/{id}": {
       "patch": {
         "tags": [
-          "Celula Proyecto"
+          "Celulas Proyecto"
         ],
         "summary": "Actualizar activo",
         "security": [
@@ -3713,6 +4131,16 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3720,13 +4148,9 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id",
                   "activo"
                 ],
                 "properties": {
-                  "id": {
-                    "type": "integer"
-                  },
                   "activo": {
                     "type": "boolean"
                   }
@@ -3741,7 +4165,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CelulaProyecto"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CelulaProyecto"
+                    }
+                  }
                 }
               }
             }
@@ -3750,7 +4185,7 @@
       },
       "delete": {
         "tags": [
-          "Celula Proyecto"
+          "Celulas Proyecto"
         ],
         "summary": "Eliminar relacion",
         "security": [
@@ -3761,199 +4196,19 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
-          }
-        }
-      }
-    },
-    "/celula_proyecto/e": {
-      "get": {
-        "tags": [
-          "Celula Proyecto"
-        ],
-        "summary": "Por empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_empleado"
-                ],
-                "properties": {
-                  "id_empleado": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CelulaProyecto"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Celula Proyecto"
-        ],
-        "summary": "Por empleado (POST alt)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_empleado"
-                ],
-                "properties": {
-                  "id_empleado": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CelulaProyecto"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/celula_proyecto/p": {
-      "get": {
-        "tags": [
-          "Celula Proyecto"
-        ],
-        "summary": "Por proyecto (query)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_proyecto",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CelulaProyecto"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Celula Proyecto"
-        ],
-        "summary": "Por proyecto (POST alt)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_proyecto"
-                ],
-                "properties": {
-                  "id_proyecto": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CelulaProyecto"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -3969,15 +4224,55 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Categoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Categoria"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4014,7 +4309,61 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Categoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Categoria"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categorias/{id}": {
+      "get": {
+        "tags": [
+          "Categorias"
+        ],
+        "summary": "Categoria por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Categoria"
+                    }
+                  }
                 }
               }
             }
@@ -4034,27 +4383,22 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_categoria"
-                    ],
-                    "properties": {
-                      "id_categoria": {
-                        "type": "integer"
-                      }
-                    }
-                  },
-                  {
-                    "$ref": "#/components/schemas/CategoriaCreate"
-                  }
-                ]
+                "$ref": "#/components/schemas/CategoriaCreate"
               }
             }
           }
@@ -4065,7 +4409,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Categoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Categoria"
+                    }
+                  }
                 }
               }
             }
@@ -4085,24 +4440,16 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_categoria"
-                ],
-                "properties": {
-                  "id_categoria": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
@@ -4110,50 +4457,7 @@
         }
       }
     },
-    "/categorias/c": {
-      "get": {
-        "tags": [
-          "Categorias"
-        ],
-        "summary": "Categoria por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_categoria"
-                ],
-                "properties": {
-                  "id_categoria": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Categoria"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/experimento_tipo": {
+    "/experimentos-tipos": {
       "get": {
         "tags": [
           "Experimento Tipo"
@@ -4164,15 +4468,55 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExperimentoTipo"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ExperimentoTipo"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4209,7 +4553,61 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExperimentoTipo"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ExperimentoTipo"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/experimentos-tipos/{id}": {
+      "get": {
+        "tags": [
+          "Experimento Tipo"
+        ],
+        "summary": "Tipo por ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ExperimentoTipo"
+                    }
+                  }
                 }
               }
             }
@@ -4229,27 +4627,22 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_experimento_tipo"
-                    ],
-                    "properties": {
-                      "id_experimento_tipo": {
-                        "type": "integer"
-                      }
-                    }
-                  },
-                  {
-                    "$ref": "#/components/schemas/ExperimentoTipoCreate"
-                  }
-                ]
+                "$ref": "#/components/schemas/ExperimentoTipoCreate"
               }
             }
           }
@@ -4260,7 +4653,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExperimentoTipo"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ExperimentoTipo"
+                    }
+                  }
                 }
               }
             }
@@ -4280,70 +4684,19 @@
             "SoloEditores": []
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_experimento_tipo"
-                ],
-                "properties": {
-                  "id_experimento_tipo": {
-                    "type": "integer"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
-        },
+        ],
         "responses": {
           "204": {
             "description": "No Content"
-          }
-        }
-      }
-    },
-    "/experimento_tipo/e": {
-      "get": {
-        "tags": [
-          "Experimento Tipo"
-        ],
-        "summary": "Tipo por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_experimento_tipo"
-                ],
-                "properties": {
-                  "id_experimento_tipo": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExperimentoTipo"
-                }
-              }
-            }
           }
         }
       }
@@ -4362,15 +4715,55 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Agente"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agente"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4407,98 +4800,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Agente"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Agentes IA"
-        ],
-        "summary": "Actualizar agente",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_agente"
-                    ],
-                    "properties": {
-                      "id_agente": {
-                        "type": "integer"
-                      }
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Agente"
                     }
-                  },
-                  {
-                    "$ref": "#/components/schemas/AgenteUpdate"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Agente"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Agentes IA"
-        ],
-        "summary": "Eliminar agente",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_agente"
-                ],
-                "properties": {
-                  "id_agente": {
-                    "type": "integer"
                   }
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
           }
         }
       }
@@ -4533,10 +4849,104 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Agente"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Agente"
+                    }
+                  }
                 }
               }
             }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Agentes IA"
+        ],
+        "summary": "Actualizar agente",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgenteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Agente"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Agentes IA"
+        ],
+        "summary": "Eliminar agente",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -4571,9 +4981,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Agente"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agente"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4582,10 +5012,10 @@
         }
       }
     },
-    "/agente_categoria": {
+    "/agentes-categorias": {
       "get": {
         "tags": [
-          "Agente Categoria"
+          "Agentes Categorias"
         ],
         "summary": "Todas las relaciones",
         "security": [
@@ -4596,15 +5026,55 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4614,7 +5084,7 @@
       },
       "post": {
         "tags": [
-          "Agente Categoria"
+          "Agentes Categorias"
         ],
         "summary": "Crear relacion",
         "security": [
@@ -4641,110 +5111,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RelacionAgenteCategoria"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Agente Categoria"
-        ],
-        "summary": "Actualizar relacion",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_agente",
-                  "id_categoria"
-                ],
-                "properties": {
-                  "id_agente": {
-                    "type": "integer"
-                  },
-                  "id_categoria": {
-                    "type": "integer"
-                  },
-                  "es_principal": {
-                    "type": "boolean"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                    }
                   }
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RelacionAgenteCategoria"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Agente Categoria"
-        ],
-        "summary": "Eliminar relacion",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_agente",
-                  "id_categoria"
-                ],
-                "properties": {
-                  "id_agente": {
-                    "type": "integer"
-                  },
-                  "id_categoria": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
           }
         }
       }
     },
-    "/agente_categoria/{id_relacion_agente_categoria}": {
+    "/agentes-categorias/{id_relacion_agente_categoria}": {
       "get": {
         "tags": [
-          "Agente Categoria"
+          "Agentes Categorias"
         ],
         "summary": "Relacion por ID",
         "security": [
@@ -4771,18 +5160,117 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                    }
+                  }
                 }
               }
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Agentes Categorias"
+        ],
+        "summary": "Actualizar relacion",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id_relacion_agente_categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "es_principal": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Agentes Categorias"
+        ],
+        "summary": "Eliminar relacion",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id_relacion_agente_categoria",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
-    "/agente_categoria/agente/{id_agente}": {
+    "/agentes-categorias/agente/{id_agente}": {
       "get": {
         "tags": [
-          "Agente Categoria"
+          "Agentes Categorias"
         ],
         "summary": "Categorias de un agente",
         "security": [
@@ -4809,9 +5297,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4820,10 +5328,10 @@
         }
       }
     },
-    "/agente_categoria/categoria/{id_categoria}": {
+    "/agentes-categorias/categoria/{id_categoria}": {
       "get": {
         "tags": [
-          "Agente Categoria"
+          "Agentes Categorias"
         ],
         "summary": "Agentes de una categoria",
         "security": [
@@ -4850,9 +5358,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RelacionAgenteCategoria"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4861,10 +5389,10 @@
         }
       }
     },
-    "/agente_categoria/categorias": {
+    "/agentes-categorias/categorias": {
       "get": {
         "tags": [
-          "Agente Categoria"
+          "Agentes Categorias"
         ],
         "summary": "Categorias disponibles",
         "security": [
@@ -4881,9 +5409,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CategoriaAgente"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CategoriaAgente"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4892,7 +5440,7 @@
         }
       }
     },
-    "/plantilla_testing_card": {
+    "/plantillas-testing-card": {
       "get": {
         "tags": [
           "Plantillas Testing Card"
@@ -4906,15 +5454,55 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlantillaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlantillaTestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -4951,104 +5539,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlantillaTestingCard"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Plantillas Testing Card"
-        ],
-        "summary": "Actualizar plantilla",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_plantilla_testing_card"
-                    ],
-                    "properties": {
-                      "id_plantilla_testing_card": {
-                        "type": "integer"
-                      }
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlantillaTestingCard"
                     }
-                  },
-                  {
-                    "$ref": "#/components/schemas/PlantillaTestingCardCreate"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PlantillaTestingCard"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Plantillas Testing Card"
-        ],
-        "summary": "Eliminar plantilla",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_plantilla_testing_card"
-                ],
-                "properties": {
-                  "id_plantilla_testing_card": {
-                    "type": "string",
-                    "format": "uuid"
                   }
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
           }
         }
       }
     },
-    "/plantilla_testing_card/{id}": {
+    "/plantillas-testing-card/{id}": {
       "get": {
         "tags": [
           "Plantillas Testing Card"
@@ -5079,15 +5589,111 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlantillaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlantillaTestingCard"
+                    }
+                  }
                 }
               }
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Plantillas Testing Card"
+        ],
+        "summary": "Actualizar plantilla",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantillaTestingCardCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlantillaTestingCard"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Plantillas Testing Card"
+        ],
+        "summary": "Eliminar plantilla",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
-    "/plantilla_testing_card/empleado/{id_empleado}": {
+    "/plantillas-testing-card/empleado/{id_empleado}": {
       "get": {
         "tags": [
           "Plantillas Testing Card"
@@ -5117,9 +5723,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlantillaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlantillaTestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -5128,7 +5754,7 @@
         }
       }
     },
-    "/plantilla_testing_card/testing-card/{id_testing_card}": {
+    "/plantillas-testing-card/testing-card/{id_testing_card}": {
       "get": {
         "tags": [
           "Plantillas Testing Card"
@@ -5158,9 +5784,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlantillaTestingCard"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlantillaTestingCard"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -5169,7 +5815,7 @@
         }
       }
     },
-    "/plantilla_metrica_tc": {
+    "/plantillas-metricas-tc": {
       "get": {
         "tags": [
           "Plantillas Metrica TC"
@@ -5183,15 +5829,55 @@
             "SoloEditores": []
           }
         ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlantillaMetricaTc"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlantillaMetricaTc"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -5228,104 +5914,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlantillaMetricaTc"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Plantillas Metrica TC"
-        ],
-        "summary": "Actualizar plantilla",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id_plantilla_metrica"
-                    ],
-                    "properties": {
-                      "id_plantilla_metrica": {
-                        "type": "integer"
-                      }
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlantillaMetricaTc"
                     }
-                  },
-                  {
-                    "$ref": "#/components/schemas/PlantillaMetricaTcCreate"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PlantillaMetricaTc"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Plantillas Metrica TC"
-        ],
-        "summary": "Eliminar plantilla",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_plantilla_metrica"
-                ],
-                "properties": {
-                  "id_plantilla_metrica": {
-                    "type": "string",
-                    "format": "uuid"
                   }
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
           }
         }
       }
     },
-    "/plantilla_metrica_tc/{id}": {
+    "/plantillas-metricas-tc/{id}": {
       "get": {
         "tags": [
           "Plantillas Metrica TC"
@@ -5356,15 +5964,111 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlantillaMetricaTc"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlantillaMetricaTc"
+                    }
+                  }
                 }
               }
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Plantillas Metrica TC"
+        ],
+        "summary": "Actualizar plantilla",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantillaMetricaTcCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlantillaMetricaTc"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Plantillas Metrica TC"
+        ],
+        "summary": "Eliminar plantilla",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
       }
     },
-    "/plantilla_metrica_tc/empleado/{id_empleado}": {
+    "/plantillas-metricas-tc/empleado/{id_empleado}": {
       "get": {
         "tags": [
           "Plantillas Metrica TC"
@@ -5394,9 +6098,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlantillaMetricaTc"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlantillaMetricaTc"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -5405,7 +6129,7 @@
         }
       }
     },
-    "/plantilla_metrica_tc/metrica/{id_metrica}": {
+    "/plantillas-metricas-tc/metrica/{id_metrica}": {
       "get": {
         "tags": [
           "Plantillas Metrica TC"
@@ -5435,9 +6159,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlantillaMetricaTc"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlantillaMetricaTc"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -5446,7 +6190,7 @@
         }
       }
     },
-    "/plantilla_secuencia": {
+    "/plantillas-secuencias": {
       "get": {
         "tags": [
           "Plantillas Secuencia"
@@ -5455,6 +6199,26 @@
         "security": [
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -5495,6 +6259,9 @@
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "requestBody": {
@@ -5532,7 +6299,7 @@
         }
       }
     },
-    "/plantilla_secuencia/{id}": {
+    "/plantillas-secuencias/{id}": {
       "get": {
         "tags": [
           "Plantillas Secuencia"
@@ -5586,6 +6353,9 @@
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -5649,6 +6419,9 @@
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -5687,7 +6460,7 @@
         }
       }
     },
-    "/plantilla_secuencia/secuencia/{id_secuencia}": {
+    "/plantillas-secuencias/secuencia/{id_secuencia}": {
       "get": {
         "tags": [
           "Plantillas Secuencia"
@@ -5739,13 +6512,11 @@
           "Accionables"
         ],
         "summary": "Crear y sincronizar accionables",
-        "description": "Método principal para crear accionables. Recibe un array y sincroniza con BD: crea los que no existan (match por contenido+impacto+esfuerzo), actualiza los que ya estén y elimina los que no estén en el array. El :id es el id_learning_card.",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "description": "Cada item del array debe incluir id_learning_card, contenido, impacto, esfuerzo. realizado es opcional. Si no existe un accionable con mismo contenido+impacto+esfuerzo, se crea uno nuevo.",
         "parameters": [
           {
             "name": "id",
@@ -5930,6 +6701,9 @@
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -6390,10 +7164,10 @@
         }
       }
     },
-    "/testing_card_playbook": {
+    "/testing-cards-playbook": {
       "get": {
         "tags": [
-          "Testing Card Playbook"
+          "Testing Cards Playbook"
         ],
         "summary": "Listar playbooks",
         "security": [
@@ -6407,9 +7181,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -6418,10 +7212,10 @@
         }
       }
     },
-    "/testing_card_playbook/por-pagina": {
+    "/testing-cards-playbook/por-pagina": {
       "get": {
         "tags": [
-          "Testing Card Playbook"
+          "Testing Cards Playbook"
         ],
         "summary": "Por pagina",
         "security": [
@@ -6445,7 +7239,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
                 }
               }
             }
@@ -6453,10 +7255,10 @@
         }
       }
     },
-    "/testing_card_playbook/buscar": {
+    "/testing-cards-playbook/buscar": {
       "get": {
         "tags": [
-          "Testing Card Playbook"
+          "Testing Cards Playbook"
         ],
         "summary": "Buscar por campo",
         "security": [
@@ -6480,9 +7282,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -6491,10 +7313,10 @@
         }
       }
     },
-    "/testing_card_playbook/buscar-tipo": {
+    "/testing-cards-playbook/buscar-tipo": {
       "get": {
         "tags": [
-          "Testing Card Playbook"
+          "Testing Cards Playbook"
         ],
         "summary": "Buscar por tipo",
         "security": [
@@ -6518,9 +7340,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -6529,7 +7371,7 @@
         }
       }
     },
-    "/api/testing-card/{testingCardId}/documents": {
+    "/testing-cards/{testingCardId}/documentos": {
       "post": {
         "tags": [
           "Documentos Testing Card"
@@ -6641,7 +7483,7 @@
         }
       }
     },
-    "/api/documents/{documentId}": {
+    "/testing-cards/documentos/{documentId}": {
       "delete": {
         "tags": [
           "Documentos Testing Card"
@@ -6688,7 +7530,7 @@
         }
       }
     },
-    "/api/learning-card/{learningCardId}/documents": {
+    "/learning-cards/{learningCardId}/documentos": {
       "post": {
         "tags": [
           "Documentos Learning Card"
@@ -6822,7 +7664,7 @@
         }
       }
     },
-    "/api/learning-card/documents/{documentId}": {
+    "/learning-cards/documentos/{documentId}": {
       "get": {
         "tags": [
           "Documentos Learning Card"
@@ -6922,7 +7764,7 @@
         }
       }
     },
-    "/formato": {
+    "/formatos": {
       "get": {
         "tags": [
           "Formatos"
@@ -6931,6 +7773,26 @@
         "security": [
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -6956,9 +7818,7 @@
             }
           }
         }
-      }
-    },
-    "/formato/upload": {
+      },
       "post": {
         "tags": [
           "Formatos"
@@ -7020,7 +7880,7 @@
         }
       }
     },
-    "/formato/{id}": {
+    "/formatos/{id}": {
       "get": {
         "tags": [
           "Formatos"
@@ -7176,15 +8036,35 @@
         }
       }
     },
-    "/url_formato": {
+    "/urls-formatos": {
       "get": {
         "tags": [
-          "URL Formato"
+          "URLs Formatos"
         ],
         "summary": "Todas las URLs",
         "security": [
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -7193,26 +8073,47 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UrlFormato"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UrlFormato"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    },
-    "/url_formato/crear": {
+      },
       "post": {
         "tags": [
-          "URL Formato"
+          "URLs Formatos"
         ],
         "summary": "Crear URL",
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "requestBody": {
@@ -7231,7 +8132,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlFormato"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlFormato"
+                    }
+                  }
                 }
               }
             }
@@ -7239,10 +8151,10 @@
         }
       }
     },
-    "/url_formato/{id}": {
+    "/urls-formatos/{id}": {
       "get": {
         "tags": [
-          "URL Formato"
+          "URLs Formatos"
         ],
         "summary": "URL por ID",
         "security": [
@@ -7266,7 +8178,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlFormato"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlFormato"
+                    }
+                  }
                 }
               }
             }
@@ -7275,12 +8195,15 @@
       },
       "patch": {
         "tags": [
-          "URL Formato"
+          "URLs Formatos"
         ],
         "summary": "Actualizar URL",
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -7309,7 +8232,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UrlFormato"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UrlFormato"
+                    }
+                  }
                 }
               }
             }
@@ -7318,12 +8252,15 @@
       },
       "delete": {
         "tags": [
-          "URL Formato"
+          "URLs Formatos"
         ],
         "summary": "Eliminar URL",
         "security": [
           {
             "BearerAuth": []
+          },
+          {
+            "SoloEditores": []
           }
         ],
         "parameters": [
@@ -7343,22 +8280,62 @@
         }
       }
     },
-    "/flow-positions": {
+    "/posiciones-flujo": {
       "get": {
         "tags": [
-          "Node Positions"
+          "Posiciones Flujo"
         ],
-        "summary": "Todas (sin auth)",
+        "summary": "Todas",
         "security": [],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NodePosition"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NodePosition"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -7368,7 +8345,7 @@
       },
       "post": {
         "tags": [
-          "Node Positions"
+          "Posiciones Flujo"
         ],
         "summary": "Crear/actualizar posicion",
         "security": [
@@ -7395,7 +8372,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodePosition"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NodePosition"
+                    }
+                  }
                 }
               }
             }
@@ -7403,10 +8391,10 @@
         }
       }
     },
-    "/flow-positions/{id_secuencia}": {
+    "/posiciones-flujo/secuencia/{id_secuencia}": {
       "get": {
         "tags": [
-          "Node Positions"
+          "Posiciones Flujo"
         ],
         "summary": "Por secuencia",
         "security": [
@@ -7430,9 +8418,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NodePosition"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NodePosition"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    }
                   }
                 }
               }
@@ -7442,7 +8450,7 @@
       },
       "delete": {
         "tags": [
-          "Node Positions"
+          "Posiciones Flujo"
         ],
         "summary": "Eliminar de secuencia",
         "security": [
@@ -7470,10 +8478,10 @@
         }
       }
     },
-    "/flow-positions/{node_id}/{node_type}/{id_secuencia}": {
+    "/posiciones-flujo/nodo/{node_id}/{node_type}/{id_secuencia}": {
       "get": {
         "tags": [
-          "Node Positions"
+          "Posiciones Flujo"
         ],
         "summary": "Posicion especifica",
         "security": [
@@ -7517,7 +8525,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NodePosition"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NodePosition"
+                    }
+                  }
                 }
               }
             }
@@ -7649,6 +8665,13 @@
       }
     },
     "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Token inválido o no proporcionado" }
+        }
+      },
       "Usuario": {
         "type": "object",
         "properties": {

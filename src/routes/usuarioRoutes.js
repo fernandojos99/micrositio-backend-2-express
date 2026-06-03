@@ -709,7 +709,7 @@ router.patch('/:id/tipo', authMiddleware, soloEditores, usuarioController.actual
 
 // Rutas genéricas - DEBEN IR AL FINAL para evitar conflictos con rutas específicas
 router.get('/:id', authMiddleware, soloEditores, usuarioController.obtenerPorId.bind(usuarioController));
-router.patch('/:id', usuarioController.actualizar.bind(usuarioController));
+router.patch('/:id', authMiddleware, usuarioController.actualizar.bind(usuarioController));
 router.delete('/:id', authMiddleware, soloEditores, usuarioController.eliminar.bind(usuarioController));
 
 //Para actualizar la imagen de perfil del usuario

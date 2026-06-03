@@ -19,7 +19,13 @@
 - **errorHandler** (`src/middlewares/errorHandler.js`) — último middleware, stack trace solo en development
 
 ## Entrypoint `src/app.js`
-- Registra ~28 rutas, más `/api/chat/stream` (proxy SSE a Lambda) y `/health`
+- Registra ~30 rutas con prefijos estandarizados en kebab-case y plurales:
+  `proyectos`, `celulas-proyecto`, `empleados`, `secuencias`, `categorias`, `experimentos-tipos`,
+  `testing-cards`, `learning-cards`, `metricas-testing-card`, `urls-testing-card`, `urls-learning-card`,
+  `posiciones-flujo`, `testing-cards-playbook`, `usuarios`, `usuarios-proyectos`, `auth`, `agentes`,
+  `agentes-categorias`, `plantillas-testing-card`, `plantillas-metricas-tc`, `plantillas-secuencias`,
+  `notificaciones`, `search`, `urls-formatos`, `formatos`, `accionables`, `habilidad`,
+  más `/api/chat/stream` (proxy SSE a Lambda) y `/health`
 - CORS: 4 orígenes (2 Vercel + localhost:5173/5174). Editar `app.js` para añadir más
 - `bodyParser.json()` + `express.json()` — ambos registrados (redundante pero inocuo)
 - Multer configurado (memoryStorage) pero **comentado**, no usado
@@ -27,8 +33,13 @@
 
 ## Convenciones críticas (fáciles de omitir)
 - **`.bind(controller)`** en cada handler de ruta — los controllers son clases ES6, sin bind se pierde `this`
-- **IDs por body, no por URL params** — `obtenerProyecto`, `actualizarProyecto`, `eliminarProyecto` leen `req.body.id_proyecto`. Solo `/usuario/:id_usuario` usa params de ruta
-- **`GET /proyectos/p` y `POST /proyectos/p`** — ambos existen, mismo handler (obtenerProyecto), mismo body
+- **IDs por path params** — todos los endpoints usan `GET/PATCH/DELETE /recurso/:id`. Ya NO se usa body para IDs.
+- **Respuesta unificada** — usar helpers de `src/utils/responseHelper.js`: `success(res, data, opts)`, `created(res, data, opts)`, `noContent(res)`, `fail(res, opts)`. Formato: `{ success, data, message?, total?, page?, limit?, totalPages? }`
+- **Paginación** en GETs de listas — usar `getPaginationParams(req)` de `src/utils/paginationHelper.js`. Default: `page=1, limit=20`.
+- **Prefijos de ruta kebab-case** — ver `app.js` para los prefijos exactos. Rutas anidadas con path params: `/testing-cards/:id/documentos`, `/posiciones-flujo/nodo/...`.
+- **Sin sufijos** `/t`, `/s`, `/p`, `/c`, `/e`, `/m`, `/l`, `/u` — reemplazados por query params (`?proyectoId=`, `?testingCardId=`) o path params (`/:id`).
+- **Sin endpoints POST duplicados** de GET — se eliminaron `POST /proyectos/p`, `POST /celula_proyecto/e`, `POST /celula_proyecto/p`.
+- **Zod schemas** en `src/middlewares/validation/` — `hipotesis`/`descripcion` minLength reducido a 3; `learningCardUpdateSchema` permite actualizar solo `id_responsable`.
 
 ## Base de datos
 - **Supabase (PostgreSQL)** vía `@supabase/supabase-js` — **NO se usa Sequelize** (aunque está en package.json, junto con `pg`, `pg-hstore`, `mysql2` — todos no utilizados)

@@ -12,25 +12,8 @@ const router = express.Router();
 const celulaProyectoController = new CelulaProyectoController();
 
 /**
- * Obtiene relaciones por ID de empleado.
- * @name get/celula_proyecto/e
- * @function
- */
-router.get('/e', authMiddleware, celulaProyectoController.obtenerPorEmpleado.bind(celulaProyectoController));
-
-router.post('/e', authMiddleware, celulaProyectoController.obtenerPorEmpleado.bind(celulaProyectoController));
-
-/**
- * Obtiene relaciones por ID de proyecto.
- * @name get/celula_proyecto/p
- * @function
- */
-router.get('/p', authMiddleware, celulaProyectoController.obtenerPorProyecto.bind(celulaProyectoController));
-
-router.post('/p', authMiddleware, celulaProyectoController.obtenerPorProyecto.bind(celulaProyectoController));
-
-/**
  * Obtiene todas las relaciones célula-proyecto.
+ * Soporta filtros por query: ?empleadoId= y ?proyectoId=
  * @name get/celula_proyecto
  * @function
  */
@@ -44,17 +27,17 @@ router.get('/', authMiddleware, celulaProyectoController.obtenerTodos.bind(celul
 router.post('/', authMiddleware, soloEditores, celulaProyectoController.crear.bind(celulaProyectoController));
 
 /**
- * Elimina una relación célula-proyecto.
- * @name delete/celula_proyecto
+ * Actualiza el estado activo de una relación célula-proyecto.
+ * @name patch/celula_proyecto/:id
  * @function
  */
-router.delete('/', authMiddleware, soloEditores, celulaProyectoController.eliminar.bind(celulaProyectoController));
+router.patch('/:id', authMiddleware, soloEditores, celulaProyectoController.actualizarActivo.bind(celulaProyectoController));
 
 /**
- * Actualiza el estado activo de una relación célula-proyecto.
- * @name patch/celula_proyecto
+ * Elimina una relación célula-proyecto.
+ * @name delete/celula_proyecto/:id
  * @function
  */
-router.patch('/', authMiddleware, soloEditores, celulaProyectoController.actualizarActivo.bind(celulaProyectoController));
+router.delete('/:id', authMiddleware, soloEditores, celulaProyectoController.eliminar.bind(celulaProyectoController));
 
 export default router;

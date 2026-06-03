@@ -31,13 +31,43 @@ class TestingCardPlaybookRepository {
     return data;
   }
 
-   async buscarPorTipo(tipo) {
+  async buscarPorTipo(tipo) {
     const { data, error } = await supabase
       .from('testing_card_playbook')
       .select('*')
       .eq('tipo', tipo);
     if (error) throw error;
     return data;
+  }
+
+  async crear(data) {
+    const { data: created, error } = await supabase
+      .from('testing_card_playbook')
+      .insert(data)
+      .select()
+      .single();
+    if (error) throw error;
+    return created;
+  }
+
+  async actualizar(pagina, data) {
+    const { data: updated, error } = await supabase
+      .from('testing_card_playbook')
+      .update(data)
+      .eq('pagina', pagina)
+      .select()
+      .single();
+    if (error) throw error;
+    return updated;
+  }
+
+  async eliminar(pagina) {
+    const { error } = await supabase
+      .from('testing_card_playbook')
+      .delete()
+      .eq('pagina', pagina);
+    if (error) throw error;
+    return true;
   }
 }
 

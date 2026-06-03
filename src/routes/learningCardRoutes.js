@@ -1,26 +1,20 @@
 import express from 'express';
 import LearningCardController from '../controllers/learningCardController.js';
-import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
+import { authMiddleware, soloEditores, verificarAccesoProyecto } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const learningCardController = new LearningCardController();
 
-// Obtener por testing card
-router.get('/t', authMiddleware, learningCardController.obtenerPorTestingCard.bind(learningCardController));
+// NOTE: verificarAccesoProyecto aquí requiere ajuste futuro — usa req.query.proyectoId
+// pero este endpoint filtra por testingCardId. Necesitaría resolver la testing card → secuencia → proyecto.
+router.get('/', authMiddleware, verificarAccesoProyecto, learningCardController.obtenerTodos.bind(learningCardController));
 
-// Obtener por learning card ID
-router.get('/l', authMiddleware, learningCardController.obtenerPorId.bind(learningCardController));
+router.get('/:id', authMiddleware, learningCardController.obtenerPorId.bind(learningCardController));
 
-// Obtener todos
-router.get('/', authMiddleware, learningCardController.obtenerTodos.bind(learningCardController));
-
-// Crear
 router.post('/', authMiddleware, soloEditores, learningCardController.crear.bind(learningCardController));
 
-// Actualizar
-router.patch('/', authMiddleware, soloEditores, learningCardController.actualizar.bind(learningCardController));
+router.patch('/:id', authMiddleware, soloEditores, learningCardController.actualizar.bind(learningCardController));
 
-// Eliminar
-router.delete('/', authMiddleware, soloEditores, learningCardController.eliminar.bind(learningCardController));
+router.delete('/:id', authMiddleware, soloEditores, learningCardController.eliminar.bind(learningCardController));
 
 export default router;

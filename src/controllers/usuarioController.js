@@ -6,6 +6,8 @@
 import UsuarioService from '../services/usuarioService.js';
 import { usuarioCreateSchema, usuarioUpdateSchema, usuarioIdSchema, usuarioVisitanteCreateSchema } from '../middlewares/validation/usuarioSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { success, created } from '../utils/responseHelper.js';
+import { getPaginationParams } from '../utils/paginationHelper.js';
 
 class UsuarioController {
   constructor() {
@@ -22,9 +24,9 @@ class UsuarioController {
    */
   async obtenerTodos(req, res, next) {
     try {
+      const { page, limit } = getPaginationParams(req);
       const filtros = {};
       
-      // Aplicar filtros desde query params
       if (req.query.activo !== undefined) {
         filtros.activo = req.query.activo === 'true';
       }
@@ -35,11 +37,8 @@ class UsuarioController {
 
       const usuarios = await this.usuarioService.obtenerTodos(filtros);
       
-      res.json({
-        success: true,
-        data: usuarios,
-        total: usuarios.length
-      });
+      const total = usuarios.length;
+      success(res, usuarios, { page, limit, total, totalPages: Math.ceil(total / limit) });
     } catch (error) {
       next(error);
     }
@@ -56,15 +55,11 @@ class UsuarioController {
     try {
       const { id } = req.params;
       
-      // Validar UUID
       usuarioIdSchema.parse({ id_usuario: id });
       
       const usuario = await this.usuarioService.obtenerPorId(id);
       
-      res.json({
-        success: true,
-        data: usuario
-      });
+      success(res, usuario);
     } catch (error) {
       next(error);
     }
@@ -87,11 +82,7 @@ class UsuarioController {
 
       const usuarios = await this.usuarioService.obtenerPorIdEmpleado(id_empleado);
       
-      res.json({
-        success: true,
-        data: usuarios,
-        total: usuarios.length
-      });
+      success(res, usuarios, { total: usuarios.length });
     } catch (error) {
       next(error);
     }
@@ -109,11 +100,7 @@ class UsuarioController {
       const validatedData = usuarioCreateSchema.parse(req.body);
       const usuario = await this.usuarioService.crear(validatedData);
       
-      res.status(201).json({
-        success: true,
-        message: 'Usuario creado exitosamente',
-        data: usuario
-      });
+      created(res, usuario, { message: 'Usuario creado exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -130,7 +117,6 @@ class UsuarioController {
     try {
       const validatedData = usuarioVisitanteCreateSchema.parse(req.body);
       
-      // Agregar tipo VISITANTE automáticamente
       const usuarioData = {
         ...validatedData,
         tipo: 'VISITANTE',
@@ -140,11 +126,7 @@ class UsuarioController {
       
       const usuario = await this.usuarioService.crear(usuarioData);
       
-      res.status(201).json({
-        success: true,
-        message: 'Usuario visitante creado exitosamente',
-        data: usuario
-      });
+      created(res, usuario, { message: 'Usuario visitante creado exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -161,17 +143,12 @@ class UsuarioController {
     try {
       const { id } = req.params;
       
-      // Validar UUID
       usuarioIdSchema.parse({ id_usuario: id });
       
       const validatedData = usuarioUpdateSchema.parse(req.body);
       const usuario = await this.usuarioService.actualizar(id, validatedData);
       
-      res.json({
-        success: true,
-        message: 'Usuario actualizado exitosamente',
-        data: usuario
-      });
+      success(res, usuario, { message: 'Usuario actualizado exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -188,16 +165,11 @@ class UsuarioController {
     try {
       const { id } = req.params;
       
-      // Validar UUID
       usuarioIdSchema.parse({ id_usuario: id });
       
       const usuario = await this.usuarioService.darBaja(id);
       
-      res.json({
-        success: true,
-        message: 'Usuario dado de baja exitosamente',
-        data: usuario
-      });
+      success(res, usuario, { message: 'Usuario dado de baja exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -214,16 +186,11 @@ class UsuarioController {
     try {
       const { id } = req.params;
       
-      // Validar UUID
       usuarioIdSchema.parse({ id_usuario: id });
       
       const usuario = await this.usuarioService.darAlta(id);
       
-      res.json({
-        success: true,
-        message: 'Usuario dado de alta exitosamente',
-        data: usuario
-      });
+      success(res, usuario, { message: 'Usuario dado de alta exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -243,11 +210,7 @@ class UsuarioController {
 
       const resultado = await this.usuarioService.asignarEmpleado(id_usuario, id_empleado);
 
-      res.json({
-        success: true,
-        message: 'Empleado asignado exitosamente',
-        data: resultado
-      });
+      success(res, resultado, { message: 'Empleado asignado exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -255,7 +218,7 @@ class UsuarioController {
 
   /**
    * Volver VISITANTE  en EDITOR
-   * PATCH /usuarios/:id_usuario/asignarEmpleado/:id_empleado
+   * PATCH /usuarios/:id/tipo
    * @param {*} req 
    * @param {*} res 
    * @param {*} next 
@@ -269,20 +232,13 @@ class UsuarioController {
         throw new ApiError('El tipo debe ser EDITOR o VISITANTE para esta operación', 400);
       }
 
-
       const resultado = await this.usuarioService.actualizarTipo(id, tipo);
 
-      res.json({
-        success: true,
-        message: `El usuario ahora es ${tipo}`,
-        data: resultado
-      });
+      success(res, resultado, { message: `El usuario ahora es ${tipo}` });
     } catch (error) {
       next(error);
     }
    }
-
-
 
   /**
    * Elimina un usuario de forma física.
@@ -295,16 +251,11 @@ class UsuarioController {
     try {
       const { id } = req.params;
       
-      // Validar UUID
       usuarioIdSchema.parse({ id_usuario: id });
       
       const usuario = await this.usuarioService.eliminar(id);
       
-      res.json({
-        success: true,
-        message: 'Usuario eliminado exitosamente',
-        data: usuario
-      });
+      success(res, usuario, { message: 'Usuario eliminado exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -321,10 +272,7 @@ class UsuarioController {
     try {
       const estadisticas = await this.usuarioService.obtenerEstadisticas();
       
-      res.json({
-        success: true,
-        data: estadisticas
-      });
+      success(res, estadisticas);
     } catch (error) {
       next(error);
     }
@@ -342,7 +290,6 @@ class UsuarioController {
       const { id } = req.params;
       const { password_actual, password_nueva } = req.body;
       
-      // Validar UUID
       usuarioIdSchema.parse({ id_usuario: id });
       
       if (!password_actual || !password_nueva) {
@@ -351,43 +298,32 @@ class UsuarioController {
       
       const usuario = await this.usuarioService.cambiarPassword(id, password_nueva, password_actual);
       
-      res.json({
-        success: true,
-        message: 'Contraseña cambiada exitosamente',
-        data: usuario
-      });
+      success(res, usuario, { message: 'Contraseña cambiada exitosamente' });
     } catch (error) {
       next(error);
     }
   }
 
+  /**
+   * Para actualizar la imagen del usuario
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} next 
+   */
+  async uploadImage(req, res, next) {
+    try {
+      const userId = req.user.user_id;
 
+      const result = await this.usuarioService.uploadUserImage(
+        req.file,
+        userId
+      );
 
-/**
- * Para actualizar la imagen del usuario
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-async  uploadImage(req, res, next) {
-  try {
-
-    const userId = req.user.user_id;
-
-    const result = await this.usuarioService.uploadUserImage(
-      req.file,
-      userId
-    );
-
-    res.json({
-      message: "Imagen subida a Supabase",
-      ...result
-    });
-
-  } catch (error) {
-    next(error);
+      success(res, result, { message: "Imagen subida a Supabase" });
+    } catch (error) {
+      next(error);
+    }
   }
-}
 
 }
 

@@ -5,18 +5,12 @@ import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 const controller = new TestingCardPlaybookController();
 
-// Listar todos los registros
 router.get('/', authMiddleware, (req, res, next) => controller.listarTodos(req, res, next));
-
-// Consultar por página (PK)
 router.get('/por-pagina', authMiddleware, (req, res, next) => controller.obtenerPorPagina(req, res, next));
-
-// Buscar por campo
 router.get('/buscar', authMiddleware, (req, res, next) => controller.buscarPorCampo(req, res, next));
-
 router.get('/buscar-tipo', authMiddleware, (req, res, next) => controller.buscarPorTipo(req, res, next));
-
-// Ejemplo en listarTodos
-// El método listarTodos debe estar definido en el controlador, no aquí.
+router.post('/', authMiddleware, soloEditores, (req, res, next) => controller.crear(req, res, next));
+router.put('/por-pagina', authMiddleware, soloEditores, (req, res, next) => controller.actualizar(req, res, next));
+router.delete('/por-pagina', authMiddleware, soloEditores, (req, res, next) => controller.eliminar(req, res, next));
 
 export default router;

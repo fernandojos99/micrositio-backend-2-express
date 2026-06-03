@@ -20,6 +20,18 @@ class TestingCardPlaybookService {
   async buscarPorCampo(campo) {
     return await this.repository.buscarPorCampo(campo);
   }
+
+  async crear(data) {
+    return await this.repository.crear(data);
+  }
+
+  async actualizar(pagina, data) {
+    return await this.repository.actualizar(pagina, data);
+  }
+
+  async eliminar(pagina) {
+    return await this.repository.eliminar(pagina);
+  }
 }
 
 export default TestingCardPlaybookService;

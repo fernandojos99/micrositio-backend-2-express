@@ -5,23 +5,20 @@ import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Subir documento para una testing card
-router.post('/testing-card/:testingCardId/documents', 
+router.post('/:testingCardId/documentos',
   authMiddleware,
   soloEditores,
-  upload.single('document'), 
+  upload.single('document'),
   handleMulterError,
   testingCardDocumentController.uploadDocument
 );
 
-// Obtener todos los documentos de una testing card
-router.get('/testing-card/:testingCardId/documents', 
+router.get('/:testingCardId/documentos',
   authMiddleware,
   testingCardDocumentController.getDocuments
 );
 
-// Eliminar un documento específico
-router.delete('/documents/:documentId', 
+router.delete('/documentos/:documentId',
   authMiddleware,
   soloEditores,
   testingCardDocumentController.deleteDocument

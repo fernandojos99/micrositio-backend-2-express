@@ -12,45 +12,6 @@ const router = express.Router();
 const empleadoController = new EmpleadoController();
 
 /**
- * Ruta GET para obtener un empleado por ID.
- * <Pendiente checar esto porque deberia ser get>
- * @name get/empleados/
- * @function
- */
-router.post('/', authMiddleware, empleadoController.obtenerPorId.bind(empleadoController));
-
-/**
- * Ruta POST para crear un nuevo empleado.
- * @name post/empleados
- * @function
- */
-router.post('/create', authMiddleware, soloEditores, empleadoController.crear.bind(empleadoController));
-
-/**
- * Ruta PATCH para actualizar un empleado existente.
- * @name patch/empleados/
- * @function
- */
-router.patch('/', authMiddleware, soloEditores, empleadoController.actualizar.bind(empleadoController));
-
-/**
- * Ruta PATCH para actualizar un empleado existente pero solo para sus habilidades
- * @name patch/empleados/
- * @function
- */
-router.patch('/infopersonal', authMiddleware, soloEditores, empleadoController.actualizarHabilidades.bind(empleadoController));
-
-
-
-
-/**
- * Ruta DELETE para desactivar un empleado (eliminación lógica).
- * @name delete/empleados/
- * @function
- */
-router.delete('/', authMiddleware, soloEditores, empleadoController.desactivar.bind(empleadoController));
-
-/**
  * Ruta GET para obtener todos los empleados.
  * @name get/empleados/todos
  * @function
@@ -63,5 +24,40 @@ router.get('/todos', authMiddleware, empleadoController.listarTodos.bind(emplead
  * @function
  */
 router.get('/sin-usuario', authMiddleware, empleadoController.obtenerEmpleadosSinUsuario.bind(empleadoController));
+
+/**
+ * Ruta GET para obtener un empleado por ID.
+ * @name get/empleados/:id
+ * @function
+ */
+router.get('/:id', authMiddleware, empleadoController.obtenerPorId.bind(empleadoController));
+
+/**
+ * Ruta POST para crear un nuevo empleado.
+ * @name post/empleados/create
+ * @function
+ */
+router.post('/create', authMiddleware, soloEditores, empleadoController.crear.bind(empleadoController));
+
+/**
+ * Ruta PATCH para actualizar un empleado existente.
+ * @name patch/empleados/:id
+ * @function
+ */
+router.patch('/:id', authMiddleware, soloEditores, empleadoController.actualizar.bind(empleadoController));
+
+/**
+ * Ruta PATCH para actualizar las habilidades de un empleado.
+ * @name patch/empleados/:id/infopersonal
+ * @function
+ */
+router.patch('/:id/infopersonal', authMiddleware, soloEditores, empleadoController.actualizarHabilidades.bind(empleadoController));
+
+/**
+ * Ruta DELETE para desactivar un empleado (eliminación lógica).
+ * @name delete/empleados/:id
+ * @function
+ */
+router.delete('/:id', authMiddleware, soloEditores, empleadoController.desactivar.bind(empleadoController));
 
 export default router;

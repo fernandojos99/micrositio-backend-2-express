@@ -5,6 +5,8 @@ import LearningCardRepository from '../repositories/learningCardRepository.js';
 import TestingCardRepository from '../repositories/testingCardRepository.js';
 import { upsertNodePositionSchema } from '../middlewares/validation/nodePositionSchema.js';
 import ApiError from '../utils/ApiError.js';
+import supabase from '../config/supabaseClient.js';
+import { success, created, noContent, fail } from '../utils/responseHelper.js';
 
 class NodePositionController {
   constructor() {
@@ -21,12 +23,6 @@ class NodePositionController {
     );
   }
 
-  /**
-   * Obtiene todas las posiciones de una secuencia
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
   async obtenerPorSecuencia(req, res, next) {
     try {
       const { id_secuencia } = req.params;
@@ -36,34 +32,40 @@ class NodePositionController {
       }
 
       const posiciones = await this.nodePositionService.obtenerPorSecuencia(Number(id_secuencia));
-      res.json(posiciones);
+      return success(res, posiciones);
     } catch (error) {
       next(error);
     }
   }
 
-  /**
-   * Crea o actualiza la posición de un nodo
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
   async upsert(req, res, next) {
     try {
       const validatedData = upsertNodePositionSchema.parse(req.body);
       const nodePosition = await this.nodePositionService.upsert(validatedData);
-      res.status(201).json(nodePosition);
+      return created(res, nodePosition);
     } catch (error) {
       next(new ApiError(error.message, 400));
     }
   }
 
-  /**
-   * Elimina todas las posiciones de una secuencia
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
+  async batchUpsert(req, res, next) {
+    try {
+      const posiciones = req.body;
+      if (!Array.isArray(posiciones) || posiciones.length === 0) {
+        throw new ApiError('Se requiere un array de posiciones no vacío', 400);
+      }
+      const results = [];
+      for (const pos of posiciones) {
+        const validated = upsertNodePositionSchema.parse(pos);
+        const result = await this.nodePositionService.upsert(validated);
+        results.push(result);
+      }
+      return created(res, results);
+    } catch (error) {
+      next(new ApiError(error.message, 400));
+    }
+  }
+
   async eliminarPorSecuencia(req, res, next) {
     try {
       const { id_secuencia } = req.params;
@@ -73,18 +75,12 @@ class NodePositionController {
       }
 
       await this.nodePositionService.eliminarPorSecuencia(Number(id_secuencia));
-      res.status(204).end();
+      return noContent(res);
     } catch (error) {
       next(error);
     }
   }
 
-  /**
-   * Obtiene una posición específica de un nodo por sus identificadores
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   * @param {Function} next - Next middleware
-   */
   async obtenerPosicionPorId(req, res, next) {
     try {
       const { node_id, node_type, id_secuencia } = req.params;
@@ -94,17 +90,12 @@ class NodePositionController {
       }
 
       const posicion = await this.nodePositionService.obtenerPosicionPorId(node_id, node_type, Number(id_secuencia));
-      res.json(posicion);
+      return success(res, posicion);
     } catch (error) {
       next(error);
     }
   }
 
-  /**
-   * Obtiene todas las posiciones de nodos
-   * @param {Object} req - Request de Express
-   * @param {Object} res - Response de Express
-   */
   async getAllNodePositions(req, res) {
     try {
       const { data, error } = await supabase
@@ -112,12 +103,12 @@ class NodePositionController {
         .select('*');
 
       if (error) {
-        return res.status(400).json({ error: error.message });
+        return fail(res, { message: error.message });
       }
 
-      res.json(data);
+      return success(res, data);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      return fail(res, { message: error.message, statusCode: 500 });
     }
   }
 }

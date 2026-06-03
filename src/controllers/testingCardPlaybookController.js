@@ -1,23 +1,22 @@
 import TestingCardPlaybookService from '../services/testingCardPlaybookService.js';
 import ApiError from '../utils/ApiError.js';
+import { success, created, noContent } from '../utils/responseHelper.js';
 
 class TestingCardPlaybookController {
   constructor() {
     this.testingCardPlaybookService = new TestingCardPlaybookService();
   }
 
-  // Listar todos los registros
   async listarTodos(req, res, next) {
     try {
       const datos = await this.testingCardPlaybookService.listarTodos();
-      res.json(datos);
+      return success(res, datos);
     } catch (error) {
-      console.error('Error en listarTodos:', error); // <-- Agrega este log
+      console.error('Error en listarTodos:', error);
       next(error);
     }
   }
 
-  // Obtener por página (PK)
   async obtenerPorPagina(req, res, next) {
     try {
       const { pagina } = req.query;
@@ -28,13 +27,12 @@ class TestingCardPlaybookController {
       if (!playbook) {
         throw new ApiError('No se encontró el registro', 404);
       }
-      res.json(playbook);
+      return success(res, playbook);
     } catch (error) {
       next(error);
     }
   }
 
-  // Buscar por campo (opcional, ejemplo de filtro)
   async buscarPorCampo(req, res, next) {
     try {
       const { campo } = req.query;
@@ -42,13 +40,12 @@ class TestingCardPlaybookController {
         throw new ApiError('Se requiere el parámetro "campo" en la query', 400);
       }
       const playbooks = await this.testingCardPlaybookService.buscarPorCampo(campo);
-      res.json(playbooks);
+      return success(res, playbooks);
     } catch (error) {
       next(error);
     }
   }
 
-  // Buscar por tipo (nuevo método)
   async buscarPorTipo(req, res, next) {
     try {
       const { tipo } = req.query;
@@ -56,7 +53,42 @@ class TestingCardPlaybookController {
         throw new ApiError('Se requiere el parámetro "tipo" en la query', 400);
       }
       const playbooks = await this.testingCardPlaybookService.buscarPorTipo(tipo);
-      res.json(playbooks);
+      return success(res, playbooks);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async crear(req, res, next) {
+    try {
+      const nuevo = await this.testingCardPlaybookService.crear(req.body);
+      return created(res, nuevo, { message: 'Playbook creado exitosamente' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async actualizar(req, res, next) {
+    try {
+      const { pagina } = req.query;
+      if (!pagina) {
+        throw new ApiError('Se requiere el parámetro "pagina" en la query', 400);
+      }
+      const actualizado = await this.testingCardPlaybookService.actualizar(pagina, req.body);
+      return success(res, actualizado, { message: 'Playbook actualizado exitosamente' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async eliminar(req, res, next) {
+    try {
+      const { pagina } = req.query;
+      if (!pagina) {
+        throw new ApiError('Se requiere el parámetro "pagina" en la query', 400);
+      }
+      await this.testingCardPlaybookService.eliminar(pagina);
+      return success(res, null, { message: 'Playbook eliminado exitosamente' });
     } catch (error) {
       next(error);
     }
@@ -64,4 +96,3 @@ class TestingCardPlaybookController {
 }
 
 export default TestingCardPlaybookController;
-
