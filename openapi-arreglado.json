@@ -649,7 +649,23 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SecuenciaCreate"
+                "allOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "id_proyecto"
+                    ],
+                    "properties": {
+                      "id_proyecto": {
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/SecuenciaCreate"
+                  }
+                ]
+      
               }
             }
           }
@@ -2240,6 +2256,9 @@
         }
       }
     },
+    "/empleados": {},
+    "/empleados/create": {},
+    "/empleados/infopersonal": {},
     "/empleados/todos": {
       "get": {
         "tags": [
@@ -2461,6 +2480,7 @@
         }
       }
     },
+    "/usuarios/visitante": {},
     "/usuarios/{id}": {
       "get": {
         "tags": [
@@ -2502,6 +2522,12 @@
         }
       }
     },
+    "/usuarios/{id}/baja": {},
+    "/usuarios/{id}/alta": {},
+    "/usuarios/{id}/password": {},
+    "/usuarios/{id_usuario}/asignar-empleado": {},
+    "/usuarios/{id}/tipo": {},
+    "/usuarios/upload": {},
     "/usuario_proyecto": {
       "get": {
         "tags": [
@@ -4953,52 +4979,6 @@
         }
       }
     },
-    "/accionables": {
-      "post": {
-        "tags": [
-          "Accionables"
-        ],
-        "summary": "Crear accionable",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Accionable"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/accionables/sync/{id}": {
       "put": {
         "tags": [
@@ -5030,8 +5010,57 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object"
-                }
+                  "type": "object",
+                  "required": [
+                    "id_learning_card",
+                    "contenido",
+                    "impacto",
+                    "esfuerzo",
+                    "realizado"
+                  ],
+                  "properties": {
+                    "id_learning_card": {
+                      "type": "integer",
+                      "example": 318
+                    },
+                    "contenido": {
+                      "type": "string",
+                      "example": "nuevo accionable"
+                    },
+                    "impacto": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "example": 4
+                    },
+                    "esfuerzo": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "example": 5
+                    },
+                    "realizado": {
+                      "type": "boolean",
+                      "example": false
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id_learning_card": 318,
+                    "contenido": "nuevo accionable",
+                    "impacto": 4,
+                    "esfuerzo": 5,
+                    "realizado": false
+                  },
+                  {
+                    "id_learning_card": 318,
+                    "contenido": "mas nuevo accionable",
+                    "impacto": 10,
+                    "esfuerzo": 10,
+                    "realizado": false
+                  }
+                ]
               }
             }
           }
@@ -7133,9 +7162,6 @@
           "id_proyecto": {
             "type": "integer"
           },
-          "id_testing_card_padre": {
-            "type": "integer"
-          },
           "nombre": {
             "type": "string",
             "minLength": 3,
@@ -7175,9 +7201,6 @@
           },
           "descripcion": {
             "type": "string"
-          },
-          "id_testing_card_padre": {
-            "type": "integer"
           },
           "dia_inicio": {
             "type": "string",
@@ -7280,9 +7303,6 @@
             "type": "string",
             "minLength": 10
           },
-          "id_experimento_tipo": {
-            "type": "integer"
-          },
           "descripcion": {
             "type": "string",
             "minLength": 10
@@ -7304,6 +7324,7 @@
           },
           "status": {
             "type": "string",
+            "description": "Estado de la Testing Card",
             "enum": [
               "EN PLANEACION",
               "EN VALIDACION",
@@ -7311,7 +7332,8 @@
               "CANCELADO",
               "TERMINADO",
               "EN EJECUCION"
-            ]
+            ],
+            "example": "EN PLANEACION"
           }
         }
       },
@@ -7413,9 +7435,6 @@
           "id_testing_card"
         ],
         "properties": {
-          "id_secuencia": {
-            "type": "integer"
-          },
           "id_testing_card": {
             "type": "integer"
           },
@@ -7426,8 +7445,18 @@
             "type": "string"
           },
           "estado": {
-            "type": "string"
+            "type": "string",
+            "description": "Estado de la Learning Card",
+            "enum": [
+              "ACEPTADA",
+              "RECHAZADA",
+              "REITERAR",
+              "MAL PLANTEADA"
+            ],
+            "default": "ACEPTADA",
+            "example": "ACEPTADA"
           },
+
           "id_responsable": {
             "type": "integer"
           }
