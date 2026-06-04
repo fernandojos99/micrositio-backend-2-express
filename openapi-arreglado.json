@@ -474,43 +474,6 @@
             }
           }
         }
-      },
-      "delete": {
-        "tags": [
-          "Proyectos"
-        ],
-        "summary": "Eliminar proyecto",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_proyecto"
-                ],
-                "properties": {
-                  "id_proyecto": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          }
-        }
       }
     },
     "/proyectos/p": {
@@ -686,7 +649,23 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SecuenciaCreate"
+                "allOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "id_proyecto"
+                    ],
+                    "properties": {
+                      "id_proyecto": {
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/SecuenciaCreate"
+                  }
+                ]
+      
               }
             }
           }
@@ -2277,235 +2256,9 @@
         }
       }
     },
-    "/empleados": {
-      "post": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Obtener empleado por ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Actualizar empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "required": [
-                      "id"
-                    ],
-                    "properties": {
-                      "id": {
-                        "type": "integer"
-                      }
-                    }
-                  },
-                  {
-                    "$ref": "#/components/schemas/EmpleadoUpdate"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Desactivar empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/empleados/create": {
-      "post": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Crear empleado",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmpleadoCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/empleados/infopersonal": {
-      "patch": {
-        "tags": [
-          "Empleados"
-        ],
-        "summary": "Actualizar solo habilidades",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id",
-                  "habilidades"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "integer"
-                  },
-                  "habilidades": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Empleado"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
+    "/empleados": {},
+    "/empleados/create": {},
+    "/empleados/infopersonal": {},
     "/empleados/todos": {
       "get": {
         "tags": [
@@ -2637,50 +2390,6 @@
             }
           }
         }
-      },
-      "post": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Crear usuario",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UsuarioCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Creado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/usuarios/estadisticas": {
@@ -2771,48 +2480,7 @@
         }
       }
     },
-    "/usuarios/visitante": {
-      "post": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Crear visitante (sin auth)",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UsuarioVisitanteCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Visitante creado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
+    "/usuarios/visitante": {},
     "/usuarios/{id}": {
       "get": {
         "tags": [
@@ -2852,436 +2520,14 @@
             }
           }
         }
-      },
-      "patch": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Actualizar usuario (sin auth)",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/idUsuarioPath"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UsuarioUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Actualizado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Eliminar usuario",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/idUsuarioPath"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Eliminado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
       }
     },
-    "/usuarios/{id}/baja": {
-      "patch": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Dar de baja (activo=false)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/idUsuarioPath"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/{id}/alta": {
-      "patch": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Dar de alta (activo=true)",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/idUsuarioPath"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/{id}/password": {
-      "patch": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Cambiar contrasena",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/idUsuarioPath"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "password_actual",
-                  "password_nueva"
-                ],
-                "properties": {
-                  "password_actual": {
-                    "type": "string"
-                  },
-                  "password_nueva": {
-                    "type": "string",
-                    "minLength": 8
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Usuario"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/{id_usuario}/asignar-empleado": {
-      "patch": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Asignar empleado a usuario",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id_usuario",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "id_empleado"
-                ],
-                "properties": {
-                  "id_empleado": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/{id}/tipo": {
-      "patch": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Actualizar tipo (EDITOR/VISITANTE)",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/idUsuarioPath"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "tipo"
-                ],
-                "properties": {
-                  "tipo": {
-                    "type": "string",
-                    "enum": [
-                      "EDITOR",
-                      "VISITANTE"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/usuarios/upload": {
-      "post": {
-        "tags": [
-          "Usuarios"
-        ],
-        "summary": "Subir imagen de perfil",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "image"
-                ],
-                "properties": {
-                  "image": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    },
-                    "url": {
-                      "type": "string"
-                    },
-                    "filename": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
+    "/usuarios/{id}/baja": {},
+    "/usuarios/{id}/alta": {},
+    "/usuarios/{id}/password": {},
+    "/usuarios/{id_usuario}/asignar-empleado": {},
+    "/usuarios/{id}/tipo": {},
+    "/usuarios/upload": {},
     "/usuario_proyecto": {
       "get": {
         "tags": [
@@ -5733,52 +4979,6 @@
         }
       }
     },
-    "/accionables": {
-      "post": {
-        "tags": [
-          "Accionables"
-        ],
-        "summary": "Crear accionable",
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SoloEditores": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Accionable"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/accionables/sync/{id}": {
       "put": {
         "tags": [
@@ -5810,8 +5010,57 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object"
-                }
+                  "type": "object",
+                  "required": [
+                    "id_learning_card",
+                    "contenido",
+                    "impacto",
+                    "esfuerzo",
+                    "realizado"
+                  ],
+                  "properties": {
+                    "id_learning_card": {
+                      "type": "integer",
+                      "example": 318
+                    },
+                    "contenido": {
+                      "type": "string",
+                      "example": "nuevo accionable"
+                    },
+                    "impacto": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "example": 4
+                    },
+                    "esfuerzo": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "example": 5
+                    },
+                    "realizado": {
+                      "type": "boolean",
+                      "example": false
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id_learning_card": 318,
+                    "contenido": "nuevo accionable",
+                    "impacto": 4,
+                    "esfuerzo": 5,
+                    "realizado": false
+                  },
+                  {
+                    "id_learning_card": 318,
+                    "contenido": "mas nuevo accionable",
+                    "impacto": 10,
+                    "esfuerzo": 10,
+                    "realizado": false
+                  }
+                ]
               }
             }
           }
@@ -7913,9 +7162,6 @@
           "id_proyecto": {
             "type": "integer"
           },
-          "id_testing_card_padre": {
-            "type": "integer"
-          },
           "nombre": {
             "type": "string",
             "minLength": 3,
@@ -7955,9 +7201,6 @@
           },
           "descripcion": {
             "type": "string"
-          },
-          "id_testing_card_padre": {
-            "type": "integer"
           },
           "dia_inicio": {
             "type": "string",
@@ -8060,9 +7303,6 @@
             "type": "string",
             "minLength": 10
           },
-          "id_experimento_tipo": {
-            "type": "integer"
-          },
           "descripcion": {
             "type": "string",
             "minLength": 10
@@ -8084,6 +7324,7 @@
           },
           "status": {
             "type": "string",
+            "description": "Estado de la Testing Card",
             "enum": [
               "EN PLANEACION",
               "EN VALIDACION",
@@ -8091,7 +7332,8 @@
               "CANCELADO",
               "TERMINADO",
               "EN EJECUCION"
-            ]
+            ],
+            "example": "EN PLANEACION"
           }
         }
       },
@@ -8193,9 +7435,6 @@
           "id_testing_card"
         ],
         "properties": {
-          "id_secuencia": {
-            "type": "integer"
-          },
           "id_testing_card": {
             "type": "integer"
           },
@@ -8206,8 +7445,18 @@
             "type": "string"
           },
           "estado": {
-            "type": "string"
+            "type": "string",
+            "description": "Estado de la Learning Card",
+            "enum": [
+              "ACEPTADA",
+              "RECHAZADA",
+              "REITERAR",
+              "MAL PLANTEADA"
+            ],
+            "default": "ACEPTADA",
+            "example": "ACEPTADA"
           },
+
           "id_responsable": {
             "type": "integer"
           }

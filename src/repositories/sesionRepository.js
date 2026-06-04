@@ -2,7 +2,7 @@ import supabase from '../config/supabaseClient.js';
 import ApiError from '../utils/ApiError.js';
 import Sesion from '../models/Sesion.js';
 
-class SesionRepository {
+class  SesionRepository {
   async listarPorEmpleado(id_empleado) {
     const { data, error } = await supabase
       .from('sesion')
