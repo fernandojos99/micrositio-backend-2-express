@@ -4,6 +4,7 @@ import ApiError from '../utils/ApiError.js';
 import { AGENT_CONFIG } from '../config/agentConfig.js';
 class ChatRepository {
   async enviarMensaje(message, thread_id, signal) {
+    console.log("La  url que detecta",AGENT_CONFIG.apiUrl);
     try {
       const response = await axios({
         method: 'POST',
