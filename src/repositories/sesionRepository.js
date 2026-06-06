@@ -63,6 +63,21 @@ class  SesionRepository {
     return data ? Sesion.fromDatabase(data) : null;
   }
 
+  async actualizarTitulo(thread_id, titulo) {
+    const { data, error } = await supabase
+      .from('sesion')
+      .update({ titulo, updated_at: new Date().toISOString() })
+      .eq('thread_id', thread_id)
+      .select()
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new ApiError(`Error al actualizar título de sesión: ${error.message}`, 500);
+    }
+
+    return data ? Sesion.fromDatabase(data) : null;
+  }
+
   async eliminar(thread_id, id_empleado) {
     const { data, error } = await supabase
       .from('sesion')

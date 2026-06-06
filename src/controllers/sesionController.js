@@ -24,6 +24,16 @@ class SesionController {
     }
   }
 
+  async generarTitulo(req, res, next) {
+    try {
+      const { thread_id } = req.params;
+      const data = await this.sesionService.generarTitulo(thread_id, req.user.id_empleado);
+      res.json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async eliminarSesion(req, res, next) {
     try {
       const { thread_id } = req.params;
