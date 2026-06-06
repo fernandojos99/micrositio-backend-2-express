@@ -1,5 +1,5 @@
 export const AGENT_CONFIG = {
-  //apiUrl: process.env.AGENT_API_URL || 'http://localhost:8000'
+  // apiUrl: process.env.AGENT_API_URL || 'http://localhost:8000'
 
   // Ahorita trae el de agente-fastapi-prueba.
   //Nota: No poner "/" al final ni espacios

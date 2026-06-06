@@ -10,6 +10,10 @@ class ChatService {
     this.sesionService = new SesionService();
   }
 
+  async ping() {
+    return await this.chatRepo.ping();
+  }
+
   async streamChat(message, thread_id, id_empleado, signal) {
     if (!message || typeof message !== 'string') {
       throw new ApiError('El campo "message" es requerido y debe ser un texto', 400);
