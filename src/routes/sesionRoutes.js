@@ -7,6 +7,7 @@ const sesionController = new SesionController();
 
 router.get('/sessions', authMiddleware, sesionController.obtenerSesiones.bind(sesionController));
 router.get('/sessions/:thread_id/messages', authMiddleware, sesionController.obtenerMensajes.bind(sesionController));
+router.patch('/sessions/:thread_id/title', authMiddleware, sesionController.generarTitulo.bind(sesionController));
 router.delete('/sessions/:thread_id', authMiddleware, sesionController.eliminarSesion.bind(sesionController));
 
 export default router;

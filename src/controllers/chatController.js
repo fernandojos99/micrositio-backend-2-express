@@ -6,6 +6,15 @@ class ChatController {
     this.chatService = new ChatService();
   }
 
+  async ping(req, res, next) {
+    try {
+      const result = await this.chatService.ping();
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async stream(req, res, next) {
     const abortController = new AbortController();
 
