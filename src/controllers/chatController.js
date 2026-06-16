@@ -59,6 +59,7 @@ class ChatController {
         if (!axios.isCancel(err)) console.error('Stream error:', err);
         if (!res.writableEnded) res.end();
       });
+      
 
     } catch (error) {
       if (!res.headersSent) next(error);
