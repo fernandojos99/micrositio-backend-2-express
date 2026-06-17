@@ -38,6 +38,7 @@ import urlFormatoRoutes from './routes/urlFormatoRoutes.js';
 import formatoRoutes from './routes/formatoRoutes.js';
 import accionableRoutes from './routes/accionableRoutes.js';
 import habilidadRoutes from './routes/habilidadRoutes.js';
+import servicioRoutes from './routes/servicioRoutes.js';
 
  
  
@@ -113,6 +114,7 @@ app.use('/accionables', accionableRoutes);
 app.use('/habilidad',habilidadRoutes);
 app.use('/api/chat', sesionRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/servicio',servicioRoutes);
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {

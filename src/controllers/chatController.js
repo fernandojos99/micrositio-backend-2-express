@@ -23,8 +23,8 @@ class ChatController {
     });
 
     try {
-      const { message, thread_id } = req.body;
-      const result = await this.chatService.streamChat(message, thread_id, req.user.id_empleado, abortController.signal);
+      const { message, thread_id, agent_id } = req.body;
+      const result = await this.chatService.streamChat(message, thread_id, agent_id, req.user.id_empleado, abortController.signal);
 
       if (!result) return;
 
@@ -59,6 +59,7 @@ class ChatController {
         if (!axios.isCancel(err)) console.error('Stream error:', err);
         if (!res.writableEnded) res.end();
       });
+      
 
     } catch (error) {
       if (!res.headersSent) next(error);
