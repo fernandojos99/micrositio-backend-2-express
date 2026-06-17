@@ -14,21 +14,23 @@ class ChatService {
     return await this.chatRepo.ping();
   }
 
-  async streamChat(message, thread_id, id_empleado, signal) {
+  async streamChat(message, thread_id, agent_id, id_empleado, signal) {
     if (!message || typeof message !== 'string') {
       throw new ApiError('El campo "message" es requerido y debe ser un texto', 400);
     }
 
+    const resolvedAgentId = agent_id || 'default';
+
     let sesionThreadId = thread_id;
 
     if (!sesionThreadId) {
-      sesionThreadId = uuidv4();
+      sesionThreadId = `${resolvedAgentId}_${uuidv4()}`;
     }
 
     try {
       await this.sesionService.asegurarSesion(sesionThreadId, id_empleado);
 
-      const stream = await this.chatRepo.enviarMensaje(message, sesionThreadId, signal);
+      const stream = await this.chatRepo.enviarMensaje(message, sesionThreadId, resolvedAgentId, signal);
       return { stream, thread_id: sesionThreadId };
     } catch (error) {
       if (axios.isCancel(error)) {
