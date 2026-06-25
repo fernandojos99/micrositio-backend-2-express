@@ -27,9 +27,19 @@ class SesionController {
   async generarTitulo(req, res, next) {
     try {
       const { thread_id } = req.params;
+      
+      // ✅ Validar que thread_id existe
+      if (!thread_id) {
+        return res.status(400).json({ 
+          error: 'thread_id es requerido' 
+        });
+      }
+      
+      console.log(`Generando título para thread_id: ${thread_id}, empleado: ${req.user.id_empleado}`);
       const data = await this.sesionService.generarTitulo(thread_id, req.user.id_empleado);
       res.json(data);
     } catch (error) {
+      console.error('Error en generarTitulo:', error); // ← Mejor usar console.error
       next(error);
     }
   }
