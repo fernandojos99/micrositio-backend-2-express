@@ -108,8 +108,8 @@ class AgenteRepository {
         .from('agente')
         .select('*')
         .or(
-          `nombre.ilike.%${q}%,descripcion.ilike.%${q}%,prompt.ilike.%${q}%,link.ilike.%${q}%`
-        ); // ✅ solo columnas reales
+          `nombre.ilike.%${q}%,descripcion.ilike.%${q}%,prompt.ilike.%${q}%,link.ilike.%${q}%,categoria.ilike.%${q}%`
+        );
 
       if (error) {
         throw new ApiError(`Error al buscar agentes: ${error.message}`, 500);

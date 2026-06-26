@@ -9,6 +9,7 @@ class Agente {
     this.link = data.link || null;
     this.descripcion = data.descripcion || null;
     this.prompt = data.prompt || null;
+    this.categoria = data.categoria || null;
     this.created_at = new Date(data.created_at || Date.now());
     this.updated_at = new Date(data.updated_at || Date.now());
   }
@@ -56,6 +57,7 @@ class Agente {
       link: dbData.link,
       descripcion: dbData.descripcion,
       prompt: dbData.prompt,
+      categoria: dbData.categoria,
       created_at: dbData.created_at,
       updated_at: dbData.updated_at
     });
@@ -70,7 +72,8 @@ class Agente {
       nombre: this.nombre,
       link: this.link,
       descripcion: this.descripcion,
-      prompt: this.prompt
+      prompt: this.prompt,
+      categoria: this.categoria
     };
   }
 
@@ -85,6 +88,7 @@ class Agente {
       link: this.link,
       descripcion: this.descripcion,
       prompt: this.prompt,
+      categoria: this.categoria,
       creado: this.created_at.toISOString(),
       actualizado: this.updated_at.toISOString()
     };
