@@ -8,6 +8,8 @@ import LearningCardRepository from '../repositories/learningCardRepository.js';
 import TestingCardRepository from '../repositories/testingCardRepository.js';
 import SecuenciaRepository from '../repositories/secuenciaRepository.js';
 import ProyectoRepository from '../repositories/proyectoRepository.js';
+
+
 import EmailService from './emailService.js';
 import ApiError from '../utils/ApiError.js';
 
@@ -49,6 +51,7 @@ class NotificacionService {
       const empleadoRemitente = await this.empleadoRepo.obtenerPorId(id_empleado_remitente);
       if (!empleadoRemitente) {
         throw new ApiError('Empleado remitente no encontrado', 404);
+        
       }
 
       // 3. Obtener la learning card
