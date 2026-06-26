@@ -5,6 +5,7 @@ import ApiError from '../utils/ApiError.js';
 
 class UrlFormatoRepository {
   constructor() {
+    
     this.tableName = 'url_formato';
   }
 
@@ -33,6 +34,7 @@ class UrlFormatoRepository {
   /**
    * Obtiene todas las URLs formato
    * @returns {Promise<UrlFormatoModel[]>}
+   * .
    */
   async obtenerTodas() {
     const { data, error } = await supabase
