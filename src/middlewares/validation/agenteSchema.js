@@ -14,6 +14,9 @@ const agenteCreateSchema = z.object({
     .optional(),
   prompt: z.string()
     .min(10, 'El prompt debe tener al menos 10 caracteres')
+    .optional(),
+  categoria: z.string()
+    .max(250, 'La categoría no puede exceder los 250 caracteres')
     .optional()
 });
 
@@ -31,6 +34,9 @@ const agenteUpdateSchema = z.object({
     .optional(),
   prompt: z.string()
     .min(10, 'El prompt debe tener al menos 10 caracteres')
+    .optional(),
+  categoria: z.string()
+    .max(250, 'La categoría no puede exceder los 250 caracteres')
     .optional()
 });
 
