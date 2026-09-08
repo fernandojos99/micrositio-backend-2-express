@@ -111,7 +111,8 @@ Utilidades de token en `src/utils/jwtUtils.js` (`extraerTokenDelHeader`, `verifi
   return data ? Proyecto.fromDatabase(data) : null;
   ```
 - **28 de 30** repositorios usan `.single()`; usan `.maybeSingle()` cuatro: `accionableRepository.js`, `sesionRepository.js`, `learningCardRepository.js` y `servicioRepository.js`. Para un repo nuevo, sigue el patrón mayoritario.
-- Esquema en `SQL/` (`DML.sql`, `Funciones.sql`, `Trigger.sql`, `insert_playbook_data.sql`). **Se aplica a mano en el editor SQL de Supabase — no hay migraciones.**
+- Esquema en `SQL/`, aplicado a mano en el editor SQL de Supabase — **no hay migraciones**.
+- ⚠️ **`SQL/DML.sql` no compila** (typos, paréntesis descuadrados, FK a columnas inexistentes) y ya divergió del esquema real. `SQL/Funciones.sql` no tiene funciones: hace **DROP de todas las tablas**. La fuente de verdad es Supabase. Detalle en `../DOMINIO.md`.
 
 ## Rutas
 
@@ -172,6 +173,7 @@ Rama `master`. El commit `55a4a40 refactor(deploy)` dejó **3 conflictos de merg
 
 | Archivo | Contenido |
 |---|---|
+| `../DOMINIO.md` | **Modelo de negocio**: secuencias, testing/learning cards, métricas, plantillas, flow, y las discrepancias de estados entre capas |
 | `AGENTS.md` | Resumen corto de estas mismas convenciones |
 | `MANUAL_BACKEND.md` | Arquitectura detallada (668 líneas) |
 | `Documentacion/` | Auth JWT, categorías, notificaciones, usuarios, formatos, endpoints |
