@@ -19,7 +19,7 @@
 
 ## Arquitectura
 - **Node.js (ESM, `"type": "module"` en package.json) + Express**, 5 capas: Route → Controller → Service → Repository → Model
-- **Validación Zod** en `src/middlewares/validation/` (23 schemas). Se llama con `schema.parse(req.body)` desde controllers. Excepción: `accionableController` no usa Zod.
+- **Validación Zod** en `src/middlewares/validation/` (23 schemas). Se llama con `schema.parse(req.body)` desde controllers, pero **solo 21 de los 32 controllers validan**; los otros 11 (incluido `accionableController`) aceptan el body sin comprobar.
 - **Autenticación JWT** — 4 middlewares en `src/middlewares/authMiddleware.js`:
   - `authMiddleware` — cualquier token válido, adjunta `req.user`
   - `soloEditores` — solo rol `EDITOR`
@@ -38,7 +38,7 @@
 - Endpoint chat stream (`POST /api/chat/stream`) hace proxy SSE a `AGENT_API_URL` (Lambda) vía `chatRepository.js`
 
 ## Convenciones críticas (fáciles de omitir)
-- **`.bind(controller)`** en cada handler de ruta — los controllers son clases ES6, sin bind se pierde `this`. Excepción: `accionableController` exporta funciones planas, no clase.
+- **`.bind(controller)`** en cada handler de ruta — los controllers son clases ES6, sin bind se pierde `this`. Excepciones: `accionableController` y `habilidadController` exportan funciones planas, no clases.
 - **IDs por body vs URL params** — inconsistente por recurso:
   - `proyecto` routes: `req.body.id_proyecto` (no params)
   - `usuario` routes: `req.params.id` o `req.params.id_usuario`
@@ -47,14 +47,14 @@
   - Verificar cada ruta antes de asumir el patrón.
 - **`GET /proyectos/p` y `POST /proyectos/p`** — ambos existen, mismo handler (obtenerProyecto), mismo body con `id_proyecto`
 - **`GET /proyectos/usuario/:id_usuario`** — obtiene proyectos de un usuario específico
-- **Excepción al patrón de clases**: `accionableController.js` y `accionableRepository.js` usan named exports de funciones. El resto del código usa clases ES6.
+- **Excepción al patrón de clases**: `accionableController.js`, `habilidadController.js`, `accionableRepository.js` y `habilidadesRepositorio.js` usan named exports de funciones. El resto usa clases ES6. `habilidadesRepositorio.js` además rompe la convención de nombres (español, plural).
 
 ## Base de datos
 - **Supabase (PostgreSQL)** vía `@supabase/supabase-js` — **NO se usa Sequelize** (aunque está en package.json, junto con `pg`, `pg-hstore`, `mysql2` — todos no utilizados)
 - Cliente en `src/config/supabaseClient.js`, requiere `SUPABASE_URL` y `SUPABASE_KEY` (aborta si faltan)
 - Schema en `SQL/DML.sql` + `SQL/Funciones.sql` + `SQL/Trigger.sql` + `SQL/insert_playbook_data.sql`. Ejecutar manualmente en SQL editor de Supabase — **no hay migraciones automatizadas**
 - Código de error `PGRST116` (0 filas) se traga silenciosamente en repositorios → retorna `null`. Hay dos patrones: `if (error && error.code !== 'PGRST116')` o `if (error.code === 'PGRST116') return null`
-- Inconsistencia: ~90% de los repos usan `.single()`, solo 3 usan `.maybeSingle()` (accionable, sesion, learningCard). Si añades un repositorio nuevo, usa `.single()` + swallow PGRST116 para consistencia.
+- Inconsistencia: 28 de 30 repos usan `.single()`; 4 usan `.maybeSingle()` (accionable, sesion, learningCard, servicio). Si añades un repositorio nuevo, usa `.single()` + swallow PGRST116 para consistencia.
 
 ## Streaming / SSE
 - `POST /api/chat/stream` (en `chatRoutes.js`) usa SSE para streamear respuestas del agente AI

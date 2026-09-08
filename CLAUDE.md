@@ -61,9 +61,9 @@ Ejemplo real completo, útil como plantilla para cualquier recurso nuevo:
 
 ### Convenciones de nombres
 
-- Controllers, services, repositories y routes: **camelCase con sufijo** — `proyectoController.js`, `proyectoService.js`, `proyectoRepository.js`, `proyectoRoutes.js`.
-- Models: **PascalCase sin sufijo** — `Proyecto.js`, `TestingCard.js`, `UsuarioProyecto.js`. Única excepción: `urlFormatoModel.js`.
-- Todo son **clases ES6** exportadas por defecto… salvo `accionableController.js` y `accionableRepository.js`, que usan named exports de funciones planas.
+- Controllers, services, repositories y routes: **camelCase con sufijo** — `proyectoController.js`, `proyectoService.js`, `proyectoRepository.js`, `proyectoRoutes.js`. Excepción: `src/repositories/habilidadesRepositorio.js` (en español y en plural).
+- Models: **PascalCase sin sufijo** — `Proyecto.js`, `TestingCard.js`, `UsuarioProyecto.js`. Única excepción: `urlFormatoModel.js`. Solo **17 de los 26** implementan `fromDatabase(row)`; no lo des por hecho.
+- Todo son **clases ES6** exportadas por defecto… salvo 4 archivos que usan named exports de funciones planas: `accionableController.js`, `habilidadController.js`, `accionableRepository.js` y `habilidadesRepositorio.js`.
 
 ### `.bind(controller)` es obligatorio
 
@@ -74,7 +74,7 @@ const proyectoController = new ProyectoController();
 router.get('/', authMiddleware, proyectoController.listarProyectos.bind(proyectoController));
 ```
 
-Excepción: las rutas de `accionable`, que apuntan a funciones sueltas.
+Excepción: las rutas de `accionable` y `habilidad`, que apuntan a funciones sueltas y por tanto **no** llevan `.bind`.
 
 ## Autenticación y autorización
 
@@ -92,7 +92,9 @@ Utilidades de token en `src/utils/jwtUtils.js` (`extraerTokenDelHeader`, `verifi
 
 ## Validación
 
-23 schemas Zod en `src/middlewares/validation/`. **No son middlewares**: se invocan desde el controller con `schema.parse(req.body)`, dentro del `try`, para que el `ZodError` caiga en `next(error)`. `accionableController` no valida nada.
+23 schemas Zod en `src/middlewares/validation/`. **No son middlewares**: se invocan desde el controller con `schema.parse(req.body)`, dentro del `try`, para que el `ZodError` caiga en `next(error)`.
+
+⚠️ La cobertura es parcial: **solo 21 de los 32 controllers** llaman a `parse`. Los otros 11 (entre ellos `accionableController`) aceptan el body sin validar. Al tocar uno de esos, comprueba si hay schema disponible antes de asumir que los datos vienen validados.
 
 ## Errores
 
@@ -108,7 +110,7 @@ Utilidades de token en `src/utils/jwtUtils.js` (`extraerTokenDelHeader`, `verifi
   if (error && error.code !== 'PGRST116') throw new ApiError(...);
   return data ? Proyecto.fromDatabase(data) : null;
   ```
-- ~90 % de los repositorios usan `.single()`; solo `accionable`, `sesion` y `learningCard` usan `.maybeSingle()`. Para un repo nuevo, sigue el patrón mayoritario.
+- **28 de 30** repositorios usan `.single()`; usan `.maybeSingle()` cuatro: `accionableRepository.js`, `sesionRepository.js`, `learningCardRepository.js` y `servicioRepository.js`. Para un repo nuevo, sigue el patrón mayoritario.
 - Esquema en `SQL/` (`DML.sql`, `Funciones.sql`, `Trigger.sql`, `insert_playbook_data.sql`). **Se aplica a mano en el editor SQL de Supabase — no hay migraciones.**
 
 ## Rutas
