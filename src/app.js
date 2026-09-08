@@ -92,18 +92,16 @@ app.options('*', (req, res) => {
 //app.use(bodyParser.json()); 
 app.use(express.json());
 
-<<<<<<< HEAD
-
-
-=======
-//Para debuguear las solicitudes entrantes
-app.use((req, res, next) => {
-  console.log("PATH:", req.path);
-  console.log("METHOD:", req.method);
-  console.log("BODY:", req.body);
-  next();
-});
->>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
+// Debug de solicitudes entrantes. Fuera de produccion: loguea el body,
+// que en POST /auth/login incluye la contrasena en claro.
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log("PATH:", req.path);
+    console.log("METHOD:", req.method);
+    console.log("BODY:", req.body);
+    next();
+  });
+}
 // Rutas
 app.use('/proyectos', proyectoRoutes);
 app.use('/celula_proyecto', celulaProyectoRoutes);
@@ -157,7 +155,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-<<<<<<< HEAD
 // ============  Imagenes Acomodar despues ==================
 
 
@@ -255,9 +252,6 @@ app.get('/health', (req, res) => {
 // ========================================================
 
 // Manejo de errores
-=======
-// Manejo de errores (volver a poner despues)
->>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
 app.use(errorHandler);
 
 
@@ -265,15 +259,11 @@ app.use(errorHandler);
 
  
 // Iniciar servidor
-<<<<<<< HEAD
-app.listen(PORT,async () => {
-  //await initStorage();
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-=======
-// app.listen(PORT, () => {
-//   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-// });
+// En Lambda el handler de lambda.js envuelve la app; solo escuchamos fuera de Lambda.
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
 
 export default app;
->>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)

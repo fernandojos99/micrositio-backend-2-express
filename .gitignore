@@ -12,3 +12,7 @@ build/
 *.log
 
 bd-micrositio-iris-firebase-adminsdk-fbsvc-87bd7e3157.json
+
+# Excepcion: la plantilla si se versiona
+!.env.example
+!src/.env.example

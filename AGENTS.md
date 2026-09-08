@@ -1,5 +1,7 @@
 # AGENTS.md — Micrositio Iris Backend
 
+> Detalle completo y verificado en `CLAUDE.md` (mismo directorio).
+
 ## Comandos
 - `npm run dev` — nodemon hot-reload (CWD=root, `node src/app.js`)
 - `npm start` — `node src/app.js`
@@ -11,23 +13,26 @@
 ## Arranque y `.env`
 - `.env` está en **`src/.env`**, NO en raíz. `dotenv.config()` sin path busca `.env` en CWD.
 - `npm start` desde raíz no encuentra `src/.env`. O bien arrancar desde `src/` (`cd src && node app.js` como dice el README), o mover `.env` a raíz, o cambiar el script a `"start": "cd src && node app.js"`.
-- `dotenv.config()` se llama independientemente en `src/app.js:45` y `src/config/supabaseClient.js:6`. Ambas usan CWD lookup.
-- Variables requeridas: `SUPABASE_URL`, `SUPABASE_KEY`, `PORT`, `NODE_ENV`, `EMAIL_USER`, `EMAIL_PASSWORD`, `JWT_SECRET`, `AGENT_API_URL`
+- La carga real ocurre en `src/config/supabaseClient.js`, que importa dotenv **dinámicamente y solo si `NODE_ENV !== 'production'`**. En `src/app.js` la llamada a `dotenv.config()` está comentada.
+- Plantilla en `src/.env.example`. Solo `SUPABASE_URL` y `SUPABASE_KEY` son duras (si faltan, `process.exit(1)`)
+- ⚠️ `JWT_SECRET` y `AGENT_API_URL` **no están en el `src/.env` actual** y tienen fallback hardcodeado en `src/config/jwtConfig.js` (`'tu-clave-secreta-muy-segura'`) y `src/config/agentConfig.js`. Los tokens se están firmando con un secreto que está en el repo
 
 ## Arquitectura
 - **Node.js (ESM, `"type": "module"` en package.json) + Express**, 5 capas: Route → Controller → Service → Repository → Model
-- **Validación Zod** en `src/middlewares/validation/` (22 schemas). Se llama con `schema.parse(req.body)` desde controllers. Excepción: `accionableController` no usa Zod.
+- **Validación Zod** en `src/middlewares/validation/` (23 schemas). Se llama con `schema.parse(req.body)` desde controllers. Excepción: `accionableController` no usa Zod.
 - **Autenticación JWT** — 4 middlewares en `src/middlewares/authMiddleware.js`:
   - `authMiddleware` — cualquier token válido, adjunta `req.user`
   - `soloEditores` — solo rol `EDITOR`
   - `verificarAccesoProyecto` — visitantes limitados a sus proyectos (`req.user.proyectos`)
   - `configurarFiltroProyectos` — inyecta `req.filtroProyectos` para filtrado downstream
 - **ApiError** (`src/utils/ApiError.js`) — `statusCode` + `status: 'fail'|'error'` + `isOperational`
-- **errorHandler** (`src/middlewares/errorHandler.js`) — último middleware, stack trace solo en development
+- **errorHandler** (`src/middlewares/errorHandler.js`) — último middleware. ⚠️ Devuelve el `stack` completo en la respuesta HTTP **en todos los entornos** y loguea `req.body` y `req.headers` a consola (deuda de seguridad conocida)
 
 ## Entrypoint `src/app.js`
-- Registra **32 prefijos de ruta** (líneas 85–115), más `GET /`, `GET /health`, y código comentado de upload de imágenes
-- CORS: 4 orígenes (2 Vercel + localhost:5173/5174). Editar `app.js:57-63` para añadir más
+- Hace **32 `app.use` de routers sobre 31 prefijos distintos** (`/api/chat` se monta dos veces: `sesionRoutes` y `chatRoutes`), más `GET /` y `GET /health`, y código comentado de upload de imágenes. `src/routes/testRoutes.js` no está montado
+- **Despliegue dual**: `app.listen(PORT)` solo si `!process.env.AWS_LAMBDA_FUNCTION_NAME`, y `export default app` siempre — lo necesita `lambda.js` (serverless-http). No romper ninguna de las dos vías al tocar el arranque
+- Tuvo 3 conflictos de merge commiteados (commit `55a4a40`) que impedían arrancar; ya resueltos
+- CORS: 4 orígenes (2 Vercel + localhost:5173/5174). Editar el bloque `app.use(cors(...))` de `app.js` para añadir más
 - `bodyParser.json()` + `express.json()` — ambos registrados (redundante pero inocuo)
 - Multer configurado (memoryStorage) pero **comentado**, no usado
 - Endpoint chat stream (`POST /api/chat/stream`) hace proxy SSE a `AGENT_API_URL` (Lambda) vía `chatRepository.js`
