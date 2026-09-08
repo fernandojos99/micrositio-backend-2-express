@@ -265,6 +265,7 @@ CREATE TABLE agente (
     link TEXT,
     descripcion TEXT,
     prompt TEXT,
+    categoria TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
