@@ -1,7 +1,10 @@
 // src/middlewares/validation/testingCardSchema.js
 import { z } from 'zod';
 
-const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO','EN EJECUCION'];
+// Estos son los 5 valores del CHECK real de testing_card.status en Supabase.
+// 'EN EJECUCION' estaba aqui y no en el CHECK: pasaba la validacion y luego
+// reventaba contra Postgres con un 500 incomprensible.
+const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO'];
 
 // Esquema base que puede ser reutilizado
 const testingCardBaseSchema = z.object({

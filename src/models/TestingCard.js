@@ -15,7 +15,7 @@ class TestingCard {
     this.dia_fin = new Date(data.dia_fin);
     this.anexo_url = data.anexo_url || null;
     this.id_responsable = data.id_responsable;
-    this.status = data.status || 'En desarrollo';
+    this.status = data.status || 'EN PLANEACION';
     this.created_at = new Date(data.created_at || Date.now());
     this.updated_at = new Date(data.updated_at || Date.now());
   }

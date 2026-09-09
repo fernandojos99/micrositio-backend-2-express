@@ -1,7 +1,9 @@
 // src/middlewares/validation/secuenciaSchema.js
 import { z } from 'zod';
 
-const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO','EN PROCESO'];
+// Los 7 valores del CHECK real de secuencia.estado en Supabase. Faltaba
+// 'EN EJECUCION', asi que el backend rechazaba un estado que la BD si acepta.
+const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN EJECUCION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO', 'EN PROCESO'];
 
 /**
  * Esquema para la creación de secuencias
