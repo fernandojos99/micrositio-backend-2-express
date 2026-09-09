@@ -2,6 +2,7 @@
 import ProyectoService from '../services/proyectoService.js';
 import { proyectoCreateSchema, proyectoUpdateSchema, proyectoPorUsuarioSchema } from '../middlewares/validation/proyectoSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { leerId } from '../utils/leerId.js';
 
 class ProyectoController {
   constructor() {
@@ -17,10 +18,9 @@ class ProyectoController {
   async obtenerProyecto(req, res, next) {
     console.log('[obtenerProyecto] Inicio - body:', req.body);
     try {
-      const id_proyecto = Number(req.body.id_proyecto);
+      const id_proyecto = Number(leerId(req, 'id_proyecto', 'id'));
       if (!id_proyecto) {
-        console.warn('[obtenerProyecto] id_proyecto no proporcionado o inválido');
-        throw new ApiError('Se requiere el campo "id_proyecto" en el body', 400);
+        throw new ApiError('Se requiere el identificador del proyecto', 400);
       }
       console.log(`[obtenerProyecto] Buscando proyecto con id: ${id_proyecto}`);
       const proyecto = await this.proyectoService.obtenerProyecto(id_proyecto);
@@ -61,12 +61,12 @@ class ProyectoController {
   async actualizarProyecto(req, res, next) {
     console.log('[actualizarProyecto] Inicio - body:', req.body);
     try {
-      if (!req.body.id_proyecto) {
-        console.warn('[actualizarProyecto] id_proyecto no proporcionado');
-        throw new ApiError('Se requiere el campo "id_proyecto" en el body', 400);
+      const id_proyecto = leerId(req, 'id_proyecto', 'id');
+      if (!id_proyecto) {
+        throw new ApiError('Se requiere el identificador del proyecto', 400);
       }
 
-      const { id_proyecto, ...updateData } = req.body;
+      const { id_proyecto: _ignorado, ...updateData } = req.body;
       console.log(`[actualizarProyecto] ID proyecto: ${id_proyecto} - Datos a actualizar:`, updateData);
       const validatedData = proyectoUpdateSchema.parse(updateData);
       console.log('[actualizarProyecto] Datos validados:', validatedData);
@@ -88,12 +88,11 @@ class ProyectoController {
   async eliminarProyecto(req, res, next) {
     console.log('[eliminarProyecto] Inicio - body:', req.body);
     try {
-      if (!req.body.id_proyecto) {
-        console.warn('[eliminarProyecto] id_proyecto no proporcionado');
-        throw new ApiError('Se requiere el campo "id_proyecto" en el body', 400);
+      const id_proyecto = leerId(req, 'id_proyecto', 'id');
+      if (!id_proyecto) {
+        throw new ApiError('Se requiere el identificador del proyecto', 400);
       }
-      console.log(`[eliminarProyecto] Eliminando proyecto con id: ${req.body.id_proyecto}`);
-      await this.proyectoService.eliminarProyecto(req.body.id_proyecto);
+      await this.proyectoService.eliminarProyecto(id_proyecto);
       console.log('[eliminarProyecto] Eliminación exitosa - 204 No Content');
       res.status(204).end();
     } catch (error) {

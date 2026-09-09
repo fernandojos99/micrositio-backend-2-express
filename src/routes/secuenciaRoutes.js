@@ -186,4 +186,20 @@ router.delete('/', authMiddleware, soloEditores, secuenciaController.eliminar.bi
  */
 router.patch('/aplicar-plantilla', authMiddleware, secuenciaController.aplicarPlantilla.bind(secuenciaController));
 
+
+/* ---------------------------------------------------------------------------
+ * Rutas REST con el identificador en el path.
+ *
+ * Van al final a proposito: Express resuelve por orden de registro, asi que
+ * las rutas literales de arriba ('/p', '/todos', '/aplicar-plantilla', ...)
+ * siguen ganando y no las tapa el parametro.
+ *
+ * Las rutas antiguas, con el ID en el body (incluido un GET con body), se
+ * mantienen para no romper a los clientes que aun no han migrado. Cuando el
+ * front deje de usarlas, se borran.
+ * ------------------------------------------------------------------------ */
+
+router.patch('/:id', authMiddleware, soloEditores, secuenciaController.actualizar.bind(secuenciaController));
+router.delete('/:id', authMiddleware, soloEditores, secuenciaController.eliminar.bind(secuenciaController));
+
 export default router;

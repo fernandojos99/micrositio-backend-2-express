@@ -2,6 +2,7 @@
 import TestingCardService from '../services/testingCardService.js';
 import { testingCardCreateSchema, testingCardUpdateSchema } from '../middlewares/validation/testingCardSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { leerId } from '../utils/leerId.js';
 
 class TestingCardController {
   constructor() {
@@ -43,11 +44,12 @@ class TestingCardController {
 
   async obtenerPorPadre(req, res, next) {
     try {
-      if (!req.body.padre_id) {
-        throw new ApiError('Se requiere el campo "padre_id" en el body', 400);
+      const padre_id = leerId(req, 'padre_id', 'id');
+      if (!padre_id) {
+        throw new ApiError('Se requiere el identificador de la testing card padre', 400);
       }
 
-      const testingCards = await this.testingCardService.obtenerPorPadre(req.body.padre_id);
+      const testingCards = await this.testingCardService.obtenerPorPadre(padre_id);
       res.json(testingCards);
     } catch (error) {
       next(error);
@@ -75,11 +77,12 @@ class TestingCardController {
 
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id_testing_card) {
-        throw new ApiError('Se requiere el campo "id_testing_card" en el body', 400);
+      const id_testing_card = leerId(req, 'id_testing_card', 'id');
+      if (!id_testing_card) {
+        throw new ApiError('Se requiere el identificador de la testing card', 400);
       }
 
-      const { id_testing_card, ...updateData } = req.body;
+      const { id_testing_card: _ignorado, ...updateData } = req.body;
       const validatedData = testingCardUpdateSchema.parse(updateData);
       const testingCard = await this.testingCardService.actualizar(id_testing_card, validatedData);
       res.json(testingCard);
@@ -90,11 +93,12 @@ class TestingCardController {
 
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id_testing_card) {
-        throw new ApiError('Se requiere el campo "id_testing_card" en el body', 400);
+      const id_testing_card = leerId(req, 'id_testing_card', 'id');
+      if (!id_testing_card) {
+        throw new ApiError('Se requiere el identificador de la testing card', 400);
       }
 
-      await this.testingCardService.eliminar(req.body.id_testing_card);
+      await this.testingCardService.eliminar(id_testing_card);
       res.status(204).end();
     } catch (error) {
       next(error);

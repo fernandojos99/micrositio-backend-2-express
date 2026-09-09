@@ -51,9 +51,13 @@
  * @param {*} next 
  */
 const errorHandler = (err, req, res, next) => {
-  // Defaults
-  const statusCode = err.statusCode || 500;
-  const status = err.status || 'error';
+  // Un fallo de validacion es culpa del cliente, no del servidor. Los
+  // controllers hacen schema.parse() dentro del try y el ZodError acababa
+  // aqui sin statusCode, asi que salia como 500: un payload mal formado se
+  // reportaba como error interno.
+  const esErrorDeValidacion = err.name === 'ZodError' || Array.isArray(err.errors);
+  const statusCode = err.statusCode || (esErrorDeValidacion ? 400 : 500);
+  const status = err.status || (statusCode < 500 ? 'fail' : 'error');
 
   // Log completo en consola (esto va a CloudWatch en AWS)
   console.error("🔥 ERROR COMPLETO:");

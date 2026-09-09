@@ -7,6 +7,7 @@ import plantillaSecuenciaService from '../services/plantillaSecuenciaService.js'
 import Secuencia from '../models/Secuencia.js';
 import { secuenciaCreateSchema, secuenciaUpdateSchema } from '../middlewares/validation/secuenciaSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { leerId } from '../utils/leerId.js';
 
 class SecuenciaController {
   constructor() {
@@ -103,11 +104,12 @@ class SecuenciaController {
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id_secuencia) {
-        throw new ApiError('Se requiere el campo "id_secuencia" en el body', 400);
+      const id_secuencia = leerId(req, 'id_secuencia', 'id');
+      if (!id_secuencia) {
+        throw new ApiError('Se requiere el identificador de la secuencia', 400);
       }
 
-      const { id_secuencia, ...updateData } = req.body;
+      const { id_secuencia: _ignorado, ...updateData } = req.body;
       const validatedData = secuenciaUpdateSchema.parse(updateData);
       const secuencia = await this.secuenciaService.actualizar(id_secuencia, validatedData);
       res.json(secuencia);
@@ -124,11 +126,12 @@ class SecuenciaController {
    */
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id_secuencia) {
-        throw new ApiError('Se requiere el campo "id_secuencia" en el body', 400);
+      const id_secuencia = leerId(req, 'id_secuencia', 'id');
+      if (!id_secuencia) {
+        throw new ApiError('Se requiere el identificador de la secuencia', 400);
       }
 
-      await this.secuenciaService.eliminar(req.body.id_secuencia);
+      await this.secuenciaService.eliminar(id_secuencia);
       res.status(204).end();
     } catch (error) {
       next(error);

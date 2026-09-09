@@ -1,5 +1,6 @@
 import AuthService from '../services/authService.js';
 import ApiError from '../utils/ApiError.js';
+import { loginSchema, registroSchema } from '../middlewares/validation/authSchema.js';
 
 class AuthController {
   constructor() {
@@ -11,11 +12,7 @@ class AuthController {
    */
   async login(req, res, next) {
     try {
-      const { alias, password } = req.body;
-
-      if (!alias || !password) {
-        throw new ApiError('Alias y password son requeridos', 400);
-      }
+      const { alias, password } = loginSchema.parse(req.body);
 
       const resultado = await this.authService.login(alias, password);
 
@@ -35,7 +32,11 @@ class AuthController {
    */
   async registro(req, res, next) {
     try {
-      const resultado = await this.authService.registro(req.body);
+      const datos = registroSchema.parse(req.body);
+
+      // El tipo se fija aqui, no se lee del body: esta ruta es publica y
+      // aceptarlo permitia darse de alta como EDITOR sin credenciales.
+      const resultado = await this.authService.registro({ ...datos, tipo: 'VISITANTE' });
 
       res.status(201).json({
         success: true,

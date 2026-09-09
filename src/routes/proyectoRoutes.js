@@ -97,4 +97,21 @@ router.patch('/', authMiddleware, soloEditores, proyectoController.actualizarPro
 // Eliminar proyecto
 router.delete('/', authMiddleware, soloEditores, proyectoController.eliminarProyecto.bind(proyectoController));
 
+
+/* ---------------------------------------------------------------------------
+ * Rutas REST con el identificador en el path.
+ *
+ * Van al final a proposito: Express resuelve por orden de registro, asi que
+ * las rutas literales de arriba ('/p', '/todos', '/aplicar-plantilla', ...)
+ * siguen ganando y no las tapa el parametro.
+ *
+ * Las rutas antiguas, con el ID en el body (incluido un GET con body), se
+ * mantienen para no romper a los clientes que aun no han migrado. Cuando el
+ * front deje de usarlas, se borran.
+ * ------------------------------------------------------------------------ */
+
+router.get('/:id_proyecto', authMiddleware, verificarAccesoProyecto, proyectoController.obtenerProyecto.bind(proyectoController));
+router.patch('/:id_proyecto', authMiddleware, soloEditores, proyectoController.actualizarProyecto.bind(proyectoController));
+router.delete('/:id_proyecto', authMiddleware, soloEditores, proyectoController.eliminarProyecto.bind(proyectoController));
+
 export default router;
