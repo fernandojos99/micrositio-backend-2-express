@@ -162,6 +162,7 @@ app.use(errorHandler);
 // En Lambda el handler de lambda.js envuelve la app; solo escuchamos fuera de Lambda.
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
   app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
   });
 }
 

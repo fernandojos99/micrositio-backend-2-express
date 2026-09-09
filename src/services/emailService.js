@@ -33,7 +33,6 @@ class EmailService {
       this.transporter.verify((error, success) => {
         if (error) {
           console.warn('Advertencia: No se pudo verificar la configuración de email:', error.message);
-        } else {
         }
       });
     } catch (error) {

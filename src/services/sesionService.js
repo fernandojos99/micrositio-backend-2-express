@@ -38,8 +38,6 @@ class SesionService {
     this.versionCounter.set(thread_id, currentVersion);
 
     // Si ya hay una tarea en curso, la reemplazamos (permitimos duplicados)
-    if (this.taskQueue.has(thread_id)) {
-    }
 
     const promise = (async () => {
       try {
@@ -52,7 +50,6 @@ class SesionService {
 
         if (titulo) {
           await this.sesionRepo.actualizarTitulo(thread_id, titulo);
-        } else {
         }
       } catch (error) {
         console.error(`❌ Error generando título para ${thread_id} (v${currentVersion}):`, error.message);
