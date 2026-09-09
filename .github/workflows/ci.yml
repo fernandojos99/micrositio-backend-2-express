@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # No hay build ni typecheck: es JavaScript. Esto al menos garantiza que
+      # nada llega a master sin parsear, que ya paso una vez (el commit 55a4a40
+      # dejo conflictos de merge sin resolver dentro de src/app.js y el
+      # servidor no arrancaba).
+      - name: Comprobar sintaxis de todo el codigo
+        run: |
+          set -e
+          find src batch lambda.js -name '*.js' -print0 \
+            | xargs -0 -n1 node --check
+          echo "Sintaxis correcta en todos los archivos."
+
+      - name: Tests
+        run: npm test
