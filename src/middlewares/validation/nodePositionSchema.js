@@ -8,6 +8,13 @@ export const upsertNodePositionSchema = z.object({
   position_y: z.number({ required_error: 'La posición Y es requerida' }),
 });
 
+export const batchUpsertNodePositionSchema = z.object({
+  posiciones: z
+    .array(upsertNodePositionSchema)
+    .min(1, 'Se requiere al menos una posición')
+    .max(500, 'No se pueden guardar más de 500 posiciones por lote'),
+});
+
 export default (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);
   if (!result.success) {

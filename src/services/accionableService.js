@@ -15,7 +15,7 @@ const learningCardRepo = new LearningCardRepository();
  */
 export async function obtenerPorId(id) {
   if (!Number.isInteger(id)) {
-    throw new ApiError('ID de accionable inválido  no rd nurto 2 ', 400);
+    throw new ApiError('ID de accionable inválido', 400);
   }
 
   const accionable = await accionableRepo.obtenerPorId(id);

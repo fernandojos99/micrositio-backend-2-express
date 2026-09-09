@@ -24,6 +24,25 @@ class NodePositionRepository {
     return new NodePosition(data);
   }
 
+  async obtenerTodas() {
+    const { data, error } = await supabase
+      .from('node_positions')
+      .select('*');
+
+    if (error) throw new ApiError(error.message, 500);
+    return data.map(row => new NodePosition(row));
+  }
+
+  async upsertLote(posiciones) {
+    const { data, error } = await supabase
+      .from('node_positions')
+      .upsert(posiciones, { onConflict: ['id_secuencia', 'node_type', 'node_id'] })
+      .select();
+
+    if (error) throw new ApiError(error.message, 500);
+    return data.map(row => new NodePosition(row));
+  }
+
   async eliminarPorSecuencia(id_secuencia) {
     const { data, error } = await supabase
       .from('node_positions')

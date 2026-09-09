@@ -33,6 +33,14 @@ router.get('/:id_secuencia', authMiddleware, nodePositionController.obtenerPorSe
 router.post('/', authMiddleware, soloEditores, validar(upsertNodePositionSchema), nodePositionController.upsert.bind(nodePositionController));
 
 /**
+ * Crea o actualiza un lote de posiciones en una sola petición.
+ * Body: { posiciones: [{ id_secuencia, node_type, node_id, position_x, position_y }, ...] }
+ * @name post/flow-positions/batch
+ * @function
+ */
+router.post('/batch', authMiddleware, soloEditores, nodePositionController.upsertLote.bind(nodePositionController));
+
+/**
  * Elimina todas las posiciones de una secuencia.
  * @name delete/flow-positions/:id_secuencia
  * @function
@@ -44,6 +52,6 @@ router.delete('/:id_secuencia', authMiddleware, soloEditores, nodePositionContro
  * @name get/node-positions
  * @function
  */
-router.get('/', nodePositionController.getAllNodePositions.bind(nodePositionController));
+router.get('/', authMiddleware, nodePositionController.getAllNodePositions.bind(nodePositionController));
 
 export default router;

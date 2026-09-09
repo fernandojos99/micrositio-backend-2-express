@@ -10,9 +10,9 @@ class PromptRepository {
    * @returns {Promise<Array>}
    */
   async buscarPorTexto(q) {
-    console.warn(
-      'PromptRepository.buscarPorTexto llamado, pero no existe tabla "prompts" en la BD. Devolviendo [].'
-    );
+    // Sin console.warn: searchService lo llama en cada busqueda con
+    // scope 'all' o 'prompts', y el aviso inundaba los logs sin aportar nada
+    // que no diga ya este archivo.
     return [];
   }
 }

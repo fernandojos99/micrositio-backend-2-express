@@ -79,14 +79,10 @@ app.use(cors({
   credentials: true
 }));
 
-//Middleware adicional para manejar preflight OPTIONS
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
+// El preflight OPTIONS lo resuelve ya el middleware cors() de arriba, que
+// termina la peticion por si mismo. Aqui habia un app.options('*') que nunca
+// llegaba a ejecutarse y que reflejaba req.headers.origin sin whitelist: si
+// alguien reordenaba los middlewares, pasaba a aceptar cualquier origen.
 
 // Middleware para parsear JSON
 //app.use(bodyParser.json()); 

@@ -3,7 +3,7 @@ import NodePositionRepository from '../repositories/nodePositionRepository.js';
 import SecuenciaRepository from '../repositories/secuenciaRepository.js';
 import LearningCardRepository from '../repositories/learningCardRepository.js';
 import TestingCardRepository from '../repositories/testingCardRepository.js';
-import { upsertNodePositionSchema } from '../middlewares/validation/nodePositionSchema.js';
+import { upsertNodePositionSchema, batchUpsertNodePositionSchema } from '../middlewares/validation/nodePositionSchema.js';
 import ApiError from '../utils/ApiError.js';
 
 class NodePositionController {
@@ -101,23 +101,33 @@ class NodePositionController {
   }
 
   /**
+   * Crea o actualiza un lote de posiciones en una sola petición
+   * @param {Object} req - Request de Express
+   * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
+   */
+  async upsertLote(req, res, next) {
+    try {
+      const { posiciones } = batchUpsertNodePositionSchema.parse(req.body);
+      const guardadas = await this.nodePositionService.upsertLote(posiciones);
+      res.status(200).json(guardadas);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Obtiene todas las posiciones de nodos
    * @param {Object} req - Request de Express
    * @param {Object} res - Response de Express
+   * @param {Function} next - Next middleware
    */
-  async getAllNodePositions(req, res) {
+  async getAllNodePositions(req, res, next) {
     try {
-      const { data, error } = await supabase
-        .from('node_positions')
-        .select('*');
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
-
-      res.json(data);
+      const posiciones = await this.nodePositionService.obtenerTodas();
+      res.json(posiciones);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      next(error);
     }
   }
 }
