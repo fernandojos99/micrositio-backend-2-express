@@ -7,10 +7,13 @@ API REST en Node.js (ESM) + Express sobre Supabase (PostgreSQL). Todo lo de aqu�
 ```bash
 npm run dev     # nodemon src/app.js (hot reload)
 npm start       # node src/app.js
-node --check src/app.js   # única verificación de sintaxis disponible
+npm test        # node --test (runner nativo, sin dependencias extra)
+npm run check   # node --check src/app.js
 ```
 
-No hay scripts de **test, lint, typecheck, build ni format**, y no hay CI.
+No hay **lint, typecheck, build ni format**. Los tests son un primer caso de humo (`src/utils/__tests__/leerId.test.js`), no cobertura real.
+
+`.github/workflows/ci.yml` ejecuta en cada push un `node --check` sobre todo `src/`, `batch/` y `lambda.js`, más `npm test`. Existe porque ya pasó lo contrario: el commit `55a4a40` dejó conflictos de merge sin resolver dentro de `src/app.js` y el servidor no arrancaba.
 
 Scripts de carga de datos (`batch/`, ver su `ReadMe.md`) — **el orden importa**, hay una FK `usuarios.id_empleado → empleados`:
 
@@ -94,17 +97,19 @@ Utilidades de token en `src/utils/jwtUtils.js` (`extraerTokenDelHeader`, `verifi
 
 23 schemas Zod en `src/middlewares/validation/`. **No son middlewares**: se invocan desde el controller con `schema.parse(req.body)`, dentro del `try`, para que el `ZodError` caiga en `next(error)`.
 
-⚠️ La cobertura es parcial: **solo 21 de los 32 controllers** llaman a `parse`. Los otros 11 (entre ellos `accionableController`) aceptan el body sin validar. Al tocar uno de esos, comprueba si hay schema disponible antes de asumir que los datos vienen validados.
+⚠️ La cobertura es parcial: **23 de los 32 controllers** llaman a `parse`. Los 9 restantes son los de chat, sesiones, documentos, formatos, habilidad, búsqueda y playbook. Al tocar uno, comprueba si hay schema disponible antes de asumir que los datos vienen validados.
+
+Ojo con un falso negativo: `plantillaSecuenciaController` no llama a `parse`, pero su service sí invoca `PlantillaSecuencia.validateCreate` / `validateUpdate`. La validación por modelo es la otra vía viva (también en `metricaTestingCardService`, `empleadoService` y `usuarioService`).
 
 ## Errores
 
 - `src/utils/ApiError.js` — `new ApiError(mensaje, statusCode, { originalError, details })`. Fija `status` a `'fail'` (4xx) o `'error'` (5xx) e `isOperational`.
-- `src/middlewares/errorHandler.js` — último `app.use`. ⚠️ **Devuelve el `stack` completo y el objeto de error en la respuesta HTTP en todos los entornos**, y loguea `req.body` y `req.headers` (incluido el `Authorization`) a consola. Es deuda de seguridad conocida; documentada aquí, no corregida.
+- `src/middlewares/errorHandler.js` — último `app.use`. Mapea `ZodError` a **400** (antes salía como 500: un payload mal formado se reportaba como error interno). ⚠️ Sigue **devolviendo el `stack` completo y el objeto de error en la respuesta HTTP en todos los entornos**, y logueando `req.body` y `req.headers` (incluido el `Authorization`). Es deuda de seguridad conocida y **no corregida**.
 
 ## Datos
 
 - **Supabase JS** (`@supabase/supabase-js`), cliente único en `src/config/supabaseClient.js`.
-- `sequelize`, `pg`, `pg-hstore` y `mysql2` están en `package.json` pero **no se usan en ningún archivo**. No escribas código asumiendo un ORM.
+- No hay ORM: se habla con Supabase directamente. `sequelize`, `pg`, `pg-hstore` y `mysql2` estaban en `package.json` sin un solo import y se eliminaron.
 - Patrón de "no encontrado": el código `PGRST116` de PostgREST (0 filas) se traga y se devuelve `null`:
   ```js
   if (error && error.code !== 'PGRST116') throw new ApiError(...);
@@ -136,17 +141,20 @@ Los que rompen el patrón:
 - `/api/learning-card` → `learningCardDocumentRoutes`.
 - `/api/chat` está montado **dos veces**: `sesionRoutes` (`/sessions`, `/sessions/:thread_id/messages`, `.../title`, DELETE) y `chatRoutes` (`/ping`, `/stream`). No hay colisión hoy, pero cuidado al añadir rutas.
 - `/flow-positions` es el único kebab-case.
-- `src/routes/testRoutes.js` existe pero **no está montado** en `app.js`: es código muerto.
 
-### El ruteo interno es inconsistente — ábrelo antes de asumir
+### El ruteo: rutas nuevas con el ID en el path, viejas todavía vivas
 
-No hay una convención única de dónde viaja el ID:
+**Proyectos, secuencias, testing cards, learning cards y empleados** ya exponen rutas REST normales con el ID en el path (`GET/PATCH/DELETE /proyectos/:id_proyecto`, `/secuencias/:id`, `/testing_card/:id`, `/learning_card/:id`, `/empleados/:id`). **Son las que hay que usar.**
 
-- `GET /proyectos/p` **y** `POST /proyectos/p` — mismo handler `obtenerProyecto`, que lee `req.body.id_proyecto`. Sí, un GET con body.
-- `PATCH /proyectos` y `DELETE /proyectos` — sin path param, el ID va en el body.
-- `GET /proyectos/usuario/:id_usuario` — path param.
-- `GET /testing_card/t/:id` (por ID) vs `GET /testing_card/s` (por secuencia) vs `GET /testing_card/padre`.
-- `usuario`: `req.params.id` o `req.params.id_usuario` según la ruta. `sesion`: `req.params.thread_id`.
+Se registran **al final de cada router**, después de las literales (`/p`, `/s`, `/padre`, `/plantillas`, `/todos`, `/aplicar-plantilla`), porque Express resuelve por orden de registro y el parámetro se las tragaría. Si añades una ruta literal, ponla antes.
+
+Las antiguas siguen montadas para no romper clientes sin migrar, y son el motivo de que exista `src/utils/leerId.js`, que deja a un mismo controller atender ambas leyendo el ID del path, del body o de la query:
+
+- `GET /proyectos/p` **y** `POST /proyectos/p` — un GET con el ID en el body.
+- `PATCH /proyectos`, `DELETE /proyectos`, y sus equivalentes en secuencias, testing cards y learning cards — el ID en el body.
+- `POST /empleados` con `{ id }` para **leer** un empleado.
+
+El resto de recursos no está normalizado: `usuario` usa `req.params.id` o `req.params.id_usuario` según la ruta, `sesion` usa `req.params.thread_id`.
 
 **Regla: lee el archivo de `src/routes/` correspondiente antes de escribir un cliente o un test.**
 
@@ -167,7 +175,9 @@ Al tocar el arranque, no rompas ninguna de las dos vías: `export default app` s
 
 ## Estado del repositorio
 
-Rama `master`. El commit `55a4a40 refactor(deploy)` dejó **3 conflictos de merge sin resolver commiteados en `src/app.js`**, lo que impedía arrancar (SyntaxError). Ya están resueltos: se conservó el logger de requests (ahora gateado por `NODE_ENV !== 'production'`), el bloque comentado de upload de imágenes, y se unificó `app.listen` + `export default app` como se describe arriba.
+Rama de trabajo actual: `docs/init-agentes` (la rama por defecto del remoto es `master`). Los conflictos de merge que el commit `55a4a40 refactor(deploy)` dejó sin resolver dentro de `src/app.js` ya están arreglados, y el `node --check` del CI existe para que no vuelva a pasar.
+
+El bloque comentado del upload de imágenes a Supabase Storage se eliminó de `src/app.js`; sigue en el historial de git.
 
 ## Referencia
 
