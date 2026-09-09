@@ -99,7 +99,6 @@ class EmpleadoController {
 
       const { habilidades } = req.body;
       //const validatedData = empleadoUpdateSchema.parse(updateData);
-      console.log('Datos recibidos para actualizar info personal:', { id, habilidades });
       const empleado = await this.empleadoService.actualizarHabilidades(id, { habilidades });
       res.json(empleado);
     } catch (error) {

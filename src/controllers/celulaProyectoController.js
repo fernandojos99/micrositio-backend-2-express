@@ -79,7 +79,6 @@ async obtenerPorProyecto(req, res, next) {
    * @param {Function} next - Next middleware.
    */
   async crear(req, res, next) {
-    console.log('Body recibido en crear celula_proyecto:', req.body);
     try {
       const validatedData = celulaProyectoCreateSchema.parse(req.body);
       const { id_empleados, id_proyecto, activo } = validatedData;

@@ -209,7 +209,6 @@ class TestingCardService {
         testingCardsConPlantilla.push(testingCardConPlantilla);
       } catch (error) {
         // Si no se puede obtener una testing card, registrar el error pero continuar
-        console.log(`Error al obtener testing card ${plantilla.id_testing_card} de plantilla ${plantilla.id_plantilla_testing_card}:`, error.message);
       }
     }
     

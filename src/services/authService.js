@@ -12,7 +12,6 @@ class AuthService {
   async login(alias, password) {
     try {
       // 1. Buscar usuario por alias
-      console.log(`Intentando login para alias: ${alias}`);
       const { data: usuario, error: userError } = await supabase
         .from('usuarios')
         .select('*')
@@ -23,17 +22,14 @@ class AuthService {
       if (userError || !usuario) {
         throw new ApiError('Credenciales inválidas', 401);
       }
-      console.log(`Usuario encontradoOOOOOOOO: ${usuario.id_usuario}, tipo: ${usuario.tipo}`);
       // 2. Verificar password
 
 
       // 🔥 TEST BCRYPT (ponlo AQUÍ)
-      console.log("TEST BCRYPT LOCAL");
 
       const testHash = await bcrypt.hash("123456", 10);
       const testCompare = await bcrypt.compare("123456", testHash);
 
-      console.log("BCRYPT TEST RESULT:", testCompare);
 
 
 
@@ -67,12 +63,9 @@ class AuthService {
 
 
 
-      console.log(`Comparando password para usuario ${usuario.id_usuario}: ${passwordValido ? 'válido' : 'inválido'}`);
       if (!passwordValido) {
-        console.log(`Password inválido para usuario ${usuario.id_usuario}`);
         throw new ApiError('Credenciales inválidas', 401);
       }
-      console.log('Password válido, generando token...');
       // 3. Obtener proyectos si es visitante
       let proyectos = null;
       if (usuario.tipo === 'VISITANTE') {
@@ -93,7 +86,6 @@ class AuthService {
 
       // 5. Preparar respuesta (sin password)
       const { password_hash, ...usuarioSinPassword } = usuario;
-      console.log(`Login exitoso para usuario ${usuario.id_usuario}, token generado`);
       return {
         token,
         usuario: {

@@ -13,7 +13,6 @@ export const plantillaSecuenciaCreateSchema = z.object({
     .describe('ID del empleado - debe ser un entero positivo')
 });
 
-// console.log('ESQUEMA PLANTILLA SECUENCIA CARGADO - Solo id_secuencia e id_empleado'); // Debug
 
 // Esquema para actualizar una plantilla secuencia
 export const plantillaSecuenciaUpdateSchema = z.object({

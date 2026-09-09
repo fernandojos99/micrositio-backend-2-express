@@ -50,7 +50,6 @@ class NotificacionController {
       ]);
 
       const duration = Date.now() - startTime;
-      console.log(`✅ Notificación enviada en ${duration}ms`);
 
       // 4. Responder con éxito
       res.status(200).json({

@@ -28,7 +28,6 @@ class EmpleadoService {
     if (!empleado) {
       throw new ApiError('Empleado no encontrado', 404);
     }
-    console.log("Empleado encontrado en servicio antes de toAPI", empleado);
     return empleado.toAPI();
   }
 

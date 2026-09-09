@@ -74,8 +74,6 @@ class TestingCardDocumentService {
         document_type: documentType
       };
 
-      // console.log('📊 Datos que se van a insertar:', documentData);
-      // console.log('🔍 testing_card_id tipo:', typeof documentData.testing_card_id);
       
       const document = await testingCardDocumentRepository.create(documentData);
       return document;

@@ -1,2 +1,0 @@
-Servidor corriendo en http://localhost:3000
-✓ Servicio de email configurado correctamente

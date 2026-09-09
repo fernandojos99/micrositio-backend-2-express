@@ -87,7 +87,6 @@ class NotificacionService {
         }
       } catch (error) {
         // Si no hay testing cards hijas, continuar sin error
-        console.log('No se encontraron testing cards hijas para:', testingCardActual.id_testing_card);
       }
 
       // 7. Preparar datos para el email

@@ -21,7 +21,6 @@ class ProyectoService {
    * @throws {ApiError} Si el proyecto no existe
    */
   async obtenerProyecto(id_proyecto) {
-    console.log(`[obtenerProyecto] Buscando proyecto ID: ${id_proyecto}`);
     const proyecto = await this.proyectoRepo.obtenerPorId(id_proyecto);
     
     if (!proyecto) {
@@ -29,7 +28,6 @@ class ProyectoService {
       throw new ApiError('Proyecto no encontrado', 404);
     }
     
-    console.log(`[obtenerProyecto] Proyecto encontrado: ID ${proyecto.id_proyecto}, título ${proyecto.titulo}`);
     return proyecto.toAPI();
   }
 
@@ -40,11 +38,9 @@ class ProyectoService {
    * @throws {ApiError} Si la categoría o el líder no existen
    */
   async crearProyecto(proyectoData) {
-    console.log('[crearProyecto] Datos recibidos:', proyectoData);
     
     // Validar que la categoría existe
     if (proyectoData.id_categoria) {
-      console.log(`[crearProyecto] Validando categoría ID: ${proyectoData.id_categoria}`);
       const categoria = await this.categoriaRepo.obtenerPorId(proyectoData.id_categoria);
       if (!categoria) {
         console.warn(`[crearProyecto] Categoría ${proyectoData.id_categoria} no encontrada`);
@@ -54,7 +50,6 @@ class ProyectoService {
 
     // Validar que el líder existe si se proporciona
     if (proyectoData.id_lider) {
-      console.log(`[crearProyecto] Validando líder ID: ${proyectoData.id_lider}`);
       const lider = await this.empleadoRepo.obtenerPorId(proyectoData.id_lider);
       if (!lider) {
         console.warn(`[crearProyecto] Líder ${proyectoData.id_lider} no encontrado`);
@@ -62,9 +57,7 @@ class ProyectoService {
       }
     }
 
-    console.log('[crearProyecto] Creando proyecto en repositorio');
     const proyecto = await this.proyectoRepo.crear(proyectoData);
-    console.log(`[crearProyecto] Proyecto creado con ID: ${proyecto.id_proyecto}`);
     return proyecto.toAPI();
   }
 
@@ -76,10 +69,8 @@ class ProyectoService {
    * @throws {ApiError} Si el proyecto no existe
    */
   async actualizarProyecto(id_proyecto, proyectoData) {
-    console.log(`[actualizarProyecto] ID: ${id_proyecto} - Datos a actualizar:`, proyectoData);
     
     if (proyectoData.id_categoria) {
-      console.log(`[actualizarProyecto] Validando categoría ID: ${proyectoData.id_categoria}`);
       const categoria = await this.categoriaRepo.obtenerPorId(proyectoData.id_categoria);
       if (!categoria) {
         console.warn(`[actualizarProyecto] Categoría ${proyectoData.id_categoria} no encontrada`);
@@ -88,7 +79,6 @@ class ProyectoService {
     }
 
     if (proyectoData.id_lider) {
-      console.log(`[actualizarProyecto] Validando líder ID: ${proyectoData.id_lider}`);
       const lider = await this.empleadoRepo.obtenerPorId(proyectoData.id_lider);
       if (!lider) {
         console.warn(`[actualizarProyecto] Líder ${proyectoData.id_lider} no encontrado`);
@@ -96,7 +86,6 @@ class ProyectoService {
       }
     }
 
-    console.log(`[actualizarProyecto] Ejecutando actualización en repositorio para ID ${id_proyecto}`);
     const proyecto = await this.proyectoRepo.actualizar(id_proyecto, proyectoData);
     
     if (!proyecto) {
@@ -104,7 +93,6 @@ class ProyectoService {
       throw new ApiError('Proyecto no encontrado', 404);
     }
     
-    console.log(`[actualizarProyecto] Proyecto actualizado: ID ${proyecto.id_proyecto}, título ${proyecto.titulo}`);
     return proyecto.toAPI();
   }
 
@@ -115,7 +103,6 @@ class ProyectoService {
    * @throws {ApiError} Si el proyecto no existe
    */
   async eliminarProyecto(id_proyecto) {
-    console.log(`[eliminarProyecto] Eliminando proyecto ID: ${id_proyecto}`);
     const proyecto = await this.proyectoRepo.eliminar(id_proyecto);
     
     if (!proyecto) {
@@ -123,7 +110,6 @@ class ProyectoService {
       throw new ApiError('Proyecto no encontrado', 404);
     }
     
-    console.log(`[eliminarProyecto] Proyecto eliminado: ID ${proyecto.id_proyecto}`);
     return proyecto.toAPI();
   }
 
@@ -133,26 +119,20 @@ class ProyectoService {
    * @returns {Promise<Array>} Lista de proyectos
    */
   async listarProyectos(filtro) {
-    console.log('[listarProyectos] Filtro recibido:', filtro);
     
     // Si es EDITOR, puede ver todos los proyectos
     if (filtro.tipo === 'EDITOR') {
-      console.log('[listarProyectos] Usuario EDITOR - listando todos los proyectos');
       const proyectos = await this.proyectoRepo.listarTodos();
-      console.log(`[listarProyectos] Se encontraron ${proyectos.length} proyectos`);
       return proyectos.map(proyecto => proyecto.toAPI());
     }
 
     // Si es VISITANTE, solo ve los proyectos asignados
     if (filtro.tipo === 'VISITANTE') {
       if (!filtro.proyectosPermitidos || filtro.proyectosPermitidos.length === 0) {
-        console.log('[listarProyectos] VISITANTE sin proyectos asignados - retornando []');
         return []; // No tiene proyectos asignados
       }
 
-      console.log(`[listarProyectos] VISITANTE - filtrando por IDs: ${filtro.proyectosPermitidos.join(', ')}`);
       const proyectos = await this.proyectoRepo.listarPorIds(filtro.proyectosPermitidos);
-      console.log(`[listarProyectos] Se encontraron ${proyectos.length} proyectos asignados`);
       return proyectos.map(proyecto => proyecto.toAPI());
     }
 
@@ -168,10 +148,8 @@ class ProyectoService {
    * @throws {ApiError} Si hay error en la operación
    */
   async obtenerProyectosPorIdUsuario(id_usuario) {
-    console.log(`[obtenerProyectosPorIdUsuario] Consultando proyectos para usuario: ${id_usuario}`);
     try {
       const proyectos = await this.usuarioProyectoRepo.obtenerPorIdUsuario(id_usuario);
-      console.log(`[obtenerProyectosPorIdUsuario] Encontrados ${proyectos.length} proyectos`);
       return proyectos;
     } catch (error) {
       console.error(`[obtenerProyectosPorIdUsuario] Error: ${error.message}`, error);

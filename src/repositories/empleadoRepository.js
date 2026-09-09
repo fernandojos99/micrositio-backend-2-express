@@ -25,8 +25,6 @@ class EmpleadoRepository {
     if (error && error.code !== 'PGRST116') {
       throw new ApiError(`Error al obtener empleado: ${error.message}`, 500);
     }
-    console.log("Empleado encontrado en repositorio", data);
-    console.log("Empleado formateado", Empleado.fromDatabase(data) );
     return data ? Empleado.fromDatabase(data) : null;
   }
 
@@ -86,7 +84,6 @@ class EmpleadoRepository {
  * @param {Object} empleadoData - Datos del empleado incluyendo el array 'habilidades'
  */
 async actualizar(id, empleadoData) {
-    console.log("Datos a actualizar en repositorio:", empleadoData);
 
     // 1. Extraemos 'habilidades' para que no choque con la tabla 'empleado'
     // 'datosParaTablaEmpleado' contendrá: cargo, departamento, infopersonal, etc.

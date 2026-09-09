@@ -34,7 +34,6 @@ class EmailService {
         if (error) {
           console.warn('Advertencia: No se pudo verificar la configuración de email:', error.message);
         } else {
-          console.log('✓ Servicio de email configurado correctamente');
         }
       });
     } catch (error) {
