@@ -1,4 +1,4 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas, exigirFila, primeraFila } from '../config/db.js';
 import LearningCardDocument from '../models/LearningCardDocument.js';
 
 class LearningCardDocumentRepository {
@@ -6,17 +6,7 @@ class LearningCardDocumentRepository {
 
   static async createDocument(documentData) {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .insert(documentData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating learning card document:', error);
-        throw error;
-      }
-
+      const data = await exigirFila(insertarFilas(this.tableName, documentData));
       return LearningCardDocument.fromDatabase(data);
     } catch (error) {
       console.error('Error in createDocument repository:', error);
@@ -26,18 +16,10 @@ class LearningCardDocumentRepository {
 
   static async getDocumentsByLearningCardId(learningCardId) {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .select('*')
-        .eq('learning_card_id', learningCardId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching learning card documents:', error);
-        throw error;
-      }
-
-      return data ? data.map(doc => LearningCardDocument.fromDatabase(doc)) : [];
+      const data = await consulta(
+        `SELECT * FROM ${this.tableName} WHERE learning_card_id = $1 ORDER BY created_at DESC`,
+        [learningCardId]);
+      return data.map(doc => LearningCardDocument.fromDatabase(doc));
     } catch (error) {
       console.error('Error in getDocumentsByLearningCardId repository:', error);
       throw error;
@@ -46,21 +28,8 @@ class LearningCardDocumentRepository {
 
   static async getDocumentById(documentId) {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .select('*')
-        .eq('id', documentId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null; // No document found
-        }
-        console.error('Error fetching learning card document by ID:', error);
-        throw error;
-      }
-
-      return data ? LearningCardDocument.fromDatabase(data) : null;
+      const data = await uno(`SELECT * FROM ${this.tableName} WHERE id = $1`, [documentId]);
+      return data ? LearningCardDocument.fromDatabase(data) : null; // null: no document found
     } catch (error) {
       console.error('Error in getDocumentById repository:', error);
       throw error;
@@ -69,22 +38,9 @@ class LearningCardDocumentRepository {
 
   static async deleteDocument(documentId) {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .delete()
-        .eq('id', documentId)
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null; // No document found
-        }
-        console.error('Error deleting learning card document:', error);
-        throw error;
-      }
-
-      return data ? LearningCardDocument.fromDatabase(data) : null;
+      const data = await primeraFila(consulta(
+        `DELETE FROM ${this.tableName} WHERE id = $1 RETURNING *`, [documentId]));
+      return data ? LearningCardDocument.fromDatabase(data) : null; // null: no document found
     } catch (error) {
       console.error('Error in deleteDocument repository:', error);
       throw error;
@@ -93,22 +49,8 @@ class LearningCardDocumentRepository {
 
   static async updateDocument(documentId, updateData) {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .update(updateData)
-        .eq('id', documentId)
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null; // No document found
-        }
-        console.error('Error updating learning card document:', error);
-        throw error;
-      }
-
-      return data ? LearningCardDocument.fromDatabase(data) : null;
+      const data = await primeraFila(actualizarFilas(this.tableName, updateData, 'id = $1', [documentId]));
+      return data ? LearningCardDocument.fromDatabase(data) : null; // null: no document found
     } catch (error) {
       console.error('Error in updateDocument repository:', error);
       throw error;

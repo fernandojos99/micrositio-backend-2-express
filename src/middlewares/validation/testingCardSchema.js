@@ -18,7 +18,9 @@ const testingCardBaseSchema = z.object({
   dia_fin: z.coerce.date().optional(),
   anexo_url: z.string().url('Debe ser una URL válida').optional(),
   id_responsable: z.number().int().positive('El ID del responsable debe ser un número positivo').optional(),
-  status: z.enum(statusValues).optional().default('EN PLANEACION')
+  status: z.enum(statusValues).optional().default('EN PLANEACION'),
+  // Card propuesta por el plan de trabajo: no se ve hasta que se aprueba
+  es_borrador: z.boolean().optional()
 });
 
 // Esquema para creación con validación adicional de fechas

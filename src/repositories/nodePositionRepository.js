@@ -1,83 +1,63 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, ejecutar, exigirFila, insertarFilas, upsertFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import NodePosition from '../models/NodePosition.js';
 
+// Clave única de node_positions (constraint unique_node_position): una
+// posición por nodo y secuencia.
+const CLAVE_NODO = ['id_secuencia', 'node_type', 'node_id'];
+
 class NodePositionRepository {
   async obtenerPorSecuencia(id_secuencia) {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .select('*')
-      .eq('id_secuencia', id_secuencia);
+    const data = await conMensaje(null,
+      consulta('SELECT * FROM node_positions WHERE id_secuencia = $1', [id_secuencia]));
 
-    if (error) throw new ApiError(error.message, 500);
     return data.map(row => new NodePosition(row));
   }
 
   async upsert(nodePositionData) {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .upsert([nodePositionData], { onConflict: ['id_secuencia', 'node_type', 'node_id'] })
-      .select()
-      .single();
+    const data = await conMensaje(null,
+      exigirFila(upsertFilas('node_positions', [nodePositionData], CLAVE_NODO)));
 
-    if (error) throw new ApiError(error.message, 500);
     return new NodePosition(data);
   }
 
   async obtenerTodas() {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .select('*');
+    const data = await conMensaje(null, consulta('SELECT * FROM node_positions'));
 
-    if (error) throw new ApiError(error.message, 500);
     return data.map(row => new NodePosition(row));
   }
 
   async upsertLote(posiciones) {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .upsert(posiciones, { onConflict: ['id_secuencia', 'node_type', 'node_id'] })
-      .select();
+    const data = await conMensaje(null, upsertFilas('node_positions', posiciones, CLAVE_NODO));
 
-    if (error) throw new ApiError(error.message, 500);
     return data.map(row => new NodePosition(row));
   }
 
   async eliminarPorSecuencia(id_secuencia) {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .delete()
-      .eq('id_secuencia', id_secuencia);
+    await conMensaje(null,
+      ejecutar('DELETE FROM node_positions WHERE id_secuencia = $1', [id_secuencia]));
 
-    if (error) throw new ApiError(error.message, 500);
-    return data;
+    // supabase-js devolvía data: null en un delete sin .select()
+    return null;
   }
 
   async crear(nodePositionData) {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .insert(nodePositionData)
-      .select()
-      .single();
+    const data = await conMensaje(null,
+      exigirFila(insertarFilas('node_positions', nodePositionData)));
 
-    if (error) throw new ApiError(error.message, 500);
     return new NodePosition(data);
   }
 
   async obtenerPosicionPorId(node_id, node_type, id_secuencia) {
-    const { data, error } = await supabase
-      .from('node_positions')
-      .select('position_x, position_y')
-      .eq('node_id', node_id)
-      .eq('node_type', node_type)
-      .eq('id_secuencia', id_secuencia)
-      .single();
+    const data = await conMensaje(null, uno(`
+      SELECT position_x, position_y
+      FROM node_positions
+      WHERE node_id = $1 AND node_type = $2 AND id_secuencia = $3
+    `, [node_id, node_type, id_secuencia]));
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new ApiError('Posición no encontrada', 404);
-      }
-      throw new ApiError(error.message, 500);
+    if (!data) {
+      throw new ApiError('Posición no encontrada', 404);
     }
     return data;
   }

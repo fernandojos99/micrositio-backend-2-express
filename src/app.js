@@ -1,8 +1,9 @@
-import dotenv from 'dotenv';
+// Primero: carga src/.env antes de que otros módulos lean process.env.
+import './config/entorno.js';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import supabase from './config/supabaseClient.js';
+import archivos from './config/archivos.js';
 //import jwt from 'jsonwebtoken'; // para leer el id_usuario del token
 import JWTUtils from './utils/jwtUtils.js'; // tu utilitario de JWT
 import chatRoutes from './routes/chatRoutes.js';
@@ -39,6 +40,9 @@ import formatoRoutes from './routes/formatoRoutes.js';
 import accionableRoutes from './routes/accionableRoutes.js';
 import habilidadRoutes from './routes/habilidadRoutes.js';
 import servicioRoutes from './routes/servicioRoutes.js';
+import proyectoEtapaRoutes from './routes/proyectoEtapaRoutes.js';
+import metricaAccionableRoutes from './routes/metricaAccionableRoutes.js';
+import proyectoBriefRoutes from './routes/proyectoBriefRoutes.js';
 
  
  
@@ -88,6 +92,10 @@ app.use(cors({
 //app.use(bodyParser.json()); 
 app.use(express.json());
 
+// Archivos subidos (documentos, formatos, fotos de perfil), guardados en disco
+// por config/archivos.js. Públicos, como lo eran los buckets de Supabase.
+app.use(archivos.PREFIJO_URL, express.static(archivos.DIRECTORIO, { index: false, dotfiles: 'deny' }));
+
 // Debug de solicitudes entrantes. Fuera de produccion: loguea el body,
 // que en POST /auth/login incluye la contrasena en claro.
 if (process.env.NODE_ENV !== 'production') {
@@ -128,6 +136,9 @@ app.use('/habilidad',habilidadRoutes);
 app.use('/api/chat', sesionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/servicio',servicioRoutes);
+app.use('/proyecto_etapa', proyectoEtapaRoutes);
+app.use('/metrica_accionable', metricaAccionableRoutes);
+app.use('/proyecto_brief', proyectoBriefRoutes);
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {

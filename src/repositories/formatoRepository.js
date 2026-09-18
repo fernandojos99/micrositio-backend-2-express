@@ -1,45 +1,28 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, unoObligatorio, exigirFila, insertarFilas, actualizarFilas } from '../config/db.js';
 
+// Este repositorio no envuelve los errores: los relanza tal cual y decide el
+// controller. Un "no encontrado" llega como SinFilas (antes, el PGRST116 de
+// `.single()`).
 class FormatoRepository {
   static async create(formatoData) {
     const { document_name, document_url, document_type, categoria } = formatoData;
-    
-    const { data, error } = await supabase
-      .from('formato')
-      .insert([
-        {
-          document_name,
-          document_url,
-          document_type,
-          categoria
-        }
-      ])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+
+    return exigirFila(insertarFilas('formato', [
+      {
+        document_name,
+        document_url,
+        document_type,
+        categoria
+      }
+    ]));
   }
 
   static async findAll() {
-    const { data, error } = await supabase
-      .from('formato')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data;
+    return consulta('SELECT * FROM formato ORDER BY created_at DESC');
   }
 
   static async findById(id) {
-    const { data, error } = await supabase
-      .from('formato')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) throw error;
-    return data;
+    return unoObligatorio('SELECT * FROM formato WHERE id = $1', [id]);
   }
 
   static async update(id, updateData) {
@@ -48,28 +31,12 @@ class FormatoRepository {
       ...updateData,
       updated_at: new Date().toISOString()
     };
-    
-    const { data, error } = await supabase
-      .from('formato')
-      .update(dataToUpdate)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+
+    return exigirFila(actualizarFilas('formato', dataToUpdate, 'id = $1', [id]));
   }
 
   static async delete(id) {
-    const { data, error } = await supabase
-      .from('formato')
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    return exigirFila(consulta('DELETE FROM formato WHERE id = $1 RETURNING *', [id]));
   }
 }
 

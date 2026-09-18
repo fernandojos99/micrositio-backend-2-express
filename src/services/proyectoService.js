@@ -120,8 +120,8 @@ class ProyectoService {
    */
   async listarProyectos(filtro) {
     
-    // Si es EDITOR, puede ver todos los proyectos
-    if (filtro.tipo === 'EDITOR') {
+    // EDITOR y ADMIN ven todos los proyectos
+    if (filtro.tipo === 'EDITOR' || filtro.tipo === 'ADMIN') {
       const proyectos = await this.proyectoRepo.listarTodos();
       return proyectos.map(proyecto => proyecto.toAPI());
     }

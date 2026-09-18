@@ -2,7 +2,7 @@ import multer from 'multer';
 
 // Configuración de Multer para subir archivos
 const upload = multer({
-  storage: multer.memoryStorage(), // Almacenar en memoria para procesar con Supabase
+  storage: multer.memoryStorage(), // En memoria; config/archivos.js lo escribe a disco
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB máximo
     files: 1 // Solo un archivo por request

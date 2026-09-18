@@ -1,5 +1,6 @@
 // src/repositories/secuenciaRepository.js
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import Secuencia from '../models/Secuencia.js';
 
@@ -11,14 +12,8 @@ class SecuenciaRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerPorProyecto(id_proyecto) {
-    const { data, error } = await supabase
-      .from('secuencia')
-      .select('*')
-      .eq('id_proyecto', id_proyecto);
-
-    if (error) {
-      throw new ApiError(`Error al obtener secuencias: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener secuencias',
+      consulta('SELECT * FROM secuencia WHERE id_proyecto = $1', [id_proyecto]));
 
     // Devuelve instancias del modelo
     return data.map(sec => new Secuencia(sec));
@@ -31,15 +26,8 @@ class SecuenciaRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerPorId(id_secuencia) {
-    const { data, error } = await supabase
-      .from('secuencia')
-      .select('*')
-      .eq('id_secuencia', id_secuencia)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener secuencia: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener secuencia',
+      uno('SELECT * FROM secuencia WHERE id_secuencia = $1', [id_secuencia]));
 
     return data ? new Secuencia(data) : null;
   }
@@ -50,13 +38,8 @@ class SecuenciaRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerTodas() {
-    const { data, error } = await supabase
-      .from('secuencia')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener secuencias: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener secuencias',
+      consulta('SELECT * FROM secuencia'));
 
     return data.map(sec => new Secuencia(sec));
   }
@@ -68,14 +51,8 @@ class SecuenciaRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async crear(secuenciaData) {
-    const { data, error } = await supabase
-      .from('secuencia')
-      .insert(secuenciaData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear secuencia: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear secuencia',
+      insertarFilas('secuencia', secuenciaData));
 
     if (!data || data.length === 0) {
       throw new ApiError('Error al crear secuencia: No se devolvieron datos', 500);
@@ -92,15 +69,8 @@ class SecuenciaRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async actualizar(id_secuencia, secuenciaData) {
-    const { data, error } = await supabase
-      .from('secuencia')
-      .update(secuenciaData)
-      .eq('id_secuencia', id_secuencia)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar secuencia: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar secuencia',
+      actualizarFilas('secuencia', secuenciaData, 'id_secuencia = $1', [id_secuencia]));
 
     if (!data || data.length === 0) {
       throw new ApiError(`Secuencia con ID ${id_secuencia} no encontrada`, 404);
@@ -116,15 +86,8 @@ class SecuenciaRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async eliminar(id_secuencia) {
-    const { data, error } = await supabase
-      .from('secuencia')
-      .delete()
-      .eq('id_secuencia', id_secuencia)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar secuencia: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar secuencia',
+      consulta('DELETE FROM secuencia WHERE id_secuencia = $1 RETURNING *', [id_secuencia]));
 
     if (!data || data.length === 0) {
       throw new ApiError('Secuencia no encontrada', 404);
@@ -141,26 +104,23 @@ class SecuenciaRepository {
    */
   async buscarPorTexto(q) {
     try {
-      const { data, error } = await supabase
-        .from('secuencia')
-        .select(`
-          id_secuencia,
-          id_proyecto,
-          nombre,
-          descripcion,
-          estado,
-          proyecto:proyecto (
-            id_proyecto,
-            titulo
-          )
-        `)
-        .or(
-          `nombre.ilike.%${q}%,descripcion.ilike.%${q}%`
-        );
-
-      if (error) {
-        throw new ApiError(`Error al buscar secuencias: ${error.message}`, 500);
-      }
+      // El proyecto se anida como objeto (o null), igual que el join embebido
+      // `proyecto:proyecto(...)` de PostgREST.
+      const data = await conMensaje('Error al buscar secuencias', consulta(`
+        SELECT
+          s.id_secuencia,
+          s.id_proyecto,
+          s.nombre,
+          s.descripcion,
+          s.estado,
+          (SELECT row_to_json(x) FROM (
+             SELECT p.id_proyecto, p.titulo
+             FROM proyecto p
+             WHERE p.id_proyecto = s.id_proyecto
+           ) x) AS proyecto
+        FROM secuencia s
+        WHERE s.nombre ILIKE $1 OR s.descripcion ILIKE $1
+      `, [`%${q}%`]));
 
       // devolvemos objetos "crudos" con la relación anidada proyecto
       return data;

@@ -6,6 +6,9 @@
 import UsuarioRepository from '../repositories/usuarioRepository.js';
 import EmpleadoRepository from '../repositories/empleadoRepository.js';
 import ApiError from '../utils/ApiError.js';
+
+// ADMIN es un EDITOR que además aprueba: mismas reglas de empleado.
+const TIPOS_CON_EMPLEADO = ['EDITOR', 'ADMIN'];
 import Usuario from '../models/Usuario.js';
 
 class UsuarioService {
@@ -77,8 +80,8 @@ class UsuarioService {
       throw new ApiError('El alias ya está en uso', 400);
     }
 
-    // Si es EDITOR, verificar que el empleado existe
-    if (validatedData.tipo === 'EDITOR' && validatedData.id_empleado) {
+    // Si es EDITOR o ADMIN, verificar que el empleado existe
+    if (TIPOS_CON_EMPLEADO.includes(validatedData.tipo) && validatedData.id_empleado) {
       const empleado = await this.empleadoRepo.obtenerPorId(validatedData.id_empleado);
       if (!empleado) {
         throw new ApiError('Empleado no encontrado', 404);
@@ -91,7 +94,7 @@ class UsuarioService {
 
       // Verificar que el empleado no tenga ya un usuario EDITOR activo
       const usuariosEmpleado = await this.usuarioRepo.obtenerPorIdEmpleado(validatedData.id_empleado);
-      const usuarioEditorActivo = usuariosEmpleado.find(u => u.tipo === 'EDITOR' && u.activo);
+      const usuarioEditorActivo = usuariosEmpleado.find(u => TIPOS_CON_EMPLEADO.includes(u.tipo) && u.activo);
       if (usuarioEditorActivo) {
         throw new ApiError('El empleado ya tiene un usuario EDITOR activo', 400);
       }
@@ -105,7 +108,7 @@ class UsuarioService {
       alias: validatedData.alias,
       password_hash,
       tipo: validatedData.tipo,
-      id_empleado: validatedData.tipo === 'EDITOR' ? validatedData.id_empleado : null,
+      id_empleado: TIPOS_CON_EMPLEADO.includes(validatedData.tipo) ? validatedData.id_empleado : null,
       activo: validatedData.activo
     };
 
@@ -155,7 +158,7 @@ class UsuarioService {
         : usuarioExistente.id_empleado;
 
       // Validar relación tipo-empleado
-      if (nuevoTipo === 'EDITOR' && !nuevoIdEmpleado) {
+      if (TIPOS_CON_EMPLEADO.includes(nuevoTipo) && !nuevoIdEmpleado) {
         throw new ApiError('Los usuarios EDITOR deben tener un empleado asignado', 400);
       }
       if (nuevoTipo === 'VISITANTE' && nuevoIdEmpleado) {
@@ -173,10 +176,10 @@ class UsuarioService {
         }
 
         // Verificar que no haya otro usuario EDITOR activo para el mismo empleado
-        if (nuevoTipo === 'EDITOR') {
+        if (TIPOS_CON_EMPLEADO.includes(nuevoTipo)) {
           const usuariosEmpleado = await this.usuarioRepo.obtenerPorIdEmpleado(nuevoIdEmpleado);
           const usuarioEditorActivo = usuariosEmpleado.find(u => 
-            u.tipo === 'EDITOR' && u.activo && u.id_usuario !== id_usuario
+            TIPOS_CON_EMPLEADO.includes(u.tipo) && u.activo && u.id_usuario !== id_usuario
           );
           if (usuarioEditorActivo) {
             throw new ApiError('El empleado ya tiene otro usuario EDITOR activo', 400);
@@ -244,8 +247,8 @@ class UsuarioService {
       throw new ApiError('El usuario ya está activo', 400);
     }
 
-    // Si es EDITOR, verificar que el empleado sigue activo
-    if (usuario.tipo === 'EDITOR' && usuario.id_empleado) {
+    // Si es EDITOR o ADMIN, verificar que el empleado sigue activo
+    if (TIPOS_CON_EMPLEADO.includes(usuario.tipo) && usuario.id_empleado) {
       const empleado = await this.empleadoRepo.obtenerPorId(usuario.id_empleado);
       if (!empleado || !empleado.activo) {
         throw new ApiError('El empleado asociado debe estar activo para reactivar el usuario', 400);
@@ -254,7 +257,7 @@ class UsuarioService {
       // Verificar que no haya otro usuario EDITOR activo para el mismo empleado
       const usuariosEmpleado = await this.usuarioRepo.obtenerPorIdEmpleado(usuario.id_empleado);
       const usuarioEditorActivo = usuariosEmpleado.find(u => 
-        u.tipo === 'EDITOR' && u.activo && u.id_usuario !== id_usuario
+        TIPOS_CON_EMPLEADO.includes(u.tipo) && u.activo && u.id_usuario !== id_usuario
       );
       if (usuarioEditorActivo) {
         throw new ApiError('Ya existe otro usuario EDITOR activo para este empleado', 400);
@@ -345,7 +348,7 @@ class UsuarioService {
 
     // Vamos a verificar si el emplado ya tiene asignado un usuario EDITOR activo
     const usuariosEmpleado = await this.usuarioRepo.obtenerPorIdEmpleado(id_empleado);
-    const usuarioEditorActivo = usuariosEmpleado.find(u => u.tipo === 'EDITOR' && u.activo);
+    const usuarioEditorActivo = usuariosEmpleado.find(u => TIPOS_CON_EMPLEADO.includes(u.tipo) && u.activo);
     if (usuarioEditorActivo) {
       throw new ApiError('El empleado ya tiene un usuario EDITOR activo', 400);
     }

@@ -1,77 +1,39 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, exigirFila, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import Servicio from '../models/Servicio.js';
 
 class ServicioRepository {
 
   async obtenerPorId(id) {
-    const { data, error } = await supabase
-      .from('servicio')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      throw new ApiError(
-        `Error al obtener servicio: ${error.message}`,
-        500
-      );
-    }
+    const data = await conMensaje('Error al obtener servicio',
+      uno('SELECT * FROM servicio WHERE id = $1', [id]));
 
     return data ? new Servicio(data) : null;
   }
 
   async obtenerTodos() {
-    const { data, error } = await supabase
-      .from('servicio')
-      .select('*')
-      .order('id');
-
-    if (error) {
-      throw new ApiError(
-        `Error al obtener servicios: ${error.message}`,
-        500
-      );
-    }
+    const data = await conMensaje('Error al obtener servicios',
+      consulta('SELECT * FROM servicio ORDER BY id'));
 
     return data.map(item => new Servicio(item));
   }
 
   async crear(servicioData) {
-    const { data, error } = await supabase
-      .from('servicio')
-      .insert(servicioData)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(
-        `Error al crear servicio: ${error.message}`,
-        500
-      );
-    }
+    const data = await conMensaje('Error al crear servicio',
+      exigirFila(insertarFilas('servicio', servicioData)));
 
     return new Servicio(data);
   }
 
   async actualizar(id, updateData) {
-
-    const { data, error } = await supabase
-      .from('servicio')
-      .update({
+    // Sin filas, exigirFila lanza y conMensaje lo convierte en un 500, igual
+    // que el `.single()` de antes: el 404 de abajo nunca llegaba a ejecutarse.
+    const data = await conMensaje('Error al actualizar servicio',
+      exigirFila(actualizarFilas('servicio', {
         ...updateData,
         updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(
-        `Error al actualizar servicio: ${error.message}`,
-        500
-      );
-    }
+      }, 'id = $1', [id])));
 
     if (!data) {
       throw new ApiError(
@@ -84,19 +46,8 @@ class ServicioRepository {
   }
 
   async eliminar(id) {
-    const { data, error } = await supabase
-      .from('servicio')
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(
-        `Error al eliminar servicio: ${error.message}`,
-        500
-      );
-    }
+    const data = await conMensaje('Error al eliminar servicio',
+      exigirFila(consulta('DELETE FROM servicio WHERE id = $1 RETURNING *', [id])));
 
     if (!data) {
       throw new ApiError(

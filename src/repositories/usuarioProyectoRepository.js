@@ -1,11 +1,19 @@
 // src/repositories/usuarioProyectoRepository.js
 /**
- * Repositorio para interactuar con la tabla usuario_proyecto en Supabase.
+ * Repositorio para interactuar con la tabla usuario_proyecto.
  * @class
  */
-import supabase from '../config/supabaseClient.js';
+import { consulta, insertarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import UsuarioProyecto from '../models/UsuarioProyecto.js';
+
+// Los antiguos joins `usuarios!inner(...)` y `proyecto!inner(...)` de PostgREST
+// se reproducen con subconsultas correlacionadas (el objeto anidado) más un
+// EXISTS (el "inner": la fila se descarta si no hay relacionada). Así se
+// recorre usuario_proyecto igual que antes y el orden de salida no cambia.
+const EXISTE_USUARIO = 'EXISTS (SELECT 1 FROM usuarios u WHERE u.id_usuario = up.id_usuario)';
+const EXISTE_PROYECTO = 'EXISTS (SELECT 1 FROM proyecto p WHERE p.id_proyecto = up.id_proyecto)';
 
 class UsuarioProyectoRepository {
   /**
@@ -14,19 +22,20 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error en la consulta.
    */
   async obtenerTodos() {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .select(`
-        id_usuario,
-        id_proyecto,
-        usuarios!inner(alias, tipo),
-        proyecto!inner(titulo, descripcion)
-      `)
-      .order('id_usuario');
-
-    if (error) {
-      throw new ApiError(`Error al obtener relaciones usuario-proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener relaciones usuario-proyecto', consulta(`
+      SELECT
+        up.id_usuario,
+        up.id_proyecto,
+        (SELECT row_to_json(x) FROM (
+           SELECT u.alias, u.tipo FROM usuarios u WHERE u.id_usuario = up.id_usuario
+         ) x) AS usuarios,
+        (SELECT row_to_json(y) FROM (
+           SELECT p.titulo, p.descripcion FROM proyecto p WHERE p.id_proyecto = up.id_proyecto
+         ) y) AS proyecto
+      FROM usuario_proyecto up
+      WHERE ${EXISTE_USUARIO} AND ${EXISTE_PROYECTO}
+      ORDER BY up.id_usuario
+    `));
 
     return data.map(item => ({
       ...UsuarioProyecto.fromDatabase(item),
@@ -49,14 +58,8 @@ class UsuarioProyectoRepository {
    */
   async obtenerPorIdUsuario(id_usuario) {
     // Primero obtenemos los IDs de los proyectos del usuario
-    const { data: usuarioProyectos, error: errorRelaciones } = await supabase
-      .from('usuario_proyecto')
-      .select('id_proyecto')
-      .eq('id_usuario', id_usuario);
-
-    if (errorRelaciones) {
-      throw new ApiError(`Error al obtener relaciones usuario-proyecto: ${errorRelaciones.message}`, 500);
-    }
+    const usuarioProyectos = await conMensaje('Error al obtener relaciones usuario-proyecto',
+      consulta('SELECT id_proyecto FROM usuario_proyecto WHERE id_usuario = $1', [id_usuario]));
 
     if (!usuarioProyectos || usuarioProyectos.length === 0) {
       return [];
@@ -66,14 +69,8 @@ class UsuarioProyectoRepository {
     const proyectoIds = usuarioProyectos.map(rel => rel.id_proyecto);
 
     // Ahora obtenemos los detalles de los proyectos
-    const { data: proyectos, error: errorProyectos } = await supabase
-      .from('proyecto')
-      .select('id_proyecto, titulo')
-      .in('id_proyecto', proyectoIds);
-
-    if (errorProyectos) {
-      throw new ApiError(`Error al obtener detalles de proyectos: ${errorProyectos.message}`, 500);
-    }
+    const proyectos = await conMensaje('Error al obtener detalles de proyectos',
+      consulta('SELECT id_proyecto, titulo FROM proyecto WHERE id_proyecto = ANY($1)', [proyectoIds]));
 
     return proyectos || [];
   }
@@ -85,24 +82,27 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error en la consulta.
    */
   async obtenerPorIdProyecto(id_proyecto) {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .select(`
-        id_usuario,
-        usuarios!inner(
-          id_usuario,
-          alias,
-          tipo,
-          activo,
-          id_empleado,
-          empleado(nombre_pila, apellido_paterno, correo)
-        )
-      `)
-      .eq('id_proyecto', id_proyecto);
-
-    if (error) {
-      throw new ApiError(`Error al obtener usuarios del proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener usuarios del proyecto', consulta(`
+      SELECT
+        up.id_usuario,
+        (SELECT row_to_json(x) FROM (
+           SELECT
+             u.id_usuario,
+             u.alias,
+             u.tipo,
+             u.activo,
+             u.id_empleado,
+             (SELECT row_to_json(e) FROM (
+                SELECT em.nombre_pila, em.apellido_paterno, em.correo
+                FROM empleado em
+                WHERE em.id_empleado = u.id_empleado
+              ) e) AS empleado
+           FROM usuarios u
+           WHERE u.id_usuario = up.id_usuario
+         ) x) AS usuarios
+      FROM usuario_proyecto up
+      WHERE up.id_proyecto = $1 AND ${EXISTE_USUARIO}
+    `, [id_proyecto]));
 
     return data.map(item => ({
       id_usuario: item.usuarios.id_usuario,
@@ -125,13 +125,10 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error al crear.
    */
   async crear(usuarioProyectoData) {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .insert(usuarioProyectoData)
-      .select()
-      .single();
-
-    if (error) {
+    let data;
+    try {
+      [data] = await insertarFilas('usuario_proyecto', usuarioProyectoData);
+    } catch (error) {
       if (error.code === '23505') { // Violación de clave única
         throw new ApiError('La relación usuario-proyecto ya existe', 409);
       }
@@ -157,12 +154,10 @@ class UsuarioProyectoRepository {
       id_proyecto
     }));
 
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .insert(relaciones)
-      .select();
-
-    if (error) {
+    let data;
+    try {
+      data = await insertarFilas('usuario_proyecto', relaciones);
+    } catch (error) {
       if (error.code === '23505') {
         throw new ApiError('Una o más relaciones usuario-proyecto ya existen', 409);
       }
@@ -183,16 +178,9 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error en la consulta.
    */
   async existe(id_usuario, id_proyecto) {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .select('id_usuario')
-      .eq('id_usuario', id_usuario)
-      .eq('id_proyecto', id_proyecto)
-      .limit(1);
-
-    if (error) {
-      throw new ApiError(`Error al verificar relación usuario-proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al verificar relación usuario-proyecto',
+      consulta('SELECT id_usuario FROM usuario_proyecto WHERE id_usuario = $1 AND id_proyecto = $2 LIMIT 1',
+        [id_usuario, id_proyecto]));
 
     return data.length > 0;
   }
@@ -205,22 +193,16 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error al eliminar o no existe.
    */
   async eliminar(id_usuario, id_proyecto) {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .delete()
-      .eq('id_usuario', id_usuario)
-      .eq('id_proyecto', id_proyecto)
-      .select()
-      .single();
+    const data = await conMensaje('Error al eliminar relación usuario-proyecto',
+      consulta('DELETE FROM usuario_proyecto WHERE id_usuario = $1 AND id_proyecto = $2 RETURNING *',
+        [id_usuario, id_proyecto]));
 
-    if (error) {
-      if (error.code === 'PGRST116') { // No se encontró el registro
-        throw new ApiError('Relación usuario-proyecto no encontrada', 404);
-      }
-      throw new ApiError(`Error al eliminar relación usuario-proyecto: ${error.message}`, 500);
+    // Era un .single(): sin exactamente una fila, PGRST116 → 404
+    if (data.length !== 1) {
+      throw new ApiError('Relación usuario-proyecto no encontrada', 404);
     }
 
-    return UsuarioProyecto.fromDatabase(data);
+    return UsuarioProyecto.fromDatabase(data[0]);
   }
 
   /**
@@ -230,15 +212,8 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error al eliminar.
    */
   async eliminarPorUsuario(id_usuario) {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .delete()
-      .eq('id_usuario', id_usuario)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar relaciones del usuario: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar relaciones del usuario',
+      consulta('DELETE FROM usuario_proyecto WHERE id_usuario = $1 RETURNING *', [id_usuario]));
 
     return data.map(item => UsuarioProyecto.fromDatabase(item));
   }
@@ -250,15 +225,8 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error al eliminar.
    */
   async eliminarPorProyecto(id_proyecto) {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .delete()
-      .eq('id_proyecto', id_proyecto)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar relaciones del proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar relaciones del proyecto',
+      consulta('DELETE FROM usuario_proyecto WHERE id_proyecto = $1 RETURNING *', [id_proyecto]));
 
     return data.map(item => UsuarioProyecto.fromDatabase(item));
   }
@@ -269,17 +237,16 @@ class UsuarioProyectoRepository {
    * @throws {ApiError} Si hay error en la consulta.
    */
   async obtenerEstadisticas() {
-    const { data, error } = await supabase
-      .from('usuario_proyecto')
-      .select(`
-        id_usuario,
-        id_proyecto,
-        usuarios!inner(tipo)
-      `);
-
-    if (error) {
-      throw new ApiError(`Error al obtener estadísticas: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener estadísticas', consulta(`
+      SELECT
+        up.id_usuario,
+        up.id_proyecto,
+        (SELECT row_to_json(x) FROM (
+           SELECT u.tipo FROM usuarios u WHERE u.id_usuario = up.id_usuario
+         ) x) AS usuarios
+      FROM usuario_proyecto up
+      WHERE ${EXISTE_USUARIO}
+    `));
 
     const estadisticas = {
       total_relaciones: data.length,
@@ -287,7 +254,8 @@ class UsuarioProyectoRepository {
       proyectos_unicos: [...new Set(data.map(item => item.id_proyecto))].length,
       por_tipo_usuario: {
         EDITOR: data.filter(item => item.usuarios.tipo === 'EDITOR').length,
-        VISITANTE: data.filter(item => item.usuarios.tipo === 'VISITANTE').length
+        VISITANTE: data.filter(item => item.usuarios.tipo === 'VISITANTE').length,
+        ADMIN: data.filter(item => item.usuarios.tipo === 'ADMIN').length
       }
     };
 

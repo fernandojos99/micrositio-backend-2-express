@@ -1,8 +1,9 @@
 /**
- * Repositorio para interactuar con la tabla empleado en Supabase.
+ * Repositorio para interactuar con la tabla empleado.
  * @class
  */
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas, ejecutar } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import Empleado from '../models/Empleado.js';
 
@@ -15,16 +16,9 @@ class EmpleadoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerPorId(id) {
-    const { data, error } = await supabase
-      .from('empleado')
-      .select('*')
-      .eq('id_empleado', id)
-      .single();
+    const data = await conMensaje('Error al obtener empleado',
+      uno('SELECT * FROM empleado WHERE id_empleado = $1', [id]));
 
-    // PGRST116 es el código de error cuando no se encuentra ningún registro
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener empleado: ${error.message}`, 500);
-    }
     return data ? Empleado.fromDatabase(data) : null;
   }
 
@@ -36,7 +30,7 @@ class EmpleadoRepository {
    * @param {Object} empleadoData - Datos del empleado.
    * @returns {Promise<Object>} Empleado creado.
    * @throws {ApiError} Si ocurre un error al crear.
-   * 
+   *
    * Se le quita el campo habilidades porque no pertenece a la tabla empleado
    * , sino a la tabla habilidades.(fallaba )
    */
@@ -45,14 +39,8 @@ class EmpleadoRepository {
   // 🔥 quitamos habilidades
   const { habilidades, ...empleadoSinHabilidades } = empleadoData;
 
-  const { data, error } = await supabase
-    .from('empleado')
-    .insert(empleadoSinHabilidades)
-    .select();
-
-  if (error) {
-    throw new ApiError(`Error al crear empleado: ${error.message}`, 500);
-  }
+  const data = await conMensaje('Error al crear empleado',
+    insertarFilas('empleado', empleadoSinHabilidades));
 
   return Empleado.fromDatabase(data[0]);
 }
@@ -64,20 +52,15 @@ class EmpleadoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async listarTodos() {
-    const { data, error } = await supabase
-      .from('empleado')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al listar empleados: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al listar empleados',
+      consulta('SELECT * FROM empleado'));
 
     return data; // O mapea si tienes un modelo
   }
 
 
 
-  
+
 /**
  * Actualiza la información de un empleado y sincroniza sus habilidades
  * @param {number|string} id - El id_empleado
@@ -90,29 +73,17 @@ async actualizar(id, empleadoData) {
     const { habilidades, ...datosParaTablaEmpleado } = empleadoData;
 
     try {
-        // 2. Actualizar la tabla principal 'empleado'
-        const { data: dataEmp, error: errorEmp } = await supabase
-            .from('empleado')
-            .update(datosParaTablaEmpleado)
-            .eq('id_empleado', id)
-            .select();
-
-        if (errorEmp) {
-            throw new ApiError(`Error al actualizar tabla empleado: ${errorEmp.message}`, 500);
-        }
+        // 2. Actualizar la tabla principal 'empleado'. Si solo llegan
+        // habilidades, el update va vacío y devuelve [], igual que PostgREST.
+        const dataEmp = await conMensaje('Error al actualizar tabla empleado',
+          actualizarFilas('empleado', datosParaTablaEmpleado, 'id_empleado = $1', [id]));
 
         // 3. Sincronizar la tabla 'habilidades' (Borrado y Re-inserción)
         if (habilidades && Array.isArray(habilidades)) {
-            
-            // A. Eliminamos todas las habilidades actuales de este empleado
-            const { error: deleteError } = await supabase
-                .from('habilidades')
-                .delete()
-                .eq('id_empleado', id);
 
-            if (deleteError) {
-                throw new ApiError(`Error al limpiar habilidades previas: ${deleteError.message}`, 500);
-            }
+            // A. Eliminamos todas las habilidades actuales de este empleado
+            await conMensaje('Error al limpiar habilidades previas',
+              ejecutar('DELETE FROM habilidades WHERE id_empleado = $1', [id]));
 
             // B. Si el usuario dejó habilidades, las insertamos como nuevas filas
             if (habilidades.length > 0) {
@@ -122,13 +93,8 @@ async actualizar(id, empleadoData) {
                     nivel: 'Intermedio' // Valor por defecto según tu esquema
                 }));
 
-                const { error: insertError } = await supabase
-                    .from('habilidades')
-                    .insert(habilidadesInsert);
-
-                if (insertError) {
-                    throw new ApiError(`Error al insertar nuevas habilidades: ${insertError.message}`, 500);
-                }
+                await conMensaje('Error al insertar nuevas habilidades',
+                  insertarFilas('habilidades', habilidadesInsert));
             }
         }
 
@@ -152,15 +118,8 @@ async actualizar(id, empleadoData) {
    * @throws {ApiError} Si ocurre un error al desactivar.
    */
   async desactivar(id) {
-    const { data, error } = await supabase
-      .from('empleado')
-      .update({ activo: false, updated_at: new Date().toISOString() })
-      .eq('id_empleado', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al desactivar empleado: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al desactivar empleado',
+      actualizarFilas('empleado', { activo: false, updated_at: new Date().toISOString() }, 'id_empleado = $1', [id]));
 
     return Empleado.fromDatabase(data[0]);
   }
@@ -173,34 +132,17 @@ async actualizar(id, empleadoData) {
    */
   async obtenerEmpleadosSinUsuario() {
     // Primero obtenemos los IDs de empleados que SÍ tienen usuario
-    const { data: empleadosConUsuario, error: errorUsuarios } = await supabase
-      .from('usuarios')
-      .select('id_empleado')
-      .not('id_empleado', 'is', null);
-
-    if (errorUsuarios) {
-      throw new ApiError(`Error al obtener usuarios con empleado: ${errorUsuarios.message}`, 500);
-    }
+    const empleadosConUsuario = await conMensaje('Error al obtener usuarios con empleado',
+      consulta('SELECT id_empleado FROM usuarios WHERE id_empleado IS NOT NULL'));
 
     // Extraemos solo los IDs de empleados
     const idsEmpleadosConUsuario = empleadosConUsuario.map(u => u.id_empleado);
 
     // Ahora obtenemos empleados activos que NO estén en esa lista
-    let query = supabase
-      .from('empleado')
-      .select('*')
-      .eq('activo', true);
-
-    // Si hay empleados con usuario, los excluimos
-    if (idsEmpleadosConUsuario.length > 0) {
-      query = query.not('id_empleado', 'in', `(${idsEmpleadosConUsuario.join(',')})`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw new ApiError(`Error al obtener empleados sin usuario: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener empleados sin usuario',
+      idsEmpleadosConUsuario.length > 0
+        ? consulta('SELECT * FROM empleado WHERE activo = true AND id_empleado <> ALL($1)', [idsEmpleadosConUsuario])
+        : consulta('SELECT * FROM empleado WHERE activo = true'));
 
     return data.map(empleado => Empleado.fromDatabase(empleado));
   }

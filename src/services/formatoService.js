@@ -1,4 +1,4 @@
-import supabase from '../config/supabaseClient.js';
+import archivos from '../config/archivos.js';
 import FormatoRepository from '../repositories/formatoRepository.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,22 +17,15 @@ class FormatoService {
       const uniqueFileName = `${uuidv4()}.${fileExtension}`;
       const filePath = `formatos/${uniqueFileName}`;
 
-      // Subir archivo a Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('formato-docs')
-        .upload(filePath, file.buffer, {
-          contentType: file.mimetype,
-          duplex: 'half'
-        });
-
-      if (uploadError) {
+      // Guardar el archivo en disco
+      try {
+        await archivos.subir('formato-docs', filePath, file.buffer);
+      } catch (uploadError) {
         throw new Error(`Error al subir archivo: ${uploadError.message}`);
       }
 
       // Obtener URL pública del archivo
-      const { data: urlData } = supabase.storage
-        .from('formato-docs')
-        .getPublicUrl(filePath);
+      const publicUrl = archivos.urlPublica('formato-docs', filePath);
 
       // Determinar tipo de documento basado en mimetype
       const documentType = this.getDocumentType(file.mimetype);
@@ -40,7 +33,7 @@ class FormatoService {
       // Crear registro en la base de datos
       const documentData = {
         document_name: file.originalname,
-        document_url: urlData.publicUrl,
+        document_url: publicUrl,
         document_type: documentType,
         categoria: categoria
       };
@@ -102,12 +95,10 @@ class FormatoService {
       const url = new URL(document.document_url);
       const filePath = url.pathname.split('/').slice(-2).join('/'); // Obtiene "formatos/filename"
 
-      // Eliminar archivo de Supabase Storage
-      const { error: deleteError } = await supabase.storage
-        .from('formato-docs')
-        .remove([filePath]);
-
-      if (deleteError) {
+      // Eliminar el archivo del disco
+      try {
+        await archivos.borrar('formato-docs', [filePath]);
+      } catch (deleteError) {
         console.warn(`Warning: No se pudo eliminar el archivo del storage: ${deleteError.message}`);
       }
 

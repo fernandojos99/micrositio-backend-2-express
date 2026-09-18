@@ -20,11 +20,26 @@ export const authMiddleware = (req, res, next) => {
 };
 
 /**
- * Middleware para verificar que el usuario sea EDITOR
+ * Tipos que pueden escribir: ADMIN es un EDITOR que además aprueba proyectos.
+ */
+const PUEDEN_EDITAR = ['EDITOR', 'ADMIN'];
+
+/**
+ * Middleware para verificar que el usuario sea EDITOR (o ADMIN)
  */
 export const soloEditores = (req, res, next) => {
-  if (req.user.tipo !== 'EDITOR') {
+  if (!PUEDEN_EDITAR.includes(req.user.tipo)) {
     return next(new ApiError('Solo los editores pueden realizar esta acción', 403));
+  }
+  next();
+};
+
+/**
+ * Middleware para las acciones reservadas al ADMIN, como aprobar un proyecto.
+ */
+export const soloAdmin = (req, res, next) => {
+  if (req.user.tipo !== 'ADMIN') {
+    return next(new ApiError('Solo un administrador puede realizar esta acción', 403));
   }
   next();
 };
@@ -35,8 +50,8 @@ export const soloEditores = (req, res, next) => {
 export const verificarAccesoProyecto = (req, res, next) => {
   const user = req.user;
   
-  // Editores tienen acceso total
-  if (user.tipo === 'EDITOR') {
+  // Editores y administradores tienen acceso total
+  if (PUEDEN_EDITAR.includes(user.tipo)) {
     return next();
   }
 

@@ -30,7 +30,7 @@ class SearchService {
 
     const filtrarPorPermisos = (items) => {
       if (!Array.isArray(items)) return [];
-      // EDITOR (o sin tipo) ve todo
+      // EDITOR y ADMIN (o sin tipo) ven todo
       if (tipo !== 'VISITANTE') return items;
       if (!proyectosPermitidos || proyectosPermitidos.length === 0) return [];
       return items.filter((item) => {

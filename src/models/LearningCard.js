@@ -17,6 +17,8 @@ class LearningCard {
     // recibia el estado real de la learning card y siempre caia a su default.
     this.estado = data.estado || 'ACEPTADA';
     this.id_responsable = data.id_responsable  || null;
+    // Card propuesta por el plan de trabajo, aún no aprobada
+    this.es_borrador = data.es_borrador ?? false;
     this.created_at = data.created_at ? new Date(data.created_at) : new Date();
     this.updated_at = data.updated_at ? new Date(data.updated_at) : new Date();
   }
@@ -59,6 +61,7 @@ class LearningCard {
       hallazgo: this.hallazgo,
       estado: this.estado,
       id_responsable : this.id_responsable,
+      es_borrador: this.es_borrador,
       creado: this.created_at.toISOString(),
       actualizado: this.updated_at.toISOString()
     };

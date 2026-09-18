@@ -1,5 +1,6 @@
 // src/repositories/metricaTestingCardRepository.js
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import MetricaTestingCard from '../models/MetricaTestingCard.js';
 
@@ -11,14 +12,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async obtenerPorTestingCard(idTestingCard) {
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .select('*')
-      .eq('id_testing_card', idTestingCard);
-
-    if (error) {
-      throw new ApiError(`Error al obtener métricas: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener métricas',
+      consulta('SELECT * FROM metrica_testing_card WHERE id_testing_card = $1', [idTestingCard]));
 
     return data.map(metrica => MetricaTestingCard.fromDatabase(metrica));
   }
@@ -30,15 +25,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async obtenerPorId(idMetrica) {
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .select('*')
-      .eq('id_metrica', idMetrica)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener métrica: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener métrica',
+      uno('SELECT * FROM metrica_testing_card WHERE id_metrica = $1', [idMetrica]));
 
     return data ? MetricaTestingCard.fromDatabase(data) : null;
   }
@@ -49,13 +37,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async obtenerTodas() {
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener métricas: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener métricas',
+      consulta('SELECT * FROM metrica_testing_card'));
 
     return data.map(metrica => MetricaTestingCard.fromDatabase(metrica));
   }
@@ -67,14 +50,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al crear
    */
   async crear(metricaData) {
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .insert(metricaData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear métrica: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear métrica',
+      insertarFilas('metrica_testing_card', metricaData));
 
     return MetricaTestingCard.fromDatabase(data[0]);
   }
@@ -87,15 +64,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al actualizar
    */
   async actualizar(idMetrica, updateData) {
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .update(updateData)
-      .eq('id_metrica', idMetrica)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar métrica: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar métrica',
+      actualizarFilas('metrica_testing_card', updateData, 'id_metrica = $1', [idMetrica]));
 
     return MetricaTestingCard.fromDatabase(data[0]);
   }
@@ -107,15 +77,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al eliminar
    */
   async eliminar(idMetrica) {
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .delete()
-      .eq('id_metrica', idMetrica)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar métrica: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar métrica',
+      consulta('DELETE FROM metrica_testing_card WHERE id_metrica = $1 RETURNING *', [idMetrica]));
 
     if (!data || data.length === 0) {
       throw new ApiError('Métrica no encontrada', 404);
@@ -131,15 +94,8 @@ class MetricaTestingCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async existeTestingCard(idTestingCard) {
-    const { data, error } = await supabase
-      .from('testing_card')
-      .select('id_testing_card')
-      .eq('id_testing_card', idTestingCard)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al verificar testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al verificar testing card',
+      uno('SELECT id_testing_card FROM testing_card WHERE id_testing_card = $1', [idTestingCard]));
 
     return !!data;
   }
@@ -153,12 +109,12 @@ class MetricaTestingCardRepository {
   async copiarMetrica(idMetricaOriginal) {
     // Primero obtener la métrica original
     const metricaOriginal = await this.obtenerPorId(idMetricaOriginal);
-    
+
     if (!metricaOriginal) {
       throw new ApiError('Métrica original no encontrada', 404);
     }
 
-    // Determinar la testing_card destino: preferir id 151, 
+    // Determinar la testing_card destino: preferir id 151,
     // si no existe buscar por título "ALMACEN DE PLANTILLAS METRICAS"
     let idTestingCardDestino = null;
 
@@ -169,15 +125,11 @@ class MetricaTestingCardRepository {
     } else {
       // Si no existe 151, buscar por título
       try {
-        const { data: tcData, error: tcError } = await supabase
-          .from('testing_card')
-          .select('id_testing_card')
-          .eq('titulo', 'ALMACEN DE PLANTILLAS METRICAS')
-          .single();
-
-        if (tcError && tcError.code !== 'PGRST116') {
-          throw new ApiError(`Error al buscar testing card por título: ${tcError.message}`, 500);
-        }
+        // Era un .single() con PGRST116 → null: tanto sin filas como con más de
+        // una (el título no es único) se trataba como "no encontrada".
+        const filasTc = await conMensaje('Error al buscar testing card por título',
+          consulta('SELECT id_testing_card FROM testing_card WHERE titulo = $1', ['ALMACEN DE PLANTILLAS METRICAS']));
+        const tcData = filasTc.length === 1 ? filasTc[0] : null;
 
         if (tcData && tcData.id_testing_card) {
           idTestingCardDestino = tcData.id_testing_card;
@@ -200,14 +152,8 @@ class MetricaTestingCardRepository {
     };
 
     // Insertar la copia
-    const { data, error } = await supabase
-      .from('metrica_testing_card')
-      .insert(datosParaCopia)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al copiar métrica: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al copiar métrica',
+      insertarFilas('metrica_testing_card', datosParaCopia));
 
     return MetricaTestingCard.fromDatabase(data[0]);
   }

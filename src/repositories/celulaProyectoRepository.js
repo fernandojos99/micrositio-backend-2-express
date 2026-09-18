@@ -1,9 +1,10 @@
 // src/repositories/celulaProyectoRepository.js
 /**
- * Repositorio para interactuar con la tabla celula_proyecto en Supabase.
+ * Repositorio para interactuar con la tabla celula_proyecto.
  * @class
  */
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import CelulaProyecto from '../models/CelulaProyecto.js';
 
@@ -16,14 +17,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerPorEmpleado(idEmpleado) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .select('*')
-      .eq('id_empleado', idEmpleado);
-
-    if (error) {
-      throw new ApiError(`Error al obtener relaciones por empleado: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener relaciones por empleado',
+      consulta('SELECT * FROM celula_proyecto WHERE id_empleado = $1', [idEmpleado]));
 
     return data.map(item => new CelulaProyecto(item));
   }
@@ -36,14 +31,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerPorProyecto(idProyecto) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .select('*')
-      .eq('id_proyecto', idProyecto);
-
-    if (error) {
-      throw new ApiError(`Error al obtener relaciones por proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener relaciones por proyecto',
+      consulta('SELECT * FROM celula_proyecto WHERE id_proyecto = $1', [idProyecto]));
 
     return data.map(item => new CelulaProyecto(item));
   }
@@ -55,13 +44,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerTodos() {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener todas las relaciones: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener todas las relaciones',
+      consulta('SELECT * FROM celula_proyecto'));
 
     return data.map(item => new CelulaProyecto(item));
   }
@@ -74,14 +58,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al crear.
    */
   async crear(celulaProyectoData) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .insert(celulaProyectoData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear relación célula-proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear relación célula-proyecto',
+      insertarFilas('celula_proyecto', celulaProyectoData));
 
     return new CelulaProyecto(data[0]);
   }
@@ -94,13 +72,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al crear.
    */
   async crearMultiple(relacionesData) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .insert(relacionesData)
-      .select();
-    if (error) {
-      throw new ApiError(`Error al crear relaciones: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear relaciones',
+      insertarFilas('celula_proyecto', relacionesData));
     return data.map(item => new CelulaProyecto(item));
   }
 
@@ -112,15 +85,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al eliminar.
    */
   async eliminar(id) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .delete()
-      .eq('id', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar relación célula-proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar relación célula-proyecto',
+      consulta('DELETE FROM celula_proyecto WHERE id = $1 RETURNING *', [id]));
 
     if (!data || data.length === 0) {
       throw new ApiError('Relación no encontrada', 404);
@@ -138,15 +104,8 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
   async actualizarActivo(id, activo) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .update({ activo })
-      .eq('id', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar relación célula-proyecto: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar relación célula-proyecto',
+      actualizarFilas('celula_proyecto', { activo }, 'id = $1', [id]));
 
     if (!data || data.length === 0) {
       throw new ApiError('Relación no encontrada', 404);
@@ -162,21 +121,10 @@ class CelulaProyectoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerPorId(id) {
-    const { data, error } = await supabase
-      .from('celula_proyecto')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const data = await conMensaje('Error al obtener relación por ID',
+      uno('SELECT * FROM celula_proyecto WHERE id = $1', [id]));
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No encontrado
-        return null;
-      }
-      throw new ApiError(`Error al obtener relación por ID: ${error.message}`, 500);
-    }
-
-    return new CelulaProyecto(data);
+    return data ? new CelulaProyecto(data) : null;
   }
 
 

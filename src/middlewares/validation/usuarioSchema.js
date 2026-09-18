@@ -18,8 +18,9 @@ const usuarioCreateSchema = z.object({
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .max(100, 'La contraseña no puede exceder los 100 caracteres')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'La contraseña debe contener al menos una letra minúscula, una mayúscula y un número'),
-  tipo: z.enum(['EDITOR', 'VISITANTE'], {
-    message: 'El tipo debe ser EDITOR o VISITANTE'
+  // ADMIN es un EDITOR que además aprueba proyectos: mismas reglas de empleado.
+  tipo: z.enum(['EDITOR', 'VISITANTE', 'ADMIN'], {
+    message: 'El tipo debe ser EDITOR, VISITANTE o ADMIN'
   }),
   id_empleado: z.number()
     .int()
@@ -31,8 +32,8 @@ const usuarioCreateSchema = z.object({
     .default(true)
 }).refine(
   data => {
-    // Si es EDITOR, debe tener id_empleado
-    if (data.tipo === 'EDITOR' && !data.id_empleado) {
+    // Si es EDITOR o ADMIN, debe tener id_empleado
+    if (data.tipo !== 'VISITANTE' && !data.id_empleado) {
       return false;
     }
     // Si es VISITANTE, no debe tener id_empleado
@@ -42,7 +43,7 @@ const usuarioCreateSchema = z.object({
     return true;
   },
   {
-    message: 'Los usuarios EDITOR deben tener id_empleado y los VISITANTE no deben tenerlo',
+    message: 'Los usuarios EDITOR y ADMIN deben tener id_empleado y los VISITANTE no deben tenerlo',
     path: ['id_empleado']
   }
 );

@@ -1,18 +1,10 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, unoObligatorio, ejecutar, insertarFilas, actualizarFilas, exigirFila } from '../config/db.js';
 import TestingCardDocument from '../models/TestingCardDocument.js';
 
 class TestingCardDocumentRepository {
   async create(documentData) {
     try {
-      
-      const { data, error } = await supabase
-        .from('testing_card_documents')
-        .insert(documentData)
-        .select('*')
-        .single();
-
-      
-      if (error) throw error;
+      const data = await exigirFila(insertarFilas('testing_card_documents', documentData));
       return TestingCardDocument.fromDatabase(data);
     } catch (error) {
       throw new Error(`Error al crear documento: ${error.message}`);
@@ -21,14 +13,10 @@ class TestingCardDocumentRepository {
 
   async findByTestingCardId(testingCardId) {
     try {
-      const { data, error } = await supabase
-        .from('testing_card_documents')
-        .select('*')
-        .eq('testing_card_id', testingCardId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data?.map(TestingCardDocument.fromDatabase) || [];
+      const data = await consulta(
+        'SELECT * FROM testing_card_documents WHERE testing_card_id = $1 ORDER BY created_at DESC',
+        [testingCardId]);
+      return data.map(TestingCardDocument.fromDatabase);
     } catch (error) {
       throw new Error(`Error al obtener documentos: ${error.message}`);
     }
@@ -36,14 +24,9 @@ class TestingCardDocumentRepository {
 
   async findById(id) {
     try {
-      const { data, error } = await supabase
-        .from('testing_card_documents')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data ? TestingCardDocument.fromDatabase(data) : null;
+      // Sin fila es un error, como con el .single() de antes.
+      const data = await unoObligatorio('SELECT * FROM testing_card_documents WHERE id = $1', [id]);
+      return TestingCardDocument.fromDatabase(data);
     } catch (error) {
       throw new Error(`Error al obtener documento: ${error.message}`);
     }
@@ -51,12 +34,7 @@ class TestingCardDocumentRepository {
 
   async delete(id) {
     try {
-      const { error } = await supabase
-        .from('testing_card_documents')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await ejecutar('DELETE FROM testing_card_documents WHERE id = $1', [id]);
       return true;
     } catch (error) {
       throw new Error(`Error al eliminar documento: ${error.message}`);
@@ -65,14 +43,7 @@ class TestingCardDocumentRepository {
 
   async update(id, updateData) {
     try {
-      const { data, error } = await supabase
-        .from('testing_card_documents')
-        .update(updateData)
-        .eq('id', id)
-        .select('*')
-        .single();
-
-      if (error) throw error;
+      const data = await exigirFila(actualizarFilas('testing_card_documents', updateData, 'id = $1', [id]));
       return TestingCardDocument.fromDatabase(data);
     } catch (error) {
       throw new Error(`Error al actualizar documento: ${error.message}`);

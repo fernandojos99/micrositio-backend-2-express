@@ -12,6 +12,8 @@ export const learningCardCreateSchema = z.object({
   resultado: z.string().nullable().optional(),
   hallazgo: z.string().nullable().optional(),
   estado: z.enum(estadoValues).optional().default('ACEPTADA'),
+  // Card propuesta por el plan de trabajo: no se ve hasta que se aprueba
+  es_borrador: z.boolean().optional(),
   id_responsable: z.number().int().positive('El ID del responsable debe ser un número positivo').optional()
 });
 

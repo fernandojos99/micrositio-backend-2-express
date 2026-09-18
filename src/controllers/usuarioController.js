@@ -29,7 +29,7 @@ class UsuarioController {
         filtros.activo = req.query.activo === 'true';
       }
       
-      if (req.query.tipo && ['EDITOR', 'VISITANTE'].includes(req.query.tipo)) {
+      if (req.query.tipo && ['EDITOR', 'VISITANTE', 'ADMIN'].includes(req.query.tipo)) {
         filtros.tipo = req.query.tipo;
       }
 
@@ -265,8 +265,8 @@ class UsuarioController {
       const { id } = req.params;
       const { tipo } = req.body;
 
-      if (tipo !== 'EDITOR' && tipo !== 'VISITANTE') {
-        throw new ApiError('El tipo debe ser EDITOR o VISITANTE para esta operación', 400);
+      if (!['EDITOR', 'VISITANTE', 'ADMIN'].includes(tipo)) {
+        throw new ApiError('El tipo debe ser EDITOR, VISITANTE o ADMIN para esta operación', 400);
       }
 
 

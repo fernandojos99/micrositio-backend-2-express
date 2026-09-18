@@ -1,19 +1,16 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, exigirFila, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import LearningCard from '../models/LearningCard.js';
 
-class LearningCardRepository {
-  /**
-   * Obtiene una learning card por ID de testing card
-   * @async
-   * @param {number} idTestingCard - ID de testing card
-   * @returns {Promise<Object|null>} Learning card encontrada o null
-   * @throws {ApiError} Si ocurre un error
-   */
-  async obtenerPorTestingCard(idTestingCard) {
-    return await this.model.findAll({ where: { id_testing_card: idTestingCard } });
-  }
+// Nota: este archivo definía obtenerPorTestingCard dos veces. La primera era un
+// resto de Sequelize (`this.model.findAll`) que nunca se ejecutaba, porque en
+// una clase la segunda definición sustituye a la primera. Solo queda la buena.
+// Ver la nota de testingCardRepository: los borradores del plan de trabajo no
+// se ven hasta que se aprueba el proyecto.
+const filtro = (incluirBorradores) => (incluirBorradores ? 'TRUE' : 'es_borrador = false');
 
+class LearningCardRepository {
   /**
    * Obtiene una learning card por ID
    * @async
@@ -22,15 +19,8 @@ class LearningCardRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async obtenerPorId(id) {
-    const { data, error } = await supabase
-      .from('learning_card')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      throw new ApiError(`Error al obtener learning card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener learning card',
+      uno('SELECT * FROM learning_card WHERE id = $1', [id]));
 
     return data ? new LearningCard(data) : null;
   }
@@ -41,14 +31,9 @@ class LearningCardRepository {
    * @returns {Promise<Array>} Lista de learning cards
    * @throws {ApiError} Si ocurre un error
    */
-  async obtenerTodos() {
-    const { data, error } = await supabase
-      .from('learning_card')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener learning cards: ${error.message}`, 500);
-    }
+  async obtenerTodos({ incluirBorradores = false } = {}) {
+    const data = await conMensaje('Error al obtener learning cards',
+      consulta(`SELECT * FROM learning_card WHERE ${filtro(incluirBorradores)}`));
 
     return data.map(item => new LearningCard(item));
   }
@@ -61,15 +46,8 @@ class LearningCardRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async crear(learningCardData) {
-    const { data, error } = await supabase
-      .from('learning_card')
-      .insert(learningCardData)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al crear learning card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear learning card',
+      exigirFila(insertarFilas('learning_card', learningCardData)));
 
     return new LearningCard(data);
   }
@@ -88,16 +66,8 @@ class LearningCardRepository {
       throw new ApiError('ID de learning card inválido', 400);
     }
 
-    const { data, error } = await supabase
-      .from('learning_card')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar learning card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar learning card',
+      exigirFila(actualizarFilas('learning_card', updateData, 'id = $1', [id])));
 
     return new LearningCard(data);
   }
@@ -110,16 +80,8 @@ class LearningCardRepository {
    * @throws {ApiError} Si ocurre un error
    */
   async eliminar(id) {
-    const { data, error } = await supabase
-      .from('learning_card')
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar learning card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar learning card',
+      exigirFila(consulta('DELETE FROM learning_card WHERE id = $1 RETURNING *', [id])));
 
     if (!data) {
       throw new ApiError('Learning card no encontrada', 404);
@@ -135,16 +97,9 @@ class LearningCardRepository {
    * @returns {Promise<Array>} Lista de learning cards encontradas
    * @throws {ApiError} Si ocurre un error
    */
-  async obtenerPorTestingCard(idTestingCard) {
-    const { data, error } = await supabase
-      .from('learning_card')
-      .select('*')
-      .eq('id_testing_card', idTestingCard);
-
-
-    if (error) {
-      throw new ApiError(`Error al obtener learning cards: ${error.message}`, 500);
-    }
+  async obtenerPorTestingCard(idTestingCard, { incluirBorradores = false } = {}) {
+    const data = await conMensaje('Error al obtener learning cards',
+      consulta(`SELECT * FROM learning_card WHERE id_testing_card = $1 AND ${filtro(incluirBorradores)}`, [idTestingCard]));
 
     // Si no hay resultados, regresa un array vacío
     return data.map(item => new LearningCard(item));
@@ -155,59 +110,63 @@ class LearningCardRepository {
    * - testing card asociada
    * - secuencia y proyecto de esa testing card
    * - responsable (empleado) de la testing card
+   *
+   * Los objetos anidados reproducen los joins embebidos de PostgREST que había
+   * antes (misma forma, mismas claves, null si no hay relación):
+   *   testing_card ← learning_card.id_testing_card (learning_card_id_testing_card_fkey)
+   *   secuencia    ← testing_card.id_secuencia     (testing_card_id_secuencia_fkey)
+   *   proyecto     ← secuencia.id_proyecto          (secuencia_id_proyecto_fkey)
+   *   responsable  ← testing_card.id_responsable   (testing_card_id_empleado_fkey)
    */
   async buscarPorTexto(q) {
     try {
       const term = q.trim();
 
-      const { data, error } = await supabase
-        .from('learning_card')
-        .select(`
-          id,
-          id_testing_card,
-          resultado,
-          hallazgo,
-          estado,
-          created_at,
-          updated_at,
-          testing_card:learning_card_id_testing_card_fkey (
-            id_testing_card,
-            titulo,
-            hipotesis,
-            descripcion,
-            status,
-            id_secuencia,
-            secuencia:testing_card_id_secuencia_fkey (
-              id_secuencia,
-              nombre,
-              descripcion,
-              id_proyecto,
-              estado,
-              proyecto:secuencia_id_proyecto_fkey (
-                id_proyecto,
-                titulo
-              )
-            ),
-            responsable:testing_card_id_empleado_fkey (
-              id_empleado,
-              nombre_pila,
-              apellido_paterno,
-              apellido_materno
-            )
-          )
-        `)
-        .or(
-          `resultado.ilike.%${term}%,hallazgo.ilike.%${term}%`
-        )
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error al buscar learning cards:', error);
-        throw new ApiError(
-          `Error al buscar learning cards: ${error.message}`,
-          500
-        );
-      }
+      const data = await conMensaje('Error al buscar learning cards', consulta(`
+        SELECT
+          lc.id,
+          lc.id_testing_card,
+          lc.resultado,
+          lc.hallazgo,
+          lc.estado,
+          lc.created_at,
+          lc.updated_at,
+          (SELECT row_to_json(t) FROM (
+             SELECT
+               tc.id_testing_card,
+               tc.titulo,
+               tc.hipotesis,
+               tc.descripcion,
+               tc.status,
+               tc.id_secuencia,
+               (SELECT row_to_json(s) FROM (
+                  SELECT
+                    sec.id_secuencia,
+                    sec.nombre,
+                    sec.descripcion,
+                    sec.id_proyecto,
+                    sec.estado,
+                    (SELECT row_to_json(p) FROM (
+                       SELECT pr.id_proyecto, pr.titulo
+                       FROM proyecto pr
+                       WHERE pr.id_proyecto = sec.id_proyecto
+                     ) p) AS proyecto
+                  FROM secuencia sec
+                  WHERE sec.id_secuencia = tc.id_secuencia
+                ) s) AS secuencia,
+               (SELECT row_to_json(r) FROM (
+                  SELECT e.id_empleado, e.nombre_pila, e.apellido_paterno, e.apellido_materno
+                  FROM empleado e
+                  WHERE e.id_empleado = tc.id_responsable
+                ) r) AS responsable
+             FROM testing_card tc
+             WHERE tc.id_testing_card = lc.id_testing_card
+           ) t) AS testing_card
+        FROM learning_card lc
+        WHERE lc.es_borrador = false
+          AND (lc.resultado ILIKE $1 OR lc.hallazgo ILIKE $1)
+        ORDER BY lc.created_at DESC
+      `, [`%${term}%`]));
 
       return data || [];
     } catch (err) {
