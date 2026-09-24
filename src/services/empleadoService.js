@@ -28,7 +28,6 @@ class EmpleadoService {
     if (!empleado) {
       throw new ApiError('Empleado no encontrado', 404);
     }
-    console.log("Empleado encontrado en servicio antes de toAPI", empleado);
     return empleado.toAPI();
   }
 
@@ -39,6 +38,22 @@ class EmpleadoService {
    */
   async listarTodos() {
     return await this.empleadoRepo.listarTodos();
+  }
+
+  /**
+   * Resumen de empleados para la página Equipo. Los proyectos se cuentan con
+   * la misma visibilidad que GET /proyectos (proyectoService.listarProyectos):
+   * EDITOR y ADMIN todos, VISITANTE solo los asignados, otros ninguno.
+   * @async
+   * @param {Object} filtro - req.filtroProyectos (configurarFiltroProyectos).
+   * @returns {Promise<Array<Object>>} Empleados con skills, image y conteos.
+   */
+  async listarResumen(filtro) {
+    const esEditor = filtro.tipo === 'EDITOR' || filtro.tipo === 'ADMIN';
+    const proyectosPermitidos = esEditor
+      ? null
+      : (filtro.tipo === 'VISITANTE' && filtro.proyectosPermitidos) || [];
+    return await this.empleadoRepo.listarResumen(proyectosPermitidos);
   }
 
   /**

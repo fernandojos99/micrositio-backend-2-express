@@ -1,4 +1,5 @@
-import supabase from '../config/supabaseClient.js'
+import { consulta, exigirFila, insertarFilas, actualizarFilas } from '../config/db.js'
+import { conMensaje } from '../utils/errorBd.js'
 import ApiError from '../utils/ApiError.js'
 import Habilidad from '../models/Habilidad.js' // Asumiendo que crearás este modelo
 
@@ -6,22 +7,12 @@ import Habilidad from '../models/Habilidad.js' // Asumiendo que crearás este mo
  * Obtener todas las habilidades de un empleado específico
  */
 export async function obtenerPorEmpleado(idEmpleado) {
-  const { data, error } = await supabase
-    .from('habilidades')
-    .select(`
-      id_habilidad,
-      id_empleado,
-      nombre_habilidad,
-      nivel
-    `)
-    .eq('id_empleado', idEmpleado);
-
-  if (error) {
-    throw new ApiError(
-      `Error al obtener las habilidades del empleado: ${error.message}`,
-      500
-    );
-  }
+  const data = await conMensaje('Error al obtener las habilidades del empleado',
+    consulta(`
+      SELECT id_habilidad, id_empleado, nombre_habilidad, nivel
+      FROM habilidades
+      WHERE id_empleado = $1
+    `, [idEmpleado]));
 
   return data ? data.map(item => new Habilidad(item)) : [];
 }
@@ -30,15 +21,8 @@ export async function obtenerPorEmpleado(idEmpleado) {
  * Agregar una nueva habilidad a un empleado
  */
 export async function crear(habilidadData) {
-  const { data, error } = await supabase
-    .from('habilidades')
-    .insert(habilidadData)
-    .select()
-    .single()
-
-  if (error) {
-    throw new ApiError(`Error al registrar la habilidad: ${error.message}`, 500)
-  }
+  const data = await conMensaje('Error al registrar la habilidad',
+    exigirFila(insertarFilas('habilidades', habilidadData)))
 
   return new Habilidad(data)
 }
@@ -47,16 +31,8 @@ export async function crear(habilidadData) {
  * Eliminar una habilidad específica por su ID
  */
 export async function eliminar(idHabilidad) {
-  const { data, error } = await supabase
-    .from('habilidades')
-    .delete()
-    .eq('id_habilidad', idHabilidad)
-    .select()
-    .single()
-
-  if (error) {
-    throw new ApiError(`Error al eliminar la habilidad: ${error.message}`, 500)
-  }
+  const data = await conMensaje('Error al eliminar la habilidad',
+    exigirFila(consulta('DELETE FROM habilidades WHERE id_habilidad = $1 RETURNING *', [idHabilidad])))
 
   if (!data) {
     throw new ApiError('Habilidad no encontrada', 404)
@@ -69,16 +45,8 @@ export async function eliminar(idHabilidad) {
  * Actualizar una habilidad (por ejemplo, cambiar el nombre o nivel)
  */
 export async function actualizar(idHabilidad, updateData) {
-  const { data, error } = await supabase
-    .from('habilidades')
-    .update(updateData)
-    .eq('id_habilidad', idHabilidad)
-    .select()
-    .single()
-
-  if (error) {
-    throw new ApiError(`Error al actualizar la habilidad: ${error.message}`, 500)
-  }
+  const data = await conMensaje('Error al actualizar la habilidad',
+    exigirFila(actualizarFilas('habilidades', updateData, 'id_habilidad = $1', [idHabilidad])))
 
   return new Habilidad(data)
 }

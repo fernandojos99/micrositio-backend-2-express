@@ -6,6 +6,7 @@ import EmpleadoService from '../services/empleadoService.js';
 import EmpleadoRepository from '../repositories/empleadoRepository.js';
 import { empleadoCreateSchema, empleadoUpdateSchema } from '../middlewares/validation/empleadoSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { leerId } from '../utils/leerId.js';
 
 class EmpleadoController {
   constructor() {
@@ -21,16 +22,11 @@ class EmpleadoController {
    */
   async obtenerPorId(req, res, next) {
     try {
-      if (!req.body || !req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      const idEmpleado = parseInt(leerId(req, 'id', 'id_empleado'));
+
+      if (isNaN(idEmpleado)) {
+        throw new ApiError('Se requiere un identificador de empleado válido', 400);
       }
-      
-      // Convertir el ID a número entero
-    const idEmpleado = parseInt(req.body.id);
-    
-    if (isNaN(idEmpleado)) {
-      throw new ApiError('El ID debe ser un número válido', 400);
-    }
 
       const empleado = await this.empleadoService.obtenerPorId(idEmpleado);
       res.json(empleado);
@@ -48,6 +44,21 @@ class EmpleadoController {
   async listarTodos(req, res, next) {
     try {
       const empleados = await this.empleadoService.listarTodos();
+      res.json(empleados);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Maneja el resumen de empleados para la página Equipo (GET /empleados/resumen).
+   * @param {Object} req - Request de Express.
+   * @param {Object} res - Response de Express.
+   * @param {Function} next - Función next de Express.
+   */
+  async listarResumen(req, res, next) {
+    try {
+      const empleados = await this.empleadoService.listarResumen(req.filtroProyectos);
       res.json(empleados);
     } catch (error) {
       next(error);
@@ -79,12 +90,12 @@ class EmpleadoController {
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      const id = leerId(req, 'id', 'id_empleado');
+      if (!id) {
+        throw new ApiError('Se requiere el identificador del empleado', 400);
       }
-      
-      console.log('Datos recibidos para actualizar empleado en controller:', req.body);
-      const { id, ...updateData } = req.body;
+
+      const { id: _ignorado, ...updateData } = req.body;
       const validatedData = empleadoUpdateSchema.parse(updateData);
       const empleado = await this.empleadoService.actualizar(id, validatedData);
       res.json(empleado);
@@ -96,13 +107,13 @@ class EmpleadoController {
 
     async actualizarHabilidades(req, res, next) {
     try {
-      if (!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
+      const id = leerId(req, 'id', 'id_empleado');
+      if (!id) {
+        throw new ApiError('Se requiere el identificador del empleado', 400);
       }
-      
-      const { id, habilidades } = req.body;
+
+      const { habilidades } = req.body;
       //const validatedData = empleadoUpdateSchema.parse(updateData);
-      console.log('Datos recibidos para actualizar info personal:', { id, habilidades });
       const empleado = await this.empleadoService.actualizarHabilidades(id, { habilidades });
       res.json(empleado);
     } catch (error) {
@@ -120,16 +131,11 @@ class EmpleadoController {
    */
   async desactivar(req, res, next) {
     try {
-      if (!req.body ||!req.body.id) {
-        throw new ApiError('Se requiere el campo "id" en el body', 400);
-      }  
+      const idEmpleado = parseInt(leerId(req, 'id', 'id_empleado'));
 
-    // Convertir el ID a número entero
-    const idEmpleado = parseInt(req.body.id);
-    
-    if (isNaN(idEmpleado)) {
-      throw new ApiError('El ID debe ser un número válido', 400);
-    }
+      if (isNaN(idEmpleado)) {
+        throw new ApiError('Se requiere un identificador de empleado válido', 400);
+      }
       const empleado = await this.empleadoService.desactivar(idEmpleado);
       res.json(empleado);
     } catch (error) {

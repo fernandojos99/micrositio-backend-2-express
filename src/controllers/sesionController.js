@@ -35,7 +35,6 @@ class SesionController {
         });
       }
       
-      console.log(`Generando título para thread_id: ${thread_id}, empleado: ${req.user.id_empleado}`);
       const data = await this.sesionService.generarTitulo(thread_id, req.user.id_empleado);
       res.json(data);
     } catch (error) {

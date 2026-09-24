@@ -8,12 +8,17 @@ import ApiError from '../utils/ApiError.js';
 class LearningCard {
   constructor(data = {}) { // Valor por defecto para data
     // Asignamos valores por defecto para todas las propiedades
+    // La PK de la tabla se llama 'id'; hacia fuera se expone id_learning_card.
     this.id_learning_card = data.id || null;
-    this.id_secuencia = data.id_secuencia || null;
     this.id_testing_card = data.id_testing_card || null;
     this.resultado = data.resultado || null;
     this.hallazgo = data.hallazgo || null;
+    // 'estado' no se leia ni se devolvia en toAPI(), asi que el front nunca
+    // recibia el estado real de la learning card y siempre caia a su default.
+    this.estado = data.estado || 'ACEPTADA';
     this.id_responsable = data.id_responsable  || null;
+    // Card propuesta por el plan de trabajo, aún no aprobada
+    this.es_borrador = data.es_borrador ?? false;
     this.created_at = data.created_at ? new Date(data.created_at) : new Date();
     this.updated_at = data.updated_at ? new Date(data.updated_at) : new Date();
   }
@@ -54,7 +59,9 @@ class LearningCard {
       id_testing_card: this.id_testing_card,
       resultado: this.resultado,
       hallazgo: this.hallazgo,
+      estado: this.estado,
       id_responsable : this.id_responsable,
+      es_borrador: this.es_borrador,
       creado: this.created_at.toISOString(),
       actualizado: this.updated_at.toISOString()
     };

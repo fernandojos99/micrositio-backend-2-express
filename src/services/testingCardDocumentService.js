@@ -1,4 +1,4 @@
-import supabase from '../config/supabaseClient.js';
+import archivos from '../config/archivos.js';
 import testingCardDocumentRepository from '../repositories/testingCardDocumentRepository.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -48,34 +48,25 @@ class TestingCardDocumentService {
       const uniqueFileName = `${testingCardId}_${uuidv4()}.${fileExtension}`;
       const filePath = `testing-cards/${uniqueFileName}`;
 
-      // Subir archivo a Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('testing-card-docs')
-        .upload(filePath, file.buffer, {
-          contentType: file.mimetype,
-          duplex: 'half'
-        });
-
-      if (uploadError) {
+      // Guardar el archivo en disco
+      try {
+        await archivos.subir('testing-card-docs', filePath, file.buffer, { contentType: file.mimetype });
+      } catch (uploadError) {
         throw new Error(`Error al subir archivo: ${uploadError.message}`);
       }
 
       // Obtener URL pública del archivo
-      const { data: urlData } = supabase.storage
-        .from('testing-card-docs')
-        .getPublicUrl(filePath);
+      const publicUrl = archivos.urlPublica('testing-card-docs', filePath);
 
       // Determinar tipo de documento basado en mimetype
       const documentType = this.getDocumentType(file.mimetype);      // Crear registro en la base de datos
       const documentData = {
         testing_card_id: parseInt(testingCardId),
         document_name: file.originalname,
-        document_url: urlData.publicUrl,
+        document_url: publicUrl,
         document_type: documentType
       };
 
-      // console.log('📊 Datos que se van a insertar:', documentData);
-      // console.log('🔍 testing_card_id tipo:', typeof documentData.testing_card_id);
       
       const document = await testingCardDocumentRepository.create(documentData);
       return document;
@@ -105,12 +96,10 @@ class TestingCardDocumentService {
       const url = new URL(document.document_url);
       const filePath = url.pathname.split('/').slice(-2).join('/'); // Obtiene "testing-cards/filename"
 
-      // Eliminar archivo de Supabase Storage
-      const { error: deleteError } = await supabase.storage
-        .from('testing-card-docs')
-        .remove([filePath]);
-
-      if (deleteError) {
+      // Eliminar el archivo del disco
+      try {
+        await archivos.borrar('testing-card-docs', [filePath]);
+      } catch (deleteError) {
         console.warn(`Warning: No se pudo eliminar el archivo del storage: ${deleteError.message}`);
       }
 

@@ -1,9 +1,10 @@
 // src/repositories/experimentoTipoRepository.js
 /**
- * Repositorio para interactuar con la tabla experimento_tipo en Supabase.
+ * Repositorio para interactuar con la tabla experimento_tipo.
  * @class
  */
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import ExperimentoTipo from '../models/ExperimentoTipo.js';
 
@@ -16,15 +17,8 @@ class ExperimentoTipoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerPorId(id) {
-    const { data, error } = await supabase
-      .from('experimento_tipo')
-      .select('*')
-      .eq('id_experimento_tipo', id)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener tipo de experimento: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener tipo de experimento',
+      uno('SELECT * FROM experimento_tipo WHERE id_experimento_tipo = $1', [id]));
 
     return data ? new ExperimentoTipo(data) : null;
   }
@@ -36,13 +30,8 @@ class ExperimentoTipoRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerTodos() {
-    const { data, error } = await supabase
-      .from('experimento_tipo')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener tipos de experimento: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener tipos de experimento',
+      consulta('SELECT * FROM experimento_tipo'));
 
     return data.map(item => new ExperimentoTipo(item));
   }
@@ -55,14 +44,8 @@ class ExperimentoTipoRepository {
    * @throws {ApiError} Si ocurre un error al crear.
    */
   async crear(experimentoTipoData) {
-    const { data, error } = await supabase
-      .from('experimento_tipo')
-      .insert(experimentoTipoData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear tipo de experimento: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear tipo de experimento',
+      insertarFilas('experimento_tipo', experimentoTipoData));
 
     return new ExperimentoTipo(data[0]);
   }
@@ -76,15 +59,8 @@ class ExperimentoTipoRepository {
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
   async actualizar(id, experimentoTipoData) {
-    const { data, error } = await supabase
-      .from('experimento_tipo')
-      .update(experimentoTipoData)
-      .eq('id_experimento_tipo', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar tipo de experimento: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar tipo de experimento',
+      actualizarFilas('experimento_tipo', experimentoTipoData, 'id_experimento_tipo = $1', [id]));
 
     return new ExperimentoTipo(data[0]);
   }
@@ -97,15 +73,8 @@ class ExperimentoTipoRepository {
    * @throws {ApiError} Si ocurre un error al eliminar.
    */
   async eliminar(id) {
-    const { data, error } = await supabase
-      .from('experimento_tipo')
-      .delete()
-      .eq('id_experimento_tipo', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar tipo de experimento: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar tipo de experimento',
+      consulta('DELETE FROM experimento_tipo WHERE id_experimento_tipo = $1 RETURNING *', [id]));
 
     if (!data || data.length === 0) {
       throw new ApiError('Tipo de experimento no encontrado', 404);

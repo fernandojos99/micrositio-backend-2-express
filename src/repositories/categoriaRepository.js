@@ -1,9 +1,10 @@
 // src/repositories/categoriaRepository.js
 /**
- * Repositorio para interactuar con la tabla categoria en Supabase.
+ * Repositorio para interactuar con la tabla categoria.
  * @class
  */
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import Categoria from '../models/Categoria.js';
 
@@ -16,15 +17,8 @@ class CategoriaRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerPorId(id) {
-    const { data, error } = await supabase
-      .from('categoria')
-      .select('*')
-      .eq('id_categoria', id)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener categoría: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener categoría',
+      uno('SELECT * FROM categoria WHERE id_categoria = $1', [id]));
 
     return data ? new Categoria(data) : null;
   }
@@ -36,13 +30,8 @@ class CategoriaRepository {
    * @throws {ApiError} Si ocurre un error al consultar.
    */
   async obtenerTodas() {
-    const { data, error } = await supabase
-      .from('categoria')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener categorías: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener categorías',
+      consulta('SELECT * FROM categoria'));
 
     return data.map(categoria => new Categoria(categoria));
   }
@@ -55,14 +44,8 @@ class CategoriaRepository {
    * @throws {ApiError} Si ocurre un error al crear.
    */
   async crear(categoriaData) {
-    const { data, error } = await supabase
-      .from('categoria')
-      .insert(categoriaData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear categoría: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear categoría',
+      insertarFilas('categoria', categoriaData));
 
     return new Categoria(data[0]);
   }
@@ -76,15 +59,8 @@ class CategoriaRepository {
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
   async actualizar(id, categoriaData) {
-    const { data, error } = await supabase
-      .from('categoria')
-      .update(categoriaData)
-      .eq('id_categoria', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar categoría: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar categoría',
+      actualizarFilas('categoria', categoriaData, 'id_categoria = $1', [id]));
 
     return new Categoria(data[0]);
   }
@@ -97,15 +73,8 @@ class CategoriaRepository {
    * @throws {ApiError} Si ocurre un error al eliminar.
    */
   async eliminar(id) {
-    const { data, error } = await supabase
-      .from('categoria')
-      .delete()
-      .eq('id_categoria', id)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar categoría: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar categoría',
+      consulta('DELETE FROM categoria WHERE id_categoria = $1 RETURNING *', [id]));
 
     if (!data || data.length === 0) {
       throw new ApiError('Categoría no encontrada', 404);

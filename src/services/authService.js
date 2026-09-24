@@ -1,9 +1,14 @@
 //import bcrypt from 'bcryptjs';
 
 import bcrypt from 'bcryptjs';
-import supabase from '../config/supabaseClient.js';
+import { consulta, exigirFila, insertarFilas } from '../config/db.js';
 import JWTUtils from '../utils/jwtUtils.js';
 import ApiError from '../utils/ApiError.js';
+
+// Este servicio consultaba la base directamente con `.single()`, que falla
+// tanto sin filas como con más de una. Aquí se reproduce igual: solo cuenta
+// si hay exactamente una fila.
+const exactamenteUna = (filas) => (filas.length === 1 ? filas[0] : null);
 
 class AuthService {
   /**
@@ -11,37 +16,26 @@ class AuthService {
    */
   async login(alias, password) {
     try {
-      // 1. Buscar usuario por alias
-      console.log(`Intentando login para alias: ${alias}`);
-      const { data: usuario, error: userError } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('alias', alias)
-        .eq('activo', true)
-        .single();
+      // 1. Buscar usuario por alias. Cualquier fallo (sin fila, más de una o
+      // un error de la base) cuenta como credenciales inválidas, como antes.
+      let usuario = null;
+      try {
+        usuario = exactamenteUna(await consulta(
+          'SELECT * FROM usuarios WHERE alias = $1 AND activo = true', [alias]));
+      } catch {
+        usuario = null;
+      }
 
-      if (userError || !usuario) {
+      if (!usuario) {
         throw new ApiError('Credenciales inválidas', 401);
       }
-      console.log(`Usuario encontradoOOOOOOOO: ${usuario.id_usuario}, tipo: ${usuario.tipo}`);
       // 2. Verificar password
 
 
       // 🔥 TEST BCRYPT (ponlo AQUÍ)
-      console.log("TEST BCRYPT LOCAL");
 
       const testHash = await bcrypt.hash("123456", 10);
       const testCompare = await bcrypt.compare("123456", testHash);
-
-      console.log("BCRYPT TEST RESULT:", testCompare);
-
-
-
-      console.log("HASH DEBUG", {
-        hash: usuario.password_hash,
-        length: usuario.password_hash?.length,
-        startsWith: usuario.password_hash?.slice(0, 4)
-      });
 
      // const passwordValido = true;
     //  2. Verificar password
@@ -67,21 +61,17 @@ class AuthService {
 
 
 
-      console.log(`Comparando password para usuario ${usuario.id_usuario}: ${passwordValido ? 'válido' : 'inválido'}`);
       if (!passwordValido) {
-        console.log(`Password inválido para usuario ${usuario.id_usuario}`);
         throw new ApiError('Credenciales inválidas', 401);
       }
-      console.log('Password válido, generando token...');
       // 3. Obtener proyectos si es visitante
       let proyectos = null;
       if (usuario.tipo === 'VISITANTE') {
-        const { data: proyectosData, error: proyectosError } = await supabase
-          .from('usuario_proyecto')
-          .select('id_proyecto')
-          .eq('id_usuario', usuario.id_usuario);
-
-        if (proyectosError) {
+        let proyectosData;
+        try {
+          proyectosData = await consulta(
+            'SELECT id_proyecto FROM usuario_proyecto WHERE id_usuario = $1', [usuario.id_usuario]);
+        } catch {
           throw new ApiError('Error al obtener proyectos del usuario', 500);
         }
 
@@ -93,7 +83,6 @@ class AuthService {
 
       // 5. Preparar respuesta (sin password)
       const { password_hash, ...usuarioSinPassword } = usuario;
-      console.log(`Login exitoso para usuario ${usuario.id_usuario}, token generado`);
       return {
         token,
         usuario: {
@@ -117,12 +106,10 @@ class AuthService {
     try {
       const { alias, password, tipo, id_empleado } = datosUsuario;
 
-      // 1. Verificar si alias ya existe
-      const { data: usuarioExistente } = await supabase
-        .from('usuarios')
-        .select('id_usuario')
-        .eq('alias', alias)
-        .single();
+      // 1. Verificar si alias ya existe. Antes el error de esta consulta se
+      // ignoraba (solo se miraba data): se mantiene.
+      const usuarioExistente = exactamenteUna(await consulta(
+        'SELECT id_usuario FROM usuarios WHERE alias = $1', [alias]).catch(() => []));
 
       if (usuarioExistente) {
         throw new ApiError('El alias ya está registrado', 400);
@@ -133,18 +120,15 @@ class AuthService {
       const password_hash = await bcrypt.hash(password, saltRounds);
 
       // 3. Crear usuario
-      const { data: nuevoUsuario, error } = await supabase
-        .from('usuarios')
-        .insert({
+      let nuevoUsuario;
+      try {
+        nuevoUsuario = await exigirFila(insertarFilas('usuarios', {
           alias,
           password_hash,
           tipo,
-          id_empleado: tipo === 'EDITOR' ? id_empleado : null
-        })
-        .select()
-        .single();
-
-      if (error) {
+          id_empleado: tipo === 'VISITANTE' ? null : id_empleado
+        }));
+      } catch {
         throw new ApiError('Error al crear usuario', 500);
       }
 
@@ -173,13 +157,16 @@ class AuthService {
  */
 async obtenerUsuarioPorId(id_usuario) {
   try {
-    const { data: usuario, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id_usuario', id_usuario)
-      .single();
+    // Sin fila, con más de una o con un error de la base (p. ej. un UUID mal
+    // formado): 404, como antes.
+    let usuario = null;
+    try {
+      usuario = exactamenteUna(await consulta('SELECT * FROM usuarios WHERE id_usuario = $1', [id_usuario]));
+    } catch {
+      usuario = null;
+    }
 
-    if (error || !usuario) {
+    if (!usuario) {
       throw new ApiError('Usuario no encontrado', 404);
     }
 

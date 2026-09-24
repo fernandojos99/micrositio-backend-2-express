@@ -13,7 +13,6 @@ class ChatRepository {
   }
 
   async enviarMensaje(message, thread_id, agent_id, signal) {
-    console.log("La  url que detecta",AGENT_CONFIG.apiUrl);
     try {
       const response = await axios({
         method: 'POST',

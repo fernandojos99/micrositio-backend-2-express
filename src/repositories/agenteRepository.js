@@ -1,6 +1,6 @@
 // src/repositories/agenteRepository.js
-import supabase from '../config/supabaseClient.js';
-import ApiError from '../utils/ApiError.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import Agente from '../models/Agente.js';
 
 class AgenteRepository {
@@ -10,15 +10,8 @@ class AgenteRepository {
    * @returns {Promise<Agente|null>} Agente encontrado o null
    */
   async obtenerPorId(id_agente) {
-    const { data, error } = await supabase
-      .from('agente')
-      .select('*')
-      .eq('id_agente', id_agente)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener agente: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener agente',
+      uno('SELECT * FROM agente WHERE id_agente = $1', [id_agente]));
 
     return data ? Agente.fromDatabase(data) : null;
   }
@@ -28,14 +21,8 @@ class AgenteRepository {
    * @returns {Promise<Array<Agente>>} Lista de agentes
    */
   async listarTodos() {
-    const { data, error } = await supabase
-      .from('agente')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new ApiError(`Error al listar agentes: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al listar agentes',
+      consulta('SELECT * FROM agente ORDER BY created_at DESC'));
 
     return data.map(agente => Agente.fromDatabase(agente));
   }
@@ -46,14 +33,8 @@ class AgenteRepository {
    * @returns {Promise<Agente>} Agente creado
    */
   async crear(agenteData) {
-    const { data, error } = await supabase
-      .from('agente')
-      .insert(agenteData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear agente: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear agente',
+      insertarFilas('agente', agenteData));
 
     return Agente.fromDatabase(data[0]);
   }
@@ -65,15 +46,8 @@ class AgenteRepository {
    * @returns {Promise<Agente|null>} Agente actualizado o null
    */
   async actualizar(id_agente, agenteData) {
-    const { data, error } = await supabase
-      .from('agente')
-      .update({...agenteData, updated_at: new Date().toISOString()})
-      .eq('id_agente', id_agente)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar agente: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar agente',
+      actualizarFilas('agente', { ...agenteData, updated_at: new Date().toISOString() }, 'id_agente = $1', [id_agente]));
 
     return data ? Agente.fromDatabase(data[0]) : null;
   }
@@ -84,15 +58,8 @@ class AgenteRepository {
    * @returns {Promise<Agente|null>} Agente eliminado o null
    */
   async eliminar(id_agente) {
-    const { data, error } = await supabase
-      .from('agente')
-      .delete()
-      .eq('id_agente', id_agente)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar agente: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar agente',
+      consulta('DELETE FROM agente WHERE id_agente = $1 RETURNING *', [id_agente]));
 
     return data ? Agente.fromDatabase(data[0]) : null;
   }
@@ -104,16 +71,13 @@ class AgenteRepository {
    */
   async buscarPorTexto(q) {
     try {
-      const { data, error } = await supabase
-        .from('agente')
-        .select('*')
-        .or(
-          `nombre.ilike.%${q}%,descripcion.ilike.%${q}%,prompt.ilike.%${q}%,link.ilike.%${q}%,categoria.ilike.%${q}%`
-        );
-
-      if (error) {
-        throw new ApiError(`Error al buscar agentes: ${error.message}`, 500);
-      }
+      // q va como parámetro: antes se interpolaba dentro del filtro .or() de
+      // PostgREST, y una coma o un paréntesis en la búsqueda alteraba el filtro.
+      const data = await conMensaje('Error al buscar agentes', consulta(`
+        SELECT * FROM agente
+        WHERE nombre ILIKE $1 OR descripcion ILIKE $1 OR prompt ILIKE $1
+           OR link ILIKE $1 OR categoria ILIKE $1
+      `, [`%${q}%`]));
 
       return data.map(agente => Agente.fromDatabase(agente));
     } catch (error) {

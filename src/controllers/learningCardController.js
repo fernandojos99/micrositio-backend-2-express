@@ -1,6 +1,7 @@
 import LearningCardService from '../services/learningCardService.js';
 import { learningCardCreateSchema, learningCardUpdateSchema } from '../middlewares/validation/learningCardSchema.js';
 import ApiError from '../utils/ApiError.js';
+import { leerId } from '../utils/leerId.js';
 
 class LearningCardController {
   constructor() {
@@ -53,13 +54,10 @@ class LearningCardController {
   async obtenerPorId(req, res, next) {
     try {
       // 🔑 Acepta múltiples fuentes (no rompe a nadie)
-      const id =
-        req.query?.id_learning_card ??
-        req.body?.id_learning_card ??
-        req.params?.id_learning_card;
-  
+      const id = leerId(req, 'id_learning_card', 'id');
+
       if (!id) {
-        throw new ApiError('Se requiere id_learning_card', 400);
+        throw new ApiError('Se requiere el identificador de la learning card', 400);
       }
   
       const learningCard = await this.learningCardService.obtenerPorId(id);
@@ -113,12 +111,13 @@ class LearningCardController {
    */
   async actualizar(req, res, next) {
     try {
-      if (!req.body.id_learning_card) {
-        throw new ApiError('Se requiere id_learning_card en el body', 400);
+      const id_learning_card = leerId(req, 'id_learning_card', 'id');
+      if (!id_learning_card) {
+        throw new ApiError('Se requiere el identificador de la learning card', 400);
       }
 
       const validatedData = learningCardUpdateSchema.parse(req.body);
-      const { id_learning_card, ...updateData } = validatedData;
+      const { id_learning_card: _ignorado, ...updateData } = validatedData;
 
       const learningCard = await this.learningCardService.actualizar(id_learning_card, updateData);
       res.json(learningCard);
@@ -135,11 +134,12 @@ class LearningCardController {
    */
   async eliminar(req, res, next) {
     try {
-      if (!req.body.id_learning_card) {
-        throw new ApiError('Se requiere id_learning_card en el body', 400);
+      const id_learning_card = leerId(req, 'id_learning_card', 'id');
+      if (!id_learning_card) {
+        throw new ApiError('Se requiere el identificador de la learning card', 400);
       }
 
-      await this.learningCardService.eliminar(req.body.id_learning_card);
+      await this.learningCardService.eliminar(id_learning_card);
       res.status(204).end();
     } catch (error) {
       next(error);

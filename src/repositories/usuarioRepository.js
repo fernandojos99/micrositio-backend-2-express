@@ -1,11 +1,19 @@
 // src/repositories/usuarioRepository.js
 /**
- * Repositorio para interactuar con la tabla usuarios en Supabase.
+ * Repositorio para interactuar con la tabla usuarios.
  * @class
  */
-import supabase from '../config/supabaseClient.js';
+import { consulta, uno, ejecutar, exigirFila, insertarFilas, actualizarFilas } from '../config/db.js';
+import { subir, urlPublica } from '../config/archivos.js';
+import { conMensaje } from '../utils/errorBd.js';
 import ApiError from '../utils/ApiError.js';
 import Usuario from '../models/Usuario.js';
+
+// Un UPDATE ... RETURNING que exige exactamente una fila, como el
+// `.update().select().single()` de antes: si no hay fila, error 500 con el
+// prefijo del método. Los errores 23505 (alias duplicado) los trata el llamador.
+const actualizarUno = (datos, id_usuario) =>
+  exigirFila(actualizarFilas('usuarios', datos, 'id_usuario = $1', [id_usuario]));
 
 class UsuarioRepository {
   /**
@@ -16,15 +24,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error en la consulta.
    */
   async obtenerPorId(id_usuario) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id_usuario', id_usuario)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener usuario: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener usuario',
+      uno('SELECT * FROM usuarios WHERE id_usuario = $1', [id_usuario]));
 
     return data ? Usuario.fromDatabase(data) : null;
   }
@@ -37,15 +38,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error en la consulta.
    */
   async obtenerPorAlias(alias) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('alias', alias)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener usuario por alias: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener usuario por alias',
+      uno('SELECT * FROM usuarios WHERE alias = $1', [alias]));
 
     return data ? Usuario.fromDatabase(data) : null;
   }
@@ -58,14 +52,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error en la consulta.
    */
   async obtenerPorIdEmpleado(id_empleado) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id_empleado', id_empleado);
-
-    if (error) {
-      throw new ApiError(`Error al obtener usuarios por empleado: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener usuarios por empleado',
+      consulta('SELECT * FROM usuarios WHERE id_empleado = $1', [id_empleado]));
 
     return data.map(usuario => Usuario.fromDatabase(usuario));
   }
@@ -80,25 +68,23 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error en la consulta.
    */
   async obtenerTodos(filtros = {}) {
-    let query = supabase
-      .from('usuarios')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const condiciones = [];
+    const params = [];
 
     // Aplicar filtros si existen
     if (filtros.activo !== undefined) {
-      query = query.eq('activo', filtros.activo);
+      params.push(filtros.activo);
+      condiciones.push(`activo = $${params.length}`);
     }
 
     if (filtros.tipo) {
-      query = query.eq('tipo', filtros.tipo);
+      params.push(filtros.tipo);
+      condiciones.push(`tipo = $${params.length}`);
     }
 
-    const { data, error } = await query;
-
-    if (error) {
-      throw new ApiError(`Error al listar usuarios: ${error.message}`, 500);
-    }
+    const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+    const data = await conMensaje('Error al listar usuarios',
+      consulta(`SELECT * FROM usuarios ${where} ORDER BY created_at DESC`, params));
 
     return data.map(usuario => Usuario.fromDatabase(usuario));
   }
@@ -111,13 +97,10 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error al crear.
    */
   async crear(usuarioData) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .insert(usuarioData)
-      .select()
-      .single();
-
-    if (error) {
+    let data;
+    try {
+      data = await exigirFila(insertarFilas('usuarios', usuarioData));
+    } catch (error) {
       // Manejo específico de errores de unicidad
       if (error.code === '23505') {
         throw new ApiError('El alias ya está en uso', 400);
@@ -143,14 +126,10 @@ class UsuarioRepository {
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
-      .from('usuarios')
-      .update(dataConFecha)
-      .eq('id_usuario', id_usuario)
-      .select()
-      .single();
-
-    if (error) {
+    let data;
+    try {
+      data = await actualizarUno(dataConFecha, id_usuario);
+    } catch (error) {
       // Manejo específico de errores de unicidad
       if (error.code === '23505') {
         throw new ApiError('El alias ya está en uso', 400);
@@ -162,16 +141,8 @@ class UsuarioRepository {
   }
 
   async asignarEmpleado(id_usuario, id_empleado) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .update({ id_empleado })
-      .eq('id_usuario', id_usuario)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al asignar empleado: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al asignar empleado',
+      actualizarUno({ id_empleado }, id_usuario));
 
     return data ? Usuario.fromDatabase(data) : null;
   }
@@ -185,19 +156,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
   async cambiarEstadoActivo(id_usuario, activo) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .update({ 
-        activo, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id_usuario', id_usuario)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al cambiar estado del usuario: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al cambiar estado del usuario',
+      actualizarUno({ activo, updated_at: new Date().toISOString() }, id_usuario));
 
     return data ? Usuario.fromDatabase(data) : null;
   }
@@ -211,18 +171,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error al actualizar.
    */
   async actualizarTipo(id, tipo) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .update({ 
-        tipo
-      })
-      .eq('id_usuario', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al cambiar tipo del usuario: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al cambiar tipo del usuario',
+      actualizarUno({ tipo }, id));
 
     return data ? Usuario.fromDatabase(data) : null;
   }
@@ -235,16 +185,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error al eliminar.
    */
   async eliminar(id_usuario) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .delete()
-      .eq('id_usuario', id_usuario)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar usuario: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar usuario',
+      exigirFila(consulta('DELETE FROM usuarios WHERE id_usuario = $1 RETURNING *', [id_usuario])));
 
     return data ? Usuario.fromDatabase(data) : null;
   }
@@ -258,22 +200,12 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error en la consulta.
    */
   async existeAlias(alias, excludeId = null) {
-    let query = supabase
-      .from('usuarios')
-      .select('id_usuario')
-      .eq('alias', alias);
+    const data = await conMensaje('Error al verificar alias', excludeId
+      ? consulta('SELECT id_usuario FROM usuarios WHERE alias = $1 AND id_usuario <> $2', [alias, excludeId])
+      : consulta('SELECT id_usuario FROM usuarios WHERE alias = $1', [alias]));
 
-    if (excludeId) {
-      query = query.neq('id_usuario', excludeId);
-    }
-
-    const { data, error } = await query.single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al verificar alias: ${error.message}`, 500);
-    }
-
-    return !!data;
+    // Era un .single() con PGRST116 → "no existe": solo exactamente una fila cuenta.
+    return data.length === 1;
   }
 
   /**
@@ -283,14 +215,8 @@ class UsuarioRepository {
    * @throws {ApiError} Si ocurre un error en la consulta.
    */
   async obtenerEstadisticas() {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('tipo, activo')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new ApiError(`Error al obtener estadísticas: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener estadísticas',
+      consulta('SELECT tipo, activo FROM usuarios ORDER BY created_at DESC'));
 
     const stats = {
       total: data.length,
@@ -299,7 +225,8 @@ class UsuarioRepository {
       editores: data.filter(u => u.tipo === 'EDITOR').length,
       visitantes: data.filter(u => u.tipo === 'VISITANTE').length,
       editores_activos: data.filter(u => u.tipo === 'EDITOR' && u.activo).length,
-      visitantes_activos: data.filter(u => u.tipo === 'VISITANTE' && u.activo).length
+      visitantes_activos: data.filter(u => u.tipo === 'VISITANTE' && u.activo).length,
+      administradores: data.filter(u => u.tipo === 'ADMIN').length
     };
 
     return stats;
@@ -314,19 +241,8 @@ class UsuarioRepository {
  * @throws {ApiError} Si ocurre un error.
  */
 async actualizarImagen(id_usuario, imageUrl) {
-  const { data, error } = await supabase
-    .from('usuarios')
-    .update({
-      image: imageUrl,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id_usuario', id_usuario)
-    .select()
-    .single();
-
-  if (error) {
-    throw new ApiError(`Error al actualizar imagen del usuario: ${error.message}`, 500);
-  }
+  const data = await conMensaje('Error al actualizar imagen del usuario',
+    actualizarUno({ image: imageUrl, updated_at: new Date().toISOString() }, id_usuario));
 
   return data ? Usuario.fromDatabase(data) : null;
 }
@@ -335,12 +251,13 @@ async actualizarImagen(id_usuario, imageUrl) {
 
 
 /**
- *   Metodos para subir imagenes a supabase y actualizar el campo image del usuario (funcionaba)
- * @param {
- } filename 
- * @param {*} buffer 
- * @param {*} mimetype 
- * @returns 
+ * Guarda la imagen de perfil en disco (bucket 'image', ver
+ * src/config/archivos.js) y devuelve su URL pública.
+ * @param {string} filename - Ruta dentro del bucket
+ * @param {Buffer} buffer - Contenido
+ * @param {string} mimetype - Tipo MIME (el disco no lo necesita: express.static
+ *   lo deduce de la extensión al servir el archivo)
+ * @returns {Promise<string>} URL pública del archivo
  */
 
 
@@ -349,36 +266,22 @@ async uploadToBucket(
   buffer,
   mimetype
   ) {
-    
-  const BUCKET = 'image';
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filename, buffer, {
-      contentType: mimetype,
-      upsert: false
-    });
 
-  if (error) {
+  const BUCKET = 'image';
+  try {
+    // Sin sobrescribir, igual que upload() con upsert: false
+    await subir(BUCKET, filename, buffer, { contentType: mimetype });
+  } catch (error) {
     throw new ApiError(error.message, 500);
   }
 
-  const { data } = supabase.storage
-    .from(BUCKET)
-    .getPublicUrl(filename);
-
-  return data.publicUrl;
+  return urlPublica(BUCKET, filename);
 }
 
 async  updateUserImage(userId, imageUrl) {
 
-  const { error } = await supabase
-    .from('usuarios')
-    .update({ image: imageUrl })
-    .eq('id_usuario', userId);
-
-  if (error) {
-    throw new ApiError(error.message, 500);
-  }
+  await conMensaje(null,
+    ejecutar('UPDATE usuarios SET image = $1 WHERE id_usuario = $2', [imageUrl, userId]));
 }
 
 
@@ -388,6 +291,6 @@ async  updateUserImage(userId, imageUrl) {
 
 
 
-} 
+}
 
 export default UsuarioRepository;

@@ -1,43 +1,27 @@
-import supabase from '../config/supabaseClient.js';
+import { consulta, unoObligatorio } from '../config/db.js';
 
+// Este repositorio no envuelve los errores: los relanza tal cual y decide el
+// controller.
 class TestingCardPlaybookRepository {
   async listarTodos() {
-    const { data, error } = await supabase
-      .from('testing_card_playbook')
-      .select('*');
-    if (error) throw error;
-    return data;
+    return consulta('SELECT * FROM testing_card_playbook');
   }
 
   async obtenerPorPagina(pagina) {
-    const { data, error } = await supabase
-      .from('testing_card_playbook')
-      .select('*')
-      .eq('pagina', pagina)
-      .single();
-    if (error) {
+    try {
+      return await unoObligatorio('SELECT * FROM testing_card_playbook WHERE pagina = $1', [pagina]);
+    } catch (error) {
       console.error('Error en obtenerPorPagina:', error);
       throw error;
     }
-    return data;
   }
 
   async buscarPorCampo(campo) {
-    const { data, error } = await supabase
-      .from('testing_card_playbook')
-      .select('*')
-      .eq('campo', campo);
-    if (error) throw error;
-    return data;
+    return consulta('SELECT * FROM testing_card_playbook WHERE campo = $1', [campo]);
   }
 
    async buscarPorTipo(tipo) {
-    const { data, error } = await supabase
-      .from('testing_card_playbook')
-      .select('*')
-      .eq('tipo', tipo);
-    if (error) throw error;
-    return data;
+    return consulta('SELECT * FROM testing_card_playbook WHERE tipo = $1', [tipo]);
   }
 }
 

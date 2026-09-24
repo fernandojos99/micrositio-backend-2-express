@@ -1,7 +1,10 @@
 // src/middlewares/validation/testingCardSchema.js
 import { z } from 'zod';
 
-const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO','EN EJECUCION'];
+// Estos son los 5 valores del CHECK real de testing_card.status en Supabase.
+// 'EN EJECUCION' estaba aqui y no en el CHECK: pasaba la validacion y luego
+// reventaba contra Postgres con un 500 incomprensible.
+const statusValues = ['EN PLANEACION', 'EN VALIDACION', 'EN ANALISIS', 'CANCELADO', 'TERMINADO'];
 
 // Esquema base que puede ser reutilizado
 const testingCardBaseSchema = z.object({
@@ -15,7 +18,9 @@ const testingCardBaseSchema = z.object({
   dia_fin: z.coerce.date().optional(),
   anexo_url: z.string().url('Debe ser una URL válida').optional(),
   id_responsable: z.number().int().positive('El ID del responsable debe ser un número positivo').optional(),
-  status: z.enum(statusValues).optional().default('EN PLANEACION')
+  status: z.enum(statusValues).optional().default('EN PLANEACION'),
+  // Card propuesta por el plan de trabajo: no se ve hasta que se aprueba
+  es_borrador: z.boolean().optional()
 });
 
 // Esquema para creación con validación adicional de fechas

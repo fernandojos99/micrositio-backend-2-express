@@ -23,21 +23,17 @@ class TestingCardService {
 
   async obtenerPorSecuencia(id_secuencia) {
     const testingCards = await this.testingCardRepo.obtenerPorSecuencia(id_secuencia);
-    
-    if (testingCards.length === 0) {
-      throw new ApiError('No se encontraron testing cards para esta secuencia', 404);
-    }
-    
+
+    // Una lista vacia es un caso normal (secuencia recien creada), no un error:
+    // devolver 404 obligaba al front a tratarlo como excepcion y enmascaraba
+    // los 404 que si son errores de verdad.
     return testingCards.map(tc => tc.toAPI());
   }
 
   async obtenerPorPadre(padre_id) {
     const testingCards = await this.testingCardRepo.obtenerPorPadre(padre_id);
-    
-    if (testingCards.length === 0) {
-      throw new ApiError('No se encontraron testing cards hijas para este padre', 404);
-    }
-    
+
+    // Idem: sin hijas no es un error, es una testing card hoja.
     return testingCards.map(tc => tc.toAPI());
   }
 
@@ -134,33 +130,32 @@ class TestingCardService {
     // 5. Aplicar los datos a la testing card destino
     const testingCardActualizada = await this.actualizar(id_testing_card, datosPlantilla);
     
-    // 6. Obtener las métricas de la testing card de la plantilla
-    let metricasCopiadas = [];
-    try {
-      const metricasPlantilla = await this.metricaTestingCardRepo.obtenerPorTestingCard(plantilla.id_testing_card);
-      
-      // 7. Eliminar métricas existentes de la testing card destino (opcional)
-      const metricasExistentes = await this.metricaTestingCardRepo.obtenerPorTestingCard(id_testing_card);
-      for (const metrica of metricasExistentes) {
-        await this.metricaTestingCardRepo.eliminar(metrica.id_metrica);
-      }
-      
-      // 8. Copiar cada métrica de la plantilla a la testing card destino
-      for (const metricaOriginal of metricasPlantilla) {
-        const datosMetrica = {
-          id_testing_card: id_testing_card, // Cambiar al ID de la testing card destino
-          nombre: metricaOriginal.nombre,
-          operador: metricaOriginal.operador,
-          criterio: metricaOriginal.criterio
-          // No copiamos el resultado, se deja null para que sea calculado después
-        };
-        
-        const metricaCopia = await this.metricaTestingCardRepo.crear(datosMetrica);
-        metricasCopiadas.push(metricaCopia);
-      }
-    } catch (error) {
-      // Si no hay métricas o hay error, continuamos sin fallar
-      console.log('No se pudieron copiar métricas o no existen métricas en la plantilla:', error.message);
+    // 6. Sustituir las métricas de la testing card destino por las de la plantilla.
+    //
+    // El orden importa y antes estaba invertido: se borraban las métricas
+    // existentes ANTES de copiar las nuevas, sin transacción, dentro de un
+    // try/catch que solo hacía console.log. Un fallo a media copia dejaba la
+    // testing card sin métricas y aun así respondía 200 con
+    // metricas_aplicadas: 0. Ahora se crean primero las nuevas y solo se
+    // borran las viejas cuando la copia ya terminó; si algo falla, se propaga
+    // el error y las métricas originales siguen intactas.
+    const metricasPlantilla = await this.metricaTestingCardRepo.obtenerPorTestingCard(plantilla.id_testing_card);
+    const metricasExistentes = await this.metricaTestingCardRepo.obtenerPorTestingCard(id_testing_card);
+
+    const metricasCopiadas = [];
+    for (const metricaOriginal of metricasPlantilla) {
+      const metricaCopia = await this.metricaTestingCardRepo.crear({
+        id_testing_card: id_testing_card,
+        nombre: metricaOriginal.nombre,
+        operador: metricaOriginal.operador,
+        criterio: metricaOriginal.criterio
+        // El resultado no se copia: se deja vacío para rellenarlo después.
+      });
+      metricasCopiadas.push(metricaCopia);
+    }
+
+    for (const metrica of metricasExistentes) {
+      await this.metricaTestingCardRepo.eliminar(metrica.id_metrica);
     }
     
     // 9. Preparar respuesta con información adicional
@@ -214,7 +209,6 @@ class TestingCardService {
         testingCardsConPlantilla.push(testingCardConPlantilla);
       } catch (error) {
         // Si no se puede obtener una testing card, registrar el error pero continuar
-        console.log(`Error al obtener testing card ${plantilla.id_testing_card} de plantilla ${plantilla.id_plantilla_testing_card}:`, error.message);
       }
     }
     

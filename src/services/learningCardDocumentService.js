@@ -1,4 +1,4 @@
-import supabase from '../config/supabaseClient.js';
+import archivos from '../config/archivos.js';
 import LearningCardDocumentRepository from '../repositories/learningCardDocumentRepository.js';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
@@ -41,33 +41,22 @@ class LearningCardDocumentService {
       const uniqueFileName = `${uuidv4()}${fileExtension}`;
       const filePath = `learning-card-${learningCardId}/${uniqueFileName}`;
 
-      // Subir archivo a Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(this.bucketName)
-        .upload(filePath, file.buffer, {
-          contentType: file.mimetype,
-          upsert: false
-        });
-
-      if (uploadError) {
-        console.error('Error uploading to Supabase Storage:', uploadError);
+      // Guardar el archivo en disco (falla si ya existe, como upsert: false)
+      try {
+        await archivos.subir(this.bucketName, filePath, file.buffer, { contentType: file.mimetype });
+      } catch (uploadError) {
+        console.error('Error saving file to disk:', uploadError);
         throw new Error(`Failed to upload file: ${uploadError.message}`);
       }
 
       // Obtener URL pública del archivo
-      const { data: urlData } = supabase.storage
-        .from(this.bucketName)
-        .getPublicUrl(filePath);
-
-      if (!urlData?.publicUrl) {
-        throw new Error('Failed to get public URL for uploaded file');
-      }
+      const publicUrl = archivos.urlPublica(this.bucketName, filePath);
 
       // Guardar información del documento en la base de datos
       const documentData = {
         learning_card_id: learningCardId,
         document_name: file.originalname,
-        document_url: urlData.publicUrl,
+        document_url: publicUrl,
         document_type: file.mimetype
       };
 
@@ -76,7 +65,7 @@ class LearningCardDocumentService {
       return {
         document: savedDocument,
         uploadPath: filePath,
-        publicUrl: urlData.publicUrl
+        publicUrl
       };
     } catch (error) {
       console.error('Error in uploadDocument service:', error);
@@ -107,13 +96,13 @@ class LearningCardDocumentService {
       const pathParts = url.pathname.split('/');
       const filePath = pathParts.slice(-2).join('/'); // learning-card-X/filename
 
-      // Eliminar archivo de Supabase Storage
-      const { error: deleteError } = await supabase.storage
-        .from(this.bucketName)
-        .remove([filePath]);
-
-      if (deleteError) {
-        console.error('Error deleting from Supabase Storage:', deleteError);
+      // Eliminar el archivo del disco
+      let deleteError = null;
+      try {
+        await archivos.borrar(this.bucketName, [filePath]);
+      } catch (error) {
+        deleteError = error;
+        console.error('Error deleting file from disk:', deleteError);
         // Continuar con la eliminación de la base de datos aunque falle el storage
       }
 

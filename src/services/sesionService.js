@@ -38,9 +38,6 @@ class SesionService {
     this.versionCounter.set(thread_id, currentVersion);
 
     // Si ya hay una tarea en curso, la reemplazamos (permitimos duplicados)
-    if (this.taskQueue.has(thread_id)) {
-      console.log(`🔄 Regenerando título para sesión ${thread_id} (versión ${currentVersion})`);
-    }
 
     const promise = (async () => {
       try {
@@ -48,15 +45,11 @@ class SesionService {
         
         // Verificar que no haya una versión más nueva en cola
         if (this.versionCounter.get(thread_id) !== currentVersion) {
-          console.log(`⏭️ Título para ${thread_id} versión ${currentVersion} obsoleto, ignorando`);
           return;
         }
 
         if (titulo) {
           await this.sesionRepo.actualizarTitulo(thread_id, titulo);
-          console.log(`✅ Título generado para sesión ${thread_id} (v${currentVersion}): "${titulo}"`);
-        } else {
-          console.log(`⚠️ No se pudo generar título para sesión ${thread_id} (v${currentVersion})`);
         }
       } catch (error) {
         console.error(`❌ Error generando título para ${thread_id} (v${currentVersion}):`, error.message);

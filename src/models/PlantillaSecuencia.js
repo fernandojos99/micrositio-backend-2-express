@@ -20,12 +20,8 @@ class PlantillaSecuencia {
    */
   static validateCreate(data) {
     try {
-      // console.log('Validando datos en PlantillaSecuencia:', data); // Debug
-      // console.log('Esquema shape:', Object.keys(plantillaSecuenciaCreateSchema.shape)); // Debug - ver qué campos espera
-      // console.log('Esquema completo:', plantillaSecuenciaCreateSchema); // Debug
       return plantillaSecuenciaCreateSchema.parse(data);
     } catch (error) {
-      // console.error('Error de validación:', error.errors); // Debug
       const errorDetails = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
       throw new ApiError(`Validación fallida: ${errorDetails}`, 400);
     }

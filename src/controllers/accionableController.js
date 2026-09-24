@@ -1,4 +1,9 @@
 import * as accionableService from '../services/accionableService.js';
+import {
+  accionableCreateSchema,
+  accionableUpdateSchema,
+  accionableSyncSchema,
+} from '../middlewares/validation/accionableSchema.js';
 
 /**
  * Obtener accionable por ID
@@ -49,7 +54,7 @@ export async function obtenerPorId(req, res, next) {
 // no se quede colgado el request sin respuesta
 export async function crear(req, res, next) {
   try {
-    const accionableData = req.body;
+    const accionableData = accionableCreateSchema.parse(req.body);
 
     const nuevoAccionable = await accionableService.crear(accionableData);
 
@@ -71,7 +76,7 @@ export async function crear(req, res, next) {
 export async function actualizar(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    const updateData = req.body;
+    const updateData = accionableUpdateSchema.parse(req.body);
 
     const accionableActualizado = await accionableService.actualizar(id, updateData);
 
@@ -115,12 +120,10 @@ export async function eliminar(req, res, next) {
 export async function sync(req, res, next) {
   try {
 
-    const accionables = req.body;
-   const idLearningCard = parseInt(req.params.id);
-   //console.log("esta es la learningCard",idLearningCard);
-   //console.log("El body",accionables)
+    const accionables = accionableSyncSchema.parse(req.body);
+    const idLearningCard = parseInt(req.params.id);
 
-    const result = await accionableService.sync(idLearningCard,accionables);
+    const result = await accionableService.sync(idLearningCard, accionables);
 
     res.status(200).json({
       success: true,

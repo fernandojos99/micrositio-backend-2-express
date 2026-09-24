@@ -15,7 +15,9 @@ class TestingCard {
     this.dia_fin = new Date(data.dia_fin);
     this.anexo_url = data.anexo_url || null;
     this.id_responsable = data.id_responsable;
-    this.status = data.status || 'En desarrollo';
+    this.status = data.status || 'EN PLANEACION';
+    // Card propuesta por el plan de trabajo, aún no aprobada
+    this.es_borrador = data.es_borrador ?? false;
     this.created_at = new Date(data.created_at || Date.now());
     this.updated_at = new Date(data.updated_at || Date.now());
   }
@@ -50,6 +52,7 @@ class TestingCard {
       anexo_url: dbData.anexo_url,
       id_responsable: dbData.id_responsable,
       status: dbData.status,
+      es_borrador: dbData.es_borrador,
       created_at: dbData.created_at,
       updated_at: dbData.updated_at
     });
@@ -69,6 +72,7 @@ class TestingCard {
       anexo_url: this.anexo_url,
       id_responsable: this.id_responsable,
       status: this.status,
+      es_borrador: this.es_borrador,
       creado: this.created_at.toISOString(),
       actualizado: this.updated_at.toISOString()
     };

@@ -1,6 +1,6 @@
 // src/repositories/urlLearningCardRepository.js
-import supabase from '../config/supabaseClient.js';
-import ApiError from '../utils/ApiError.js';
+import { consulta, uno, exigirFila, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import UrlLearningCard from '../models/UrlLearningCard.js';
 
 class UrlLearningCardRepository {
@@ -11,14 +11,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async obtenerPorLearningCard(idLearningCard) {
-    const { data, error } = await supabase
-      .from('url_learning_card')
-      .select('*')
-      .eq('id_learning_card', idLearningCard);
-
-    if (error) {
-      throw new ApiError(`Error al obtener URLs: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener URLs',
+      consulta('SELECT * FROM url_learning_card WHERE id_learning_card = $1', [idLearningCard]));
 
     return data.map(url => UrlLearningCard.fromDatabase(url));
   }
@@ -30,15 +24,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async obtenerPorId(idUrl) {
-    const { data, error } = await supabase
-      .from('url_learning_card')
-      .select('*')
-      .eq('id_url_lc', idUrl)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener URL: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener URL',
+      uno('SELECT * FROM url_learning_card WHERE id_url_lc = $1', [idUrl]));
 
     return data ? UrlLearningCard.fromDatabase(data) : null;
   }
@@ -49,13 +36,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async obtenerTodas() {
-    const { data, error } = await supabase
-      .from('url_learning_card')
-      .select('*');
-
-    if (error) {
-      throw new ApiError(`Error al obtener URLs: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener URLs',
+      consulta('SELECT * FROM url_learning_card'));
 
     return data.map(url => UrlLearningCard.fromDatabase(url));
   }
@@ -67,15 +49,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al crear
    */
   async crear(urlData) {
-    const { data, error } = await supabase
-      .from('url_learning_card')
-      .insert(urlData)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al crear URL: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear URL',
+      exigirFila(insertarFilas('url_learning_card', urlData)));
 
     return UrlLearningCard.fromDatabase(data);
   }
@@ -88,16 +63,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al actualizar
    */
   async actualizar(idUrl, urlData) {
-    const { data, error } = await supabase
-      .from('url_learning_card')
-      .update(urlData)
-      .eq('id_url_lc', idUrl)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar URL: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar URL',
+      exigirFila(actualizarFilas('url_learning_card', urlData, 'id_url_lc = $1', [idUrl])));
 
     return data ? UrlLearningCard.fromDatabase(data) : null;
   }
@@ -109,16 +76,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al eliminar
    */
   async eliminar(idUrl) {
-    const { data, error } = await supabase
-      .from('url_learning_card')
-      .delete()
-      .eq('id_url_lc', idUrl)
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar URL: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar URL',
+      exigirFila(consulta('DELETE FROM url_learning_card WHERE id_url_lc = $1 RETURNING *', [idUrl])));
 
     return data ? UrlLearningCard.fromDatabase(data) : null;
   }
@@ -130,15 +89,8 @@ class UrlLearningCardRepository {
    * @throws {ApiError} Si hay error al consultar
    */
   async existeLearningCard(idLearningCard) {
-    const { data, error } = await supabase
-      .from('learning_card')
-      .select('id')
-      .eq('id', idLearningCard)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al verificar learning card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al verificar learning card',
+      uno('SELECT id FROM learning_card WHERE id = $1', [idLearningCard]));
 
     return !!data;
   }

@@ -158,14 +158,14 @@ class UsuarioProyectoService {
       throw new ApiError('No se puede asignar proyectos a un usuario inactivo', 400);
     }
 
-    // Verificar que todos los proyectos existen
-    const proyectosExistentes = await Promise.all(
+    // Verificar que todos los proyectos existen. El resultado no se usa: lo
+    // unico que importa es que lance si alguno no existe.
+    await Promise.all(
       proyectos.map(async (id_proyecto) => {
         const proyecto = await this.proyectoRepo.obtenerPorId(id_proyecto);
         if (!proyecto) {
           throw new ApiError(`Proyecto con ID ${id_proyecto} no encontrado`, 404);
         }
-        return proyecto;
       })
     );
 

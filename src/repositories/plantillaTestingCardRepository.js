@@ -4,7 +4,7 @@
 === CONSULTAS SQL AVANZADAS PARA REFERENCIA FUTURA ===
 
 -- Obtener plantillas con información detallada de testing card y empleado
-SELECT 
+SELECT
     ptc.id_plantilla_testing_card,
     ptc.id_testing_card,
     ptc.id_empleado,
@@ -20,7 +20,7 @@ LEFT JOIN empleado e ON ptc.id_empleado = e.id_empleado
 ORDER BY ptc.created_at DESC;
 
 -- Contar plantillas por empleado
-SELECT 
+SELECT
     e.nombre,
     COUNT(ptc.id_plantilla_testing_card) as total_plantillas
 FROM empleado e
@@ -35,14 +35,14 @@ JOIN testing_card tc ON ptc.id_testing_card = tc.id_testing_card
 WHERE tc.titulo ILIKE '%busqueda%' OR tc.descripcion ILIKE '%busqueda%';
 
 -- Plantillas creadas en un rango de fechas
-SELECT * FROM plantilla_testing_card 
+SELECT * FROM plantilla_testing_card
 WHERE created_at BETWEEN $1 AND $2
 ORDER BY created_at DESC;
 
 -- Verificar restricciones de integridad referencial
-SELECT 
+SELECT
     ptc.id_plantilla_testing_card,
-    CASE 
+    CASE
         WHEN tc.id_testing_card IS NULL THEN 'Testing card no existe'
         WHEN e.id_empleado IS NULL THEN 'Empleado no existe'
         ELSE 'OK'
@@ -54,8 +54,8 @@ LEFT JOIN empleado e ON ptc.id_empleado = e.id_empleado;
 === FIN CONSULTAS SQL AVANZADAS ===
 */
 
-import supabase from '../config/supabaseClient.js';
-import ApiError from '../utils/ApiError.js';
+import { consulta, uno, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import PlantillaTestingCard from '../models/PlantillaTestingCard.js';
 
 class PlantillaTestingCardRepository {
@@ -65,21 +65,8 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<PlantillaTestingCard|null>} Plantilla testing card encontrada o null
    */
   async obtenerPorId(id_plantilla_testing_card) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    SELECT id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at
-    FROM plantilla_testing_card 
-    WHERE id_plantilla_testing_card = $1;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .select('*')
-      .eq('id_plantilla_testing_card', id_plantilla_testing_card)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener plantilla testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener plantilla testing card',
+      uno('SELECT * FROM plantilla_testing_card WHERE id_plantilla_testing_card = $1', [id_plantilla_testing_card]));
 
     return data ? PlantillaTestingCard.fromDatabase(data) : null;
   }
@@ -89,20 +76,8 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<Array<PlantillaTestingCard>>} Lista de plantillas testing card
    */
   async listarTodas() {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    SELECT id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at
-    FROM plantilla_testing_card 
-    ORDER BY created_at DESC;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new ApiError(`Error al listar plantillas testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al listar plantillas testing card',
+      consulta('SELECT * FROM plantilla_testing_card ORDER BY created_at DESC'));
 
     return data.map(plantilla => PlantillaTestingCard.fromDatabase(plantilla));
   }
@@ -113,22 +88,8 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<Array<PlantillaTestingCard>>} Lista de plantillas testing card del empleado
    */
   async listarPorEmpleado(id_empleado) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    SELECT id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at
-    FROM plantilla_testing_card 
-    WHERE id_empleado = $1 
-    ORDER BY created_at DESC;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .select('*')
-      .eq('id_empleado', id_empleado)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new ApiError(`Error al listar plantillas testing card por empleado: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al listar plantillas testing card por empleado',
+      consulta('SELECT * FROM plantilla_testing_card WHERE id_empleado = $1 ORDER BY created_at DESC', [id_empleado]));
 
     return data.map(plantilla => PlantillaTestingCard.fromDatabase(plantilla));
   }
@@ -139,22 +100,8 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<Array<PlantillaTestingCard>>} Lista de plantillas testing card de la testing card
    */
   async listarPorTestingCard(id_testing_card) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    SELECT id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at
-    FROM plantilla_testing_card 
-    WHERE id_testing_card = $1 
-    ORDER BY created_at DESC;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .select('*')
-      .eq('id_testing_card', id_testing_card)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new ApiError(`Error al listar plantillas testing card por testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al listar plantillas testing card por testing card',
+      consulta('SELECT * FROM plantilla_testing_card WHERE id_testing_card = $1 ORDER BY created_at DESC', [id_testing_card]));
 
     return data.map(plantilla => PlantillaTestingCard.fromDatabase(plantilla));
   }
@@ -165,20 +112,8 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<PlantillaTestingCard>} Plantilla testing card creada
    */
   async crear(plantillaData) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    INSERT INTO plantilla_testing_card (id_testing_card, id_empleado) 
-    VALUES ($1, $2) 
-    RETURNING id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .insert(plantillaData)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al crear plantilla testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al crear plantilla testing card',
+      insertarFilas('plantilla_testing_card', plantillaData));
 
     return PlantillaTestingCard.fromDatabase(data[0]);
   }
@@ -190,24 +125,9 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<PlantillaTestingCard|null>} Plantilla testing card actualizada o null
    */
   async actualizar(id_plantilla_testing_card, plantillaData) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    UPDATE plantilla_testing_card 
-    SET id_testing_card = COALESCE($2, id_testing_card), 
-        id_empleado = COALESCE($3, id_empleado), 
-        updated_at = NOW() 
-    WHERE id_plantilla_testing_card = $1 
-    RETURNING id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .update({...plantillaData, updated_at: new Date().toISOString()})
-      .eq('id_plantilla_testing_card', id_plantilla_testing_card)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al actualizar plantilla testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar plantilla testing card',
+      actualizarFilas('plantilla_testing_card', { ...plantillaData, updated_at: new Date().toISOString() },
+        'id_plantilla_testing_card = $1', [id_plantilla_testing_card]));
 
     return data && data.length > 0 ? PlantillaTestingCard.fromDatabase(data[0]) : null;
   }
@@ -218,21 +138,8 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<PlantillaTestingCard|null>} Plantilla testing card eliminada o null
    */
   async eliminar(id_plantilla_testing_card) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    DELETE FROM plantilla_testing_card 
-    WHERE id_plantilla_testing_card = $1 
-    RETURNING id_plantilla_testing_card, id_testing_card, id_empleado, created_at, updated_at;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .delete()
-      .eq('id_plantilla_testing_card', id_plantilla_testing_card)
-      .select();
-
-    if (error) {
-      throw new ApiError(`Error al eliminar plantilla testing card: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar plantilla testing card',
+      consulta('DELETE FROM plantilla_testing_card WHERE id_plantilla_testing_card = $1 RETURNING *', [id_plantilla_testing_card]));
 
     return data && data.length > 0 ? PlantillaTestingCard.fromDatabase(data[0]) : null;
   }
@@ -244,23 +151,11 @@ class PlantillaTestingCardRepository {
    * @returns {Promise<boolean>} True si la relación existe
    */
   async existeRelacion(id_testing_card, id_empleado) {
-    /* 
-    CONSULTA SQL EQUIVALENTE:
-    SELECT EXISTS(
-      SELECT 1 FROM plantilla_testing_card 
+    const data = await conMensaje('Error al verificar relación', consulta(`
+      SELECT id_plantilla_testing_card FROM plantilla_testing_card
       WHERE id_testing_card = $1 AND id_empleado = $2
-    ) as existe;
-    */
-    const { data, error } = await supabase
-      .from('plantilla_testing_card')
-      .select('id_plantilla_testing_card')
-      .eq('id_testing_card', id_testing_card)
-      .eq('id_empleado', id_empleado)
-      .limit(1);
-
-    if (error) {
-      throw new ApiError(`Error al verificar relación: ${error.message}`, 500);
-    }
+      LIMIT 1
+    `, [id_testing_card, id_empleado]));
 
     return data && data.length > 0;
   }

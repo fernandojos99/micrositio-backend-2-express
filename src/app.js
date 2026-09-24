@@ -1,8 +1,9 @@
-import dotenv from 'dotenv';
+// Primero: carga src/.env antes de que otros módulos lean process.env.
+import './config/entorno.js';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import supabase from './config/supabaseClient.js';
+import archivos from './config/archivos.js';
 //import jwt from 'jsonwebtoken'; // para leer el id_usuario del token
 import JWTUtils from './utils/jwtUtils.js'; // tu utilitario de JWT
 import chatRoutes from './routes/chatRoutes.js';
@@ -39,6 +40,9 @@ import formatoRoutes from './routes/formatoRoutes.js';
 import accionableRoutes from './routes/accionableRoutes.js';
 import habilidadRoutes from './routes/habilidadRoutes.js';
 import servicioRoutes from './routes/servicioRoutes.js';
+import proyectoEtapaRoutes from './routes/proyectoEtapaRoutes.js';
+import metricaAccionableRoutes from './routes/metricaAccionableRoutes.js';
+import proyectoBriefRoutes from './routes/proyectoBriefRoutes.js';
 
  
  
@@ -79,31 +83,26 @@ app.use(cors({
   credentials: true
 }));
 
-//Middleware adicional para manejar preflight OPTIONS
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
+// El preflight OPTIONS lo resuelve ya el middleware cors() de arriba, que
+// termina la peticion por si mismo. Aqui habia un app.options('*') que nunca
+// llegaba a ejecutarse y que reflejaba req.headers.origin sin whitelist: si
+// alguien reordenaba los middlewares, pasaba a aceptar cualquier origen.
 
 // Middleware para parsear JSON
 //app.use(bodyParser.json()); 
 app.use(express.json());
 
-<<<<<<< HEAD
+// Archivos subidos (documentos, formatos, fotos de perfil), guardados en disco
+// por config/archivos.js. Públicos, como lo eran los buckets de Supabase.
+app.use(archivos.PREFIJO_URL, express.static(archivos.DIRECTORIO, { index: false, dotfiles: 'deny' }));
 
-
-=======
-//Para debuguear las solicitudes entrantes
-app.use((req, res, next) => {
-  console.log("PATH:", req.path);
-  console.log("METHOD:", req.method);
-  console.log("BODY:", req.body);
-  next();
-});
->>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
+// Debug de solicitudes entrantes. Fuera de produccion: loguea el body,
+// que en POST /auth/login incluye la contrasena en claro.
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    next();
+  });
+}
 // Rutas
 app.use('/proyectos', proyectoRoutes);
 app.use('/celula_proyecto', celulaProyectoRoutes);
@@ -137,6 +136,9 @@ app.use('/habilidad',habilidadRoutes);
 app.use('/api/chat', sesionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/servicio',servicioRoutes);
+app.use('/proyecto_etapa', proyectoEtapaRoutes);
+app.use('/metrica_accionable', metricaAccionableRoutes);
+app.use('/proyecto_brief', proyectoBriefRoutes);
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {
@@ -157,107 +159,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-<<<<<<< HEAD
-// ============  Imagenes Acomodar despues ==================
-
-
-// // Multer en memoria: NO guarda en disco, pasa el buffer directo
-// const upload = multer({
-//   storage: multer.memoryStorage(),
-//   fileFilter: (req, file, cb) => {
-//     file.mimetype.startsWith("image/") ? cb(null, true) : cb(new Error("Solo imágenes"));
-//   },
-// });
-
-
-
-
-// El bueno
-//   app.post("/upload", upload.single("image"), async (req, res) => {
-//   if (!req.file) return res.status(400).json({ error: "No se recibió imagen" });
-
-//   // ✅ Leer y verificar token con tu utilitario
-//   let userId;
-//   try {
-//     const token = JWTUtils.extraerTokenDelHeader(req.headers.authorization);
-//     const decoded = JWTUtils.verificarToken(token);
-//     userId = decoded.user_id;
-//   } catch (err) {
-//     return res.status(401).json({ error: err.message });
-//   }
-
-//   const filename = `${Date.now()}-${req.file.originalname}`;
-
-//   const { error } = await supabase.storage
-//     .from(BUCKET)
-//     .upload(filename, req.file.buffer, {
-//       contentType: req.file.mimetype,
-//       upsert: false,
-//     });
-//   if (error) return res.status(500).json({ error: error.message });
-
-//   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-//   const publicUrl = data.publicUrl;
-
-//   // ✅ Guardar URL en la BD
-//   const { error: dbError } = await supabase
-//     .from('usuarios')
-//     .update({ image: publicUrl })
-//     .eq('id_usuario', userId);
-
-//   if (dbError) return res.status(500).json({ error: dbError.message });
-
-//   res.json({ message: "Imagen subida a Supabase", url: publicUrl, filename });
-// });
-
-
-
-
-
-
-//  ─── OBTENER URL DE IMAGEN  (usar esta opcion solo si es privado el bucket)────────────────────────────────
-//
-//    GET /images/:filename
-//   app.get("/images/:filename", async (req, res) => {
-//     const { data, error } = await supabase.storage
-//       .from(BUCKET)
-//       .createSignedUrl(req.params.filename, 60 * 60); // URL válida por 1 hora
-
-//     if (error) return res.status(404).json({ error: "Imagen no encontrada" });
-
-//     res.json({ url: data.signedUrl });
-//   });
-
-
-
-
-//  Agrega esto antes de definir las rutas
-// async function initStorage() {
-//   const { data: buckets } = await supabase.storage.listBuckets();
-//   const exists = buckets.some((b) => b.name === BUCKET);
-
-//   if (!exists) {
-//     const { error } = await supabase.storage.createBucket(BUCKET, {
-//       public: true, // false si quieres URLs firmadas privadas
-//     });
-
-//     if (error) {
-//       console.error("Error creando bucket:", error.message);
-//     } else {
-//       console.log(`Bucket "${BUCKET}" creado`);
-//     }
-//   } else {
-//     console.log(`Bucket "${BUCKET}" ya existe`);
-//   }
-// }
-
-
-// ========================================================
-
-// Manejo de errores
-=======
-// Manejo de errores (volver a poner despues)
->>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)
+// El bloque de subida de imagenes a Supabase Storage (multer en memoria,
+// initStorage, POST /upload y GET /images/:filename) vivia aqui comentado,
+// unas 75 lineas. Se elimina: sigue en el historial de git si hace falta
+// recuperarlo.
 app.use(errorHandler);
 
 
@@ -265,15 +170,11 @@ app.use(errorHandler);
 
  
 // Iniciar servidor
-<<<<<<< HEAD
-app.listen(PORT,async () => {
-  //await initStorage();
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-=======
-// app.listen(PORT, () => {
-//   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-// });
+// En Lambda el handler de lambda.js envuelve la app; solo escuchamos fuera de Lambda.
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
 
 export default app;
->>>>>>> b422555 (refactor(deploy):configure for will be deploy in lambda of AWS)

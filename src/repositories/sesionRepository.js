@@ -1,95 +1,49 @@
-import supabase from '../config/supabaseClient.js';
-import ApiError from '../utils/ApiError.js';
+import { consulta, uno, exigirFila, primeraFila, insertarFilas, actualizarFilas } from '../config/db.js';
+import { conMensaje } from '../utils/errorBd.js';
 import Sesion from '../models/Sesion.js';
 
 class  SesionRepository {
   async listarPorEmpleado(id_empleado) {
-    const { data, error } = await supabase
-      .from('sesion')
-      .select('*')
-      .eq('id_empleado', id_empleado)
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      throw new ApiError(`Error al listar sesiones: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al listar sesiones',
+      consulta('SELECT * FROM sesion WHERE id_empleado = $1 ORDER BY updated_at DESC', [id_empleado]));
 
     return data.map(sesion => Sesion.fromDatabase(sesion));
   }
 
   async obtenerPorThreadId(thread_id) {
-    const { data, error } = await supabase
-      .from('sesion')
-      .select('*')
-      .eq('thread_id', thread_id)
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al obtener sesión: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al obtener sesión',
+      uno('SELECT * FROM sesion WHERE thread_id = $1', [thread_id]));
 
     return data ? Sesion.fromDatabase(data) : null;
   }
 
   async crear(data) {
-    const { data: resultado, error } = await supabase
-      .from('sesion')
-      .insert({
+    const resultado = await conMensaje('Error al crear sesión',
+      exigirFila(insertarFilas('sesion', {
         id_empleado: data.id_empleado,
         thread_id: data.thread_id
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new ApiError(`Error al crear sesión: ${error.message}`, 500);
-    }
+      })));
 
     return Sesion.fromDatabase(resultado);
   }
 
   async actualizarActualizado(thread_id) {
-    const { data, error } = await supabase
-      .from('sesion')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('thread_id', thread_id)
-      .select()
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al actualizar sesión: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar sesión',
+      primeraFila(actualizarFilas('sesion', { updated_at: new Date().toISOString() }, 'thread_id = $1', [thread_id])));
 
     return data ? Sesion.fromDatabase(data) : null;
   }
 
   async actualizarTitulo(thread_id, titulo) {
-    const { data, error } = await supabase
-      .from('sesion')
-      .update({ titulo, updated_at: new Date().toISOString() })
-      .eq('thread_id', thread_id)
-      .select()
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al actualizar título de sesión: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al actualizar título de sesión',
+      primeraFila(actualizarFilas('sesion', { titulo, updated_at: new Date().toISOString() }, 'thread_id = $1', [thread_id])));
 
     return data ? Sesion.fromDatabase(data) : null;
   }
 
   async eliminar(thread_id, id_empleado) {
-    const { data, error } = await supabase
-      .from('sesion')
-      .delete()
-      .eq('thread_id', thread_id)
-      .eq('id_empleado', id_empleado)
-      .select()
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new ApiError(`Error al eliminar sesión: ${error.message}`, 500);
-    }
+    const data = await conMensaje('Error al eliminar sesión',
+      primeraFila(consulta('DELETE FROM sesion WHERE thread_id = $1 AND id_empleado = $2 RETURNING *', [thread_id, id_empleado])));
 
     return data ? Sesion.fromDatabase(data) : null;
   }
