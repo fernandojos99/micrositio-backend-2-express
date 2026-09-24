@@ -41,6 +41,22 @@ class EmpleadoService {
   }
 
   /**
+   * Resumen de empleados para la página Equipo. Los proyectos se cuentan con
+   * la misma visibilidad que GET /proyectos (proyectoService.listarProyectos):
+   * EDITOR y ADMIN todos, VISITANTE solo los asignados, otros ninguno.
+   * @async
+   * @param {Object} filtro - req.filtroProyectos (configurarFiltroProyectos).
+   * @returns {Promise<Array<Object>>} Empleados con skills, image y conteos.
+   */
+  async listarResumen(filtro) {
+    const esEditor = filtro.tipo === 'EDITOR' || filtro.tipo === 'ADMIN';
+    const proyectosPermitidos = esEditor
+      ? null
+      : (filtro.tipo === 'VISITANTE' && filtro.proyectosPermitidos) || [];
+    return await this.empleadoRepo.listarResumen(proyectosPermitidos);
+  }
+
+  /**
    * Crea un nuevo empleado.
    * @async
    * @param {Object} empleadoData - Datos del empleado.

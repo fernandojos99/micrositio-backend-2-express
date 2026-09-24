@@ -264,13 +264,13 @@ async actualizarImagen(id_usuario, imageUrl) {
 async uploadToBucket(
   filename,
   buffer,
-  mimetype // eslint-disable-line no-unused-vars
+  mimetype
   ) {
 
   const BUCKET = 'image';
   try {
     // Sin sobrescribir, igual que upload() con upsert: false
-    await subir(BUCKET, filename, buffer);
+    await subir(BUCKET, filename, buffer, { contentType: mimetype });
   } catch (error) {
     throw new ApiError(error.message, 500);
   }

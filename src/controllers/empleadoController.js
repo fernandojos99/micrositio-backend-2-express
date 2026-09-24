@@ -50,6 +50,21 @@ class EmpleadoController {
     }
   }
 
+  /**
+   * Maneja el resumen de empleados para la página Equipo (GET /empleados/resumen).
+   * @param {Object} req - Request de Express.
+   * @param {Object} res - Response de Express.
+   * @param {Function} next - Función next de Express.
+   */
+  async listarResumen(req, res, next) {
+    try {
+      const empleados = await this.empleadoService.listarResumen(req.filtroProyectos);
+      res.json(empleados);
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
   /**
    * Maneja la creación de un empleado (POST /empleados).

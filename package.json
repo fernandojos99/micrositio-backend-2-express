@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "dev:produccion": "ENTORNO=produccion nodemon src/app.js",
     "test": "node --test",
     "check": "node --check src/app.js",
     "test:bd": "node --test pruebas-bd/*.mjs"

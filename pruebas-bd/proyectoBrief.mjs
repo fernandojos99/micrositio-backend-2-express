@@ -5,7 +5,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 const db = await import('../src/config/db.js');
+const { default: archivos } = await import('../src/config/archivos.js');
 const { default: ApiError } = await import('../src/utils/ApiError.js');
 const { default: ProyectoBriefService } = await import('../src/services/proyectoBriefService.js');
 
@@ -134,4 +138,38 @@ test('brief: rechaza una extensión que no es de presentación', async () => {
 
 test('brief: un proyecto inexistente da 404', async () => {
   await assert.rejects(servicio.obtener(999_999_999), esApiError(404, 'Proyecto no encontrado'));
+});
+
+test('brief: limpiar lo deja a cero y borra el archivo del disco', async () => {
+  await conRollback(async () => {
+    const [proyecto] = await db.insertarFilas('proyecto',
+      await copiaDe('proyecto', 'id_proyecto', { titulo: '__prueba_brief_limpiar__' }));
+    const id = proyecto.id_proyecto;
+
+    await servicio.guardar(id, {
+      transcript_id: '999',
+      url: 'https://docs.example.com/z',
+      resumen_estructurado: { cliente: 'Prueba' }
+    });
+
+    const conPptx = await servicio.subirArchivo(id, {
+      originalname: 'para borrar.pptx',
+      buffer: Buffer.from('contenido de prueba'),
+      size: 19
+    }, 'pptx');
+
+    // Misma convención que usa el servicio: los dos últimos segmentos de la URL
+    const ruta = conPptx.pptx.url.split('/').slice(-2).map(decodeURIComponent).join('/');
+    const enDisco = path.join(archivos.DIRECTORIO, 'brief-docs', ruta);
+
+    assert.ok(existsSync(enDisco), 'el archivo debería existir antes de limpiar');
+
+    const limpio = await servicio.limpiar(id);
+
+    assert.equal(limpio.ejecutado, false, 'no debe quedar resultado de la Lambda');
+    assert.equal(limpio.url, null);
+    assert.equal(limpio.resumen_estructurado, null);
+    assert.equal(limpio.pptx, null, 'no debe quedar referencia al pptx');
+    assert.equal(existsSync(enDisco), false, 'el archivo debe borrarse del disco');
+  });
 });

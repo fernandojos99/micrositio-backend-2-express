@@ -19,7 +19,7 @@ class FormatoService {
 
       // Guardar el archivo en disco
       try {
-        await archivos.subir('formato-docs', filePath, file.buffer);
+        await archivos.subir('formato-docs', filePath, file.buffer, { contentType: file.mimetype });
       } catch (uploadError) {
         throw new Error(`Error al subir archivo: ${uploadError.message}`);
       }

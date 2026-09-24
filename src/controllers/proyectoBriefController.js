@@ -60,6 +60,15 @@ class ProyectoBriefController {
       next(error);
     }
   }
+
+  async limpiar(req, res, next) {
+    try {
+      const brief = await this.proyectoBriefService.limpiar(this.leerIdProyecto(req));
+      res.json(brief);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default ProyectoBriefController;

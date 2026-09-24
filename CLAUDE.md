@@ -34,12 +34,27 @@ node batch/cambiarContraseña.js  # reseteo de password
 
 Plantilla en **`src/.env.example`** (versionada; el `.env` real está en `.gitignore`).
 
+### Toggle local ↔ producción (`ENTORNO`)
+
+`ENTORNO=local` (por defecto, en `src/.env`) usa solo `src/.env`: base local y archivos en disco. `ENTORNO=produccion` carga **encima** `src/.env.produccion` (no versionado; plantilla `src/.env.produccion.example`), que apunta al Supabase de producción (`pnhlsqqyqxrwgzxefdcs`): base por el transaction pooler con TLS validado y archivos en Storage. Solo sustituye las variables que define; `PORT`, `EMAIL_*`… siguen saliendo de `src/.env`.
+
+```bash
+npm run dev                  # lo que diga ENTORNO en src/.env (local)
+npm run dev:produccion       # = ENTORNO=produccion npm run dev
+ENTORNO=produccion node scripts/…   # cualquier script, contra producción
+```
+
+Con `produccion` el arranque avisa por consola: **todo lo que se escriba va a la base de producción**. Un `ENTORNO` sin su `src/.env.<valor>` hace `process.exit(1)`. En Vercel (`NODE_ENV=production`) no se lee ningún `.env`: las mismas variables de `src/.env.produccion` van en su dashboard.
+
 | Variable | Si falta |
 |---|---|
 | `DATABASE_URL` | `process.exit(1)` al arrancar. `postgres://usuario:clave@host:5432/base` |
+| `ENTORNO` | `local`. Ver arriba |
 | `PG_POOL_MAX` | 10 conexiones. En Lambda conviene bajarlo |
+| `PG_SSL_CA` | Sin TLS (lo que diga `DATABASE_URL`). Para Supabase: `src/config/certs/supabase-root-2021.crt`, su CA raíz (con `sslmode=require` a secas `pg` rechaza la cadena por autofirmada) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | Los archivos van a disco. Con las dos, a Supabase Storage |
 | `ARCHIVOS_DIR` | Los archivos subidos van a `<paquete>/uploads` |
-| `ARCHIVOS_URL_BASE` | Las URLs de archivos se construyen con `http://localhost:$PORT`. **En producción hay que definirla** con la URL pública del backend, porque esa URL es la que se guarda en la base |
+| `ARCHIVOS_URL_BASE` | (Solo modo disco) las URLs de archivos se construyen con `http://localhost:$PORT` |
 | `PORT` | Escucha en 3000. El `.env` actual define `3001`, que es el puerto que el frontend tiene hardcodeado |
 | `NODE_ENV` | En `'production'` **no** se carga el `.env` |
 | `JWT_SECRET` | ⚠️ **Fallback hardcodeado** `'tu-clave-secreta-muy-segura'` en `src/config/jwtConfig.js`. **Hoy el `src/.env` no la define**, así que los tokens se firman con un secreto que está en el repo. Definirla siempre |
@@ -114,7 +129,10 @@ Ojo al probar a mano: `GET /api/chat/sessions` lee `req.user.id_empleado` del JW
 
 ## Archivos subidos: `src/config/archivos.js`
 
-Documentos de testing y learning cards, formatos y fotos de perfil se guardan **en disco**, en `ARCHIVOS_DIR/<bucket>/<ruta>`, y el backend los sirve en **`/archivos`** con `express.static` (`src/app.js`). Son públicos, como lo eran los buckets de Supabase.
+Documentos de testing y learning cards, formatos, briefs y fotos de perfil. Dos destinos, elegidos por las variables y no por `NODE_ENV` (`DESTINO` en el módulo):
+
+- **Supabase Storage** si están `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` (producción). REST de Storage con `fetch`, sin supabase-js. URL guardada: `${SUPABASE_URL}/storage/v1/object/public/<bucket>/<ruta>`. Los 5 buckets existen y son públicos en el proyecto de producción.
+- **Disco** si no (local): `ARCHIVOS_DIR/<bucket>/<ruta>`, servido en **`/archivos`** con `express.static` (`src/app.js`).
 
 | Bucket | Carpeta | Quién |
 |---|---|---|
@@ -122,13 +140,17 @@ Documentos de testing y learning cards, formatos y fotos de perfil se guardan **
 | `testing-card-docs` | `testing-cards/` | `testingCardDocumentService` |
 | `learning-card-docs` | `learning-card-<id>/` | `learningCardDocumentService` |
 | `image` | (raíz) | `usuarioRepository.uploadToBucket` (foto de perfil) |
+| `brief-docs` | `transcripts/` … | `proyectoBriefService` |
 
-- `subir()` **no sobrescribe** por defecto, igual que el `upsert: false` de Supabase.
+- `subir()` **no sobrescribe** por defecto (en los dos destinos falla con `code: 'EEXIST'`). Acepta `contentType`, que los servicios pasan desde el `mimetype` de multer.
 - `borrar()` no falla si el archivo ya no existe.
 - Cualquier ruta que se salga de su bucket (`..`, rutas absolutas) se rechaza.
-- La URL guardada en la base es `${ARCHIVOS_URL_BASE}/archivos/<bucket>/<carpeta>/<archivo>`. Los servicios recuperan la ruta del archivo a partir de **los dos últimos segmentos** de esa URL para borrarlo: no cambies ese formato.
-- ⚠️ **En Lambda y en Render el disco no es persistente.** En producción hace falta montar un disco persistente en `ARCHIVOS_DIR`.
+- En disco, la URL guardada es `${ARCHIVOS_URL_BASE}/archivos/<bucket>/<carpeta>/<archivo>`. En los dos destinos los servicios recuperan la ruta del archivo a partir de **los dos últimos segmentos** de esa URL para borrarlo: no cambies ese formato.
+- En Vercel y Lambda el disco no es persistente: por eso producción usa Storage.
+- Tras borrar, la URL pública puede seguir sirviendo el archivo un rato desde la caché del CDN de Supabase.
 - `uploads/` está en `.gitignore`.
+
+`scripts/subir-archivos-a-supabase.mjs` hace el camino inverso: sube a Storage los archivos de disco que referencia la base de `DATABASE_URL` y reescribe sus URLs (simulacro por defecto, `--aplicar`). Así se cargó producción el 23-sep-2026, junto con un `pg_restore` de la base local.
 
 `scripts/migrar-archivos-supabase.mjs` descarga los archivos de Supabase Storage que la base todavía referencia, los guarda en disco y reescribe sus URLs. Sin argumentos solo lista; con `--aplicar` ejecuta. Se puede repetir. En la base local ya se aplicó (5 archivos), y sirve igual para la futura base de producción.
 
@@ -208,6 +230,8 @@ Ojo con un falso negativo: `plantillaSecuenciaController` no llama a `parse`, pe
 /search               /url_formato          /formato              /accionables
 /habilidad            /api/chat             /servicio
 ```
+
+`GET /empleados/resumen` (`empleadoRepository.listarResumen`) devuelve en un solo SQL lo que pinta la página Equipo: empleados con `skills`, `image` (la del usuario ligado) y `projectsCompleted`/`projectsActive` (proyectos que lideran, con la visibilidad de `configurarFiltroProyectos`). Sustituye a las ~60 peticiones que hacía el front (2 por empleado). Lo puede pedir cualquier usuario autenticado, a diferencia de `/habilidad/empleado/:id` y `/usuarios/empleado/:id`, que son `soloEditores`.
 
 Más `GET /` (health textual), `GET /health` (JSON con uptime y memoria) y los archivos estáticos en `/archivos`.
 

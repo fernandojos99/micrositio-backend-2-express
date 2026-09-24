@@ -50,7 +50,7 @@ class TestingCardDocumentService {
 
       // Guardar el archivo en disco
       try {
-        await archivos.subir('testing-card-docs', filePath, file.buffer);
+        await archivos.subir('testing-card-docs', filePath, file.buffer, { contentType: file.mimetype });
       } catch (uploadError) {
         throw new Error(`Error al subir archivo: ${uploadError.message}`);
       }

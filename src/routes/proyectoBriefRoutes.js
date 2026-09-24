@@ -51,4 +51,14 @@ router.post(
   proyectoBriefController.subirPptx.bind(proyectoBriefController)
 );
 
+// Deja el brief como si nunca se hubiera ejecutado: vacía la fila y borra de
+// disco el .docx y el .pptx. Es irreversible, de ahí que el front confirme.
+router.delete(
+  '/:id_proyecto',
+  authMiddleware,
+  soloEditores,
+  verificarAccesoProyecto,
+  proyectoBriefController.limpiar.bind(proyectoBriefController)
+);
+
 export default router;

@@ -58,6 +58,34 @@ class EmpleadoRepository {
     return data; // O mapea si tienes un modelo
   }
 
+  /**
+   * Empleados con lo que necesita la página Equipo, en una sola consulta:
+   * habilidades, foto del usuario ligado y conteo de proyectos que lidera.
+   * Sustituye a las 2 peticiones por empleado que hacía el front.
+   * @async
+   * @param {Array<number>|null} proyectosPermitidos - null cuenta todos los
+   *   proyectos; un array (visitante) cuenta solo esos.
+   * @returns {Promise<Array<Object>>} Filas de empleado más skills, image,
+   *   projectsCompleted y projectsActive.
+   */
+  async listarResumen(proyectosPermitidos) {
+    return conMensaje('Error al listar el resumen de empleados',
+      consulta(`
+        SELECT e.*,
+          COALESCE((SELECT array_agg(h.nombre_habilidad ORDER BY h.id_habilidad)
+                    FROM habilidades h WHERE h.id_empleado = e.id_empleado), '{}') AS skills,
+          (SELECT u.image FROM usuarios u
+           WHERE u.id_empleado = e.id_empleado ORDER BY u.id_usuario LIMIT 1) AS image,
+          (SELECT count(*) FILTER (WHERE p.estado = 'COMPLETADO')::int FROM proyecto p
+           WHERE p.id_lider = e.id_empleado
+             AND ($1::int[] IS NULL OR p.id_proyecto = ANY($1))) AS "projectsCompleted",
+          (SELECT count(*) FILTER (WHERE p.estado = 'ACTIVO')::int FROM proyecto p
+           WHERE p.id_lider = e.id_empleado
+             AND ($1::int[] IS NULL OR p.id_proyecto = ANY($1))) AS "projectsActive"
+        FROM empleado e
+      `, [proyectosPermitidos]));
+  }
+
 
 
 

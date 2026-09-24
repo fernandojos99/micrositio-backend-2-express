@@ -46,6 +46,25 @@ class ProyectoBriefRepository {
 
     return new ProyectoBrief(data);
   }
+
+  /**
+   * Vacía el brief de un proyecto: deja la fila con todos los campos en null.
+   *
+   * No se borra la fila, solo su contenido. `obtener` devuelve exactamente lo
+   * mismo que si nunca se hubiera ejecutado nada, y así no hace falta borrar
+   * filas de la base.
+   * @param {number} id_proyecto
+   * @returns {Promise<ProyectoBrief>}
+   */
+  async limpiar(id_proyecto) {
+    const fila = { id_proyecto, updated_at: new Date().toISOString() };
+    for (const campo of CAMPOS) fila[campo] = null;
+
+    const data = await conMensaje('Error al limpiar el brief del proyecto',
+      exigirFila(upsertFilas('proyecto_brief', fila, ['id_proyecto'])));
+
+    return new ProyectoBrief(data);
+  }
 }
 
 export default ProyectoBriefRepository;

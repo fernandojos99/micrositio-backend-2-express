@@ -43,7 +43,7 @@ class LearningCardDocumentService {
 
       // Guardar el archivo en disco (falla si ya existe, como upsert: false)
       try {
-        await archivos.subir(this.bucketName, filePath, file.buffer);
+        await archivos.subir(this.bucketName, filePath, file.buffer, { contentType: file.mimetype });
       } catch (uploadError) {
         console.error('Error saving file to disk:', uploadError);
         throw new Error(`Failed to upload file: ${uploadError.message}`);

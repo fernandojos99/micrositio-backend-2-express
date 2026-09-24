@@ -35,6 +35,23 @@ function nombreEnUtf8(original = '') {
   return reinterpretado.includes('�') ? original : reinterpretado;
 }
 
+/**
+ * Ruta del archivo dentro de su bucket, a partir de la URL pública guardada.
+ *
+ * La URL es `<base>/archivos/<bucket>/<carpeta>/<archivo>`, y el resto de
+ * servicios de documentos recuperan la ruta tomando sus dos últimos
+ * segmentos. Se sigue la misma convención para no inventar otra.
+ */
+function rutaDesdeUrl(url) {
+  const segmentos = String(url).split('/').filter(Boolean);
+  if (segmentos.length < 2) return null;
+
+  return segmentos
+    .slice(-2)
+    .map((s) => decodeURIComponent(s))
+    .join('/');
+}
+
 class ProyectoBriefService {
   constructor() {
     this.briefRepo = new ProyectoBriefRepository();
@@ -100,7 +117,7 @@ class ProyectoBriefService {
     const ruta = `${admitido.carpeta}/${id_proyecto}_${uuidv4()}.${extension}`;
 
     try {
-      await archivos.subir(BUCKET, ruta, file.buffer);
+      await archivos.subir(BUCKET, ruta, file.buffer, { contentType: file.mimetype });
     } catch (error) {
       throw new ApiError(`Error al guardar el archivo: ${error.message}`, 500);
     }
@@ -118,6 +135,35 @@ class ProyectoBriefService {
 
     const brief = await this.briefRepo.guardar(id_proyecto, cambios);
     return brief.toAPI();
+  }
+
+  /**
+   * Deja el brief como si nunca se hubiera ejecutado: vacía la fila y borra
+   * de disco el .docx y el .pptx.
+   *
+   * Hace falta un método aparte porque `guardar` no puede limpiar: resuelve
+   * `ejecutado_en` con `??`, que también captura el null, así que enviar null
+   * volvería a poner la fecha de ahora.
+   * @param {number} id_proyecto
+   */
+  async limpiar(id_proyecto) {
+    await this.exigirProyecto(id_proyecto);
+
+    const brief = await this.briefRepo.obtenerPorProyecto(id_proyecto);
+
+    // Los archivos se borran antes que la fila: si algo falla aquí, la
+    // referencia sigue en la base y no quedan huérfanos invisibles.
+    const rutas = [brief?.archivo_url, brief?.pptx_url]
+      .filter(Boolean)
+      .map(rutaDesdeUrl)
+      .filter(Boolean);
+
+    if (rutas.length > 0) {
+      await archivos.borrar(BUCKET, rutas);
+    }
+
+    const limpio = await this.briefRepo.limpiar(id_proyecto);
+    return limpio.toAPI();
   }
 }
 

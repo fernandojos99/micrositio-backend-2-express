@@ -11,6 +11,9 @@
 
 import './entorno.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { sqlInsertar, sqlUpsert, sqlActualizar } from './sql.js';
 
@@ -19,8 +22,18 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// PG_SSL_CA: certificado raíz con el que validar el TLS del servidor (ruta
+// absoluta o relativa al paquete). Para Supabase: src/config/certs/supabase-root-2021.crt.
+// Sin ella, la conexión va como diga DATABASE_URL (la base local, sin TLS).
+function configuracionSsl() {
+  if (!process.env.PG_SSL_CA) return undefined;
+  const raizPaquete = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  return { ca: fs.readFileSync(path.resolve(raizPaquete, process.env.PG_SSL_CA), 'utf8'), rejectUnauthorized: true };
+}
+
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: configuracionSsl(),
   // En Lambda cada instancia abre su propio pool: conviene que sea pequeño.
   max: Number(process.env.PG_POOL_MAX) || 10,
 });

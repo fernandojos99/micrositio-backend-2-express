@@ -6,7 +6,7 @@
 
 import express from 'express';
 import EmpleadoController from '../controllers/empleadoController.js';
-import { authMiddleware, soloEditores } from '../middlewares/authMiddleware.js';
+import { authMiddleware, soloEditores, configurarFiltroProyectos } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 const empleadoController = new EmpleadoController();
@@ -63,6 +63,15 @@ router.get('/todos', authMiddleware, empleadoController.listarTodos.bind(emplead
  * @function
  */
 router.get('/sin-usuario', authMiddleware, empleadoController.obtenerEmpleadosSinUsuario.bind(empleadoController));
+
+/**
+ * Ruta GET con todo lo que pinta la página Equipo en una sola petición:
+ * empleados más habilidades, foto y conteo de proyectos (con la visibilidad
+ * de proyectos del usuario).
+ * @name get/empleados/resumen
+ * @function
+ */
+router.get('/resumen', authMiddleware, configurarFiltroProyectos, empleadoController.listarResumen.bind(empleadoController));
 
 
 /* ---------------------------------------------------------------------------
