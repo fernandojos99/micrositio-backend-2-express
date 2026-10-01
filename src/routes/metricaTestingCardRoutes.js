@@ -65,7 +65,7 @@ router.get('/m', authMiddleware, controller.obtenerPorId.bind(controller));
  *       200:
  *         description: Lista de todas las métricas
  */
-router.get('/', controller.obtenerTodas.bind(controller));
+router.get('/', authMiddleware, controller.obtenerTodas.bind(controller));
 
 /**
  * @swagger

@@ -59,6 +59,7 @@ Con `produccion` el arranque avisa por consola: **todo lo que se escriba va a la
 | `NODE_ENV` | En `'production'` **no** se carga el `.env` |
 | `JWT_SECRET` | ⚠️ **Fallback hardcodeado** `'tu-clave-secreta-muy-segura'` en `src/config/jwtConfig.js`. **Hoy el `src/.env` no la define**, así que los tokens se firman con un secreto que está en el repo. Definirla siempre |
 | `EMAIL_USER`, `EMAIL_PASSWORD` | Fallan las notificaciones por correo (nodemailer) |
+| `CORS_ORIGINS` | Solo los 4 orígenes fijos de `src/app.js`. Orígenes extra separados por comas (el dominio del front en Vercel, otro puerto local…) |
 | `AGENT_API_URL` | Fallback a una Lambda Function URL en `src/config/agentConfig.js`. Tampoco está en el `.env` actual |
 
 `src/.env.supabase` (no versionado) guarda la configuración antigua de producción, de cuando el backend usaba Supabase. La app ya no lo lee: es solo un registro.
@@ -269,6 +270,8 @@ El resto de recursos no está normalizado: `usuario` usa `req.params.id` o `req.
 
 - **Local / servidor**: llama a `app.listen(PORT)`, pero **solo si no está en Lambda** (`if (!process.env.AWS_LAMBDA_FUNCTION_NAME)`).
 - **AWS Lambda**: `lambda.js` (raíz del paquete) importa el `export default app` y lo envuelve con `serverless-http`.
+
+- **Vercel**: detecta Express por el `export default app` de `src/app.js` (sin `vercel.json`); con `VERCEL=1` tampoco se llama a `app.listen`. No lee ningún `.env`: las variables de `src/.env.produccion` van en el dashboard, y `PG_SSL_CA` con **el contenido** del `.crt` (el empaquetador no incluiría un archivo cuya ruta sale de una variable; `db.js` acepta PEM o ruta). Límites: el cuerpo de una petición no pasa de 4.5 MB aunque multer permita 50 MB, y el disco no persiste (por eso Storage).
 
 Al tocar el arranque, no rompas ninguna de las dos vías: `export default app` siempre debe existir. En Lambda, recuerda lo del pool (`PG_POOL_MAX`) y que el disco no persiste.
 

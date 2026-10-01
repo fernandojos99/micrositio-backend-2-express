@@ -69,6 +69,13 @@ const PORT = process.env.PORT || 3000;
 //const BUCKET = "image";
  
 // Configuración de CORS
+// CORS_ORIGINS (opcional): orígenes extra separados por comas, p. ej. el
+// dominio del front en Vercel, sin tocar código.
+const origenesExtra = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 app.use(cors({
   origin: [
     'https://micrositio-iris-front.vercel.app',
@@ -76,7 +83,8 @@ app.use(cors({
     //'http://localhost:3001',
     'https://micrositio-iris-front-git-dev3-iris-star-up-labs-projects.vercel.app',
     'http://localhost:5173',
-    'http://localhost:5174'
+    'http://localhost:5174',
+    ...origenesExtra
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -170,8 +178,9 @@ app.use(errorHandler);
 
  
 // Iniciar servidor
-// En Lambda el handler de lambda.js envuelve la app; solo escuchamos fuera de Lambda.
-if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+// En Lambda el handler de lambda.js envuelve la app, y en Vercel la función usa
+// el export default; solo escuchamos fuera de los dos.
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
   });

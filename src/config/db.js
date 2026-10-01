@@ -22,13 +22,20 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-// PG_SSL_CA: certificado raíz con el que validar el TLS del servidor (ruta
-// absoluta o relativa al paquete). Para Supabase: src/config/certs/supabase-root-2021.crt.
+// PG_SSL_CA: certificado raíz con el que validar el TLS del servidor. Admite
+// el contenido PEM directamente (lo que se usa en Vercel: el empaquetador no
+// incluiría un archivo cuya ruta sale de una variable) o una ruta absoluta o
+// relativa al paquete. Para Supabase: src/config/certs/supabase-root-2021.crt.
 // Sin ella, la conexión va como diga DATABASE_URL (la base local, sin TLS).
 function configuracionSsl() {
-  if (!process.env.PG_SSL_CA) return undefined;
+  const valor = process.env.PG_SSL_CA;
+  if (!valor) return undefined;
+  if (valor.trim().startsWith('-----BEGIN')) {
+    // Los dashboards a veces guardan los saltos de línea como "\n" literal
+    return { ca: valor.replace(/\\n/g, '\n'), rejectUnauthorized: true };
+  }
   const raizPaquete = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-  return { ca: fs.readFileSync(path.resolve(raizPaquete, process.env.PG_SSL_CA), 'utf8'), rejectUnauthorized: true };
+  return { ca: fs.readFileSync(path.resolve(raizPaquete, valor), 'utf8'), rejectUnauthorized: true };
 }
 
 const pool = new pg.Pool({
