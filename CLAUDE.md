@@ -271,7 +271,7 @@ El resto de recursos no está normalizado: `usuario` usa `req.params.id` o `req.
 - **Local / servidor**: llama a `app.listen(PORT)`, pero **solo si no está en Lambda** (`if (!process.env.AWS_LAMBDA_FUNCTION_NAME)`).
 - **AWS Lambda**: `lambda.js` (raíz del paquete) importa el `export default app` y lo envuelve con `serverless-http`.
 
-- **Vercel**: detecta Express por el `export default app` de `src/app.js` (sin `vercel.json`); con `VERCEL=1` tampoco se llama a `app.listen`. No lee ningún `.env`: las variables de `src/.env.produccion` van en el dashboard, y `PG_SSL_CA` con **el contenido** del `.crt` (el empaquetador no incluiría un archivo cuya ruta sale de una variable; `db.js` acepta PEM o ruta). Límites: el cuerpo de una petición no pasa de 4.5 MB aunque multer permita 50 MB, y el disco no persiste (por eso Storage).
+- **Vercel**: la función es `api/index.js`, que reexporta el `app` de `src/app.js`, y `vercel.json` reescribe todas las rutas hacia ella (Express sigue viendo la ruta original). El proyecto va con **Framework Preset "Other"**: con el preset "Express" el build fallaba con `Cannot read properties of undefined (reading 'fsPath')` porque no reconocía la entrada. Con `VERCEL=1` no se llama a `app.listen`. No lee ningún `.env`: las variables de `src/.env.produccion` van en el dashboard, y `PG_SSL_CA` con **el contenido** del `.crt` (el empaquetador no incluiría un archivo cuya ruta sale de una variable; `db.js` acepta PEM o ruta). Límites: el cuerpo de una petición no pasa de 4.5 MB aunque multer permita 50 MB, y el disco no persiste (por eso Storage).
 
 Al tocar el arranque, no rompas ninguna de las dos vías: `export default app` siempre debe existir. En Lambda, recuerda lo del pool (`PG_POOL_MAX`) y que el disco no persiste.
 
